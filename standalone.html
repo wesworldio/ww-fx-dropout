@@ -1033,10 +1033,8 @@
                     if (x < 0) x = 0;
                     if (y < 0) y = 0;
                     
-                    // Call applyFaceMask - it's async but we don't await to keep frame rate up
-                    applyFaceMask(ctx, x, y, width, height).catch(err => {
-                        console.error('Error in applyFaceMask:', err);
-                    });
+                    // Draw face mask synchronously (images are preloaded)
+                    applyFaceMaskSync(ctx, x, y, width, height);
                 });
             } else if (currentFilter === 'dropout_logo') {
                 // Apply logo to first detected face
