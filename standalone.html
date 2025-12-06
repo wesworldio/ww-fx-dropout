@@ -955,7 +955,16 @@
                             }
                             
                             // Always draw mask if we have any data (never hide it)
-                            if (shouldDrawMask && maskDataToUse && maskDataToUse.length > 0) {
+                            // PRIORITY: If we have a locked position, use it directly without ANY recalculation
+                            // This completely bypasses applyFilterWithFaceApi to prevent any position recalculation
+                            if (lockedMaskPosition) {
+                                // Bypass ALL position calculation - just draw at locked position
+                                // This prevents ANY flickering from position recalculation
+                                applyFaceMaskSync(ctx, lockedMaskPosition.x, lockedMaskPosition.y, 
+                                                 lockedMaskPosition.width, lockedMaskPosition.height);
+                            } else if (shouldDrawMask && maskDataToUse && maskDataToUse.length > 0) {
+                                // Only call applyFilterWithFaceApi if we don't have a locked position
+                                // This will calculate and lock the position on first detection
                                 applyFilterWithFaceApi(ctx, maskDataToUse);
                             } else if (lastKnownMaskPosition) {
                                 // Even if no detection, draw mask at last known position
