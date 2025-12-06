@@ -793,6 +793,9 @@
                                         // Only update if we got valid detections
                                         cachedDetections = detections;
                                         lastValidDetections = detections; // Update last valid
+                                        console.log('Face detection successful:', detections.length, 'faces detected');
+                                    } else {
+                                        console.log('No faces detected in this frame');
                                     }
                                     // If no detections, keep using lastValidDetections (don't clear)
                                     lastFaceDetectionTime = now;
@@ -1002,7 +1005,10 @@
                     if (x < 0) x = 0;
                     if (y < 0) y = 0;
                     
-                    applyFaceMask(ctx, x, y, width, height);
+                    // Call applyFaceMask - it's async but we don't await to keep frame rate up
+                    applyFaceMask(ctx, x, y, width, height).catch(err => {
+                        console.error('Error in applyFaceMask:', err);
+                    });
                 });
             } else if (currentFilter === 'dropout_logo') {
                 // Apply logo to first detected face
@@ -1038,7 +1044,10 @@
                     if (x < 0) x = 0;
                     if (y < 0) y = 0;
                     
-                    applyFaceMask(ctx, x, y, width, height);
+                    // Call applyFaceMask - it's async but we don't await to keep frame rate up
+                    applyFaceMask(ctx, x, y, width, height).catch(err => {
+                        console.error('Error in applyFaceMask:', err);
+                    });
                 });
             } else if (currentFilter === 'dropout_logo') {
                 // Apply logo to first detected face
