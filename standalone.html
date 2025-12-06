@@ -814,8 +814,13 @@
                                 }
                             }
                             
-                            // Always use lastValidDetections for rendering (prevents flickering)
+                            // Always draw mask with 5-second persistence (prevents flickering)
                             // This ensures mask stays visible even if detection fails temporarily
+                            const now = Date.now();
+                            let shouldDrawMask = false;
+                            let maskDataToUse = null;
+                            
+                            // First, try to use current detections
                             if (lastValidDetections && Array.isArray(lastValidDetections) && lastValidDetections.length > 0) {
                                 // Only normalize if we don't have cached normalized detections or if detections changed
                                 if (normalizedDetectionsCache.length === 0 || normalizedDetectionsCache.length !== lastValidDetections.length) {
@@ -851,10 +856,32 @@
                                     });
                                 }
                                 
-                                // Use cached normalized detections to avoid re-processing every frame
+                                // Use cached normalized detections
                                 if (normalizedDetectionsCache.length > 0) {
-                                    applyFilterWithFaceApi(ctx, normalizedDetectionsCache);
+                                    shouldDrawMask = true;
+                                    maskDataToUse = normalizedDetectionsCache;
+                                    // Update last successful mask time and store data
+                                    lastSuccessfulMaskTime = now;
+                                    if (maskDataToUse[0] && maskDataToUse[0].box) {
+                                        lastSuccessfulMaskData = {
+                                            box: { ...maskDataToUse[0].box },
+                                            landmarks: maskDataToUse[0].landmarks
+                                        };
+                                    }
                                 }
+                            }
+                            
+                            // If no current detection but we have recent successful mask data, use it (5-second persistence)
+                            if (!shouldDrawMask && lastSuccessfulMaskData && 
+                                (now - lastSuccessfulMaskTime) < maskPersistenceTimeout) {
+                                // Use last successful mask position (debounced persistence)
+                                maskDataToUse = [lastSuccessfulMaskData];
+                                shouldDrawMask = true;
+                            }
+                            
+                            // Draw mask if we have data to use
+                            if (shouldDrawMask && maskDataToUse && maskDataToUse.length > 0) {
+                                applyFilterWithFaceApi(ctx, maskDataToUse);
                             }
                         }
                     } else {
