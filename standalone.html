@@ -792,12 +792,13 @@
                             // Get current time for both detection interval and persistence checks
                             const now = Date.now();
                             
-                            // If we have a locked position, skip detection entirely to prevent flickering
-                            // Only check for detection if we need to update the locked position (very large movement)
-                            if (lockedMaskPosition) {
-                                // Skip all detection - just draw at locked position
-                                // This prevents any flickering from detection updates
-                            } else if (now - lastFaceDetectionTime > faceDetectionInterval && !isDetecting) {
+                            // If we have a locked position, run detection less frequently (every 1 second instead of 500ms)
+                            // This allows tracking of large movements while preventing flickering
+                            const detectionInterval = lockedMaskPosition ? 1000 : faceDetectionInterval;
+                            
+                            // Only detect faces periodically to improve performance
+                            // Use cached detections between intervals to prevent flickering
+                            if (now - lastFaceDetectionTime > detectionInterval && !isDetecting) {
                                 isDetecting = true;
                                 try {
                                     // Use withFaceLandmarks to get eye positions for proper mask alignment
