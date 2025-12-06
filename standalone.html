@@ -806,8 +806,18 @@
                             
                             // Always use lastValidDetections for rendering (prevents flickering)
                             // This ensures mask stays visible even if detection fails temporarily
-                            if (lastValidDetections && lastValidDetections.length > 0) {
-                                applyFilterWithFaceApi(ctx, lastValidDetections);
+                            if (lastValidDetections && Array.isArray(lastValidDetections) && lastValidDetections.length > 0) {
+                                // Ensure all detections have valid structure before passing
+                                const safeDetections = lastValidDetections.filter(d => 
+                                    d && 
+                                    typeof d === 'object' && 
+                                    d.box && 
+                                    typeof d.box === 'object' &&
+                                    typeof d.box.x === 'number'
+                                );
+                                if (safeDetections.length > 0) {
+                                    applyFilterWithFaceApi(ctx, safeDetections);
+                                }
                             }
                         }
                     } else {
