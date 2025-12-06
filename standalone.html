@@ -891,16 +891,39 @@
                                 if (normalizedDetectionsCache.length > 0) {
                                     shouldDrawMask = true;
                                     maskDataToUse = normalizedDetectionsCache;
-                                    // Update last successful mask time and store data
-                                    lastSuccessfulMaskTime = now;
-                                    if (maskDataToUse[0] && maskDataToUse[0].box) {
-                                        lastSuccessfulMaskData = {
-                                            box: { ...maskDataToUse[0].box },
-                                            landmarks: maskDataToUse[0].landmarks
-                                        };
-                                        // Reset last drawn position when we get new detection
-                                        // This allows smooth transition to new position
-                                        lastDrawnMaskPosition = null;
+                                    // Only update last successful mask time if this is a NEW detection (not cached)
+                                    // Check if detection actually changed by comparing with lastSuccessfulMaskData
+                                    const currentBox = maskDataToUse[0] && maskDataToUse[0].box;
+                                    if (currentBox) {
+                                        let isNewDetection = true;
+                                        if (lastSuccessfulMaskData && lastSuccessfulMaskData.box) {
+                                            const dx = Math.abs(currentBox.x - lastSuccessfulMaskData.box.x);
+                                            const dy = Math.abs(currentBox.y - lastSuccessfulMaskData.box.y);
+                                            const dw = Math.abs(currentBox.width - lastSuccessfulMaskData.box.width);
+                                            const dh = Math.abs(currentBox.height - lastSuccessfulMaskData.box.height);
+                                            // If detection hasn't changed significantly, don't reset smoothing
+                                            if (dx < 15 && dy < 15 && dw < 15 && dh < 15) {
+                                                isNewDetection = false;
+                                            }
+                                        }
+                                        
+                                        if (isNewDetection) {
+                                            // Only update on truly new detection
+                                            lastSuccessfulMaskTime = now;
+                                            lastSuccessfulMaskData = {
+                                                box: { ...currentBox },
+                                                landmarks: maskDataToUse[0].landmarks
+                                            };
+                                            // Only reset position smoothing if detection changed significantly
+                                            // This prevents flickering from small variations
+                                            if (lastDrawnMaskPosition) {
+                                                const dx = Math.abs(currentBox.x - (lastDrawnMaskPosition.x || 0));
+                                                const dy = Math.abs(currentBox.y - (lastDrawnMaskPosition.y || 0));
+                                                if (dx > 20 || dy > 20) {
+                                                    lastDrawnMaskPosition = null; // Reset only for large changes
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
