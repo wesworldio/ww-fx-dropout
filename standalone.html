@@ -501,9 +501,16 @@
         }
         
         // Process video frame with face detection
+        let lastFaceDetectionTime = 0;
+        const faceDetectionInterval = 100; // Detect faces every 100ms (10fps for face detection)
+        let cachedDetections = [];
+        
         async function processVideoFrame() {
             try {
-                if (!localStream || !videoInput.videoWidth) return;
+                if (!localStream || !videoInput.videoWidth) {
+                    requestAnimationFrame(processVideoFrame);
+                    return;
+                }
                 
                 // Set canvas size to match video
                 if (canvasOutput.width !== videoInput.videoWidth || canvasOutput.height !== videoInput.videoHeight) {
@@ -519,13 +526,22 @@
                     if (currentFilter.includes('face_mask') || currentFilter.includes('logo')) {
                         // Face-specific filters - detect faces using face-api.js
                         if (faceApiModelsLoaded) {
-                            try {
-                                const detections = await faceapi.detectAllFaces(videoInput, new faceapi.TinyFaceDetectorOptions());
-                                if (detections && detections.length > 0) {
-                                    applyFilterWithFaceApi(ctx, detections);
+                            const now = Date.now();
+                            // Only detect faces periodically to improve performance
+                            if (now - lastFaceDetectionTime > faceDetectionInterval) {
+                                try {
+                                    const detections = await faceapi.detectAllFaces(videoInput, new faceapi.TinyFaceDetectorOptions());
+                                    cachedDetections = detections || [];
+                                    lastFaceDetectionTime = now;
+                                } catch (err) {
+                                    console.warn('Face detection error:', err);
+                                    cachedDetections = [];
                                 }
-                            } catch (err) {
-                                console.warn('Face detection error:', err);
+                            }
+                            
+                            // Apply filters using cached detections
+                            if (cachedDetections && cachedDetections.length > 0) {
+                                applyFilterWithFaceApi(ctx, cachedDetections);
                             }
                         }
                     } else {
