@@ -1188,6 +1188,9 @@
                     // Always draw mask (canvas is cleared every frame, so we need to redraw)
                     // But use smoothed/stable position to prevent flickering
                     
+                    // Store the last known position so mask never disappears
+                    lastKnownMaskPosition = { x, y, width, height };
+                    
                     // Draw face mask synchronously (images are preloaded)
                     applyFaceMaskSync(ctx, x, y, width, height);
                 });
