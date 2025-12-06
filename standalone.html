@@ -489,10 +489,19 @@
                 updateStatus('Loading face detection models...', 'connected');
                 
                 // Load face-api.js models
-                // Use unpkg.com for weights as it has the correct directory structure
-                const modelPath = 'https://unpkg.com/face-api.js@0.22.2/weights';
+                // Use GitHub raw content for weights (most reliable)
+                const modelPath = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
                 console.log('Loading face detection models from:', modelPath);
-                await faceapi.nets.tinyFaceDetector.loadFromUri(modelPath);
+                try {
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(modelPath);
+                    console.log('TinyFaceDetector model loaded successfully');
+                } catch (error) {
+                    console.error('Failed to load from GitHub, trying unpkg:', error);
+                    // Fallback to unpkg
+                    const unpkgPath = 'https://unpkg.com/face-api.js@0.22.2/weights';
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(unpkgPath);
+                    console.log('TinyFaceDetector model loaded from unpkg');
+                }
                 
                 faceApiModelsLoaded = true;
                 faceDetection = true; // Mark as available
