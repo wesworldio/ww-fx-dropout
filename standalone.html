@@ -916,13 +916,15 @@
                                                 box: { ...currentBox },
                                                 landmarks: maskDataToUse[0].landmarks
                                             };
-                                            // Only reset position smoothing if detection changed significantly
+                                            // Only reset locked position if detection changed by a VERY large amount
                                             // This prevents flickering from small variations
-                                            if (lastDrawnMaskPosition) {
-                                                const dx = Math.abs(currentBox.x - (lastDrawnMaskPosition.x || 0));
-                                                const dy = Math.abs(currentBox.y - (lastDrawnMaskPosition.y || 0));
-                                                if (dx > 20 || dy > 20) {
-                                                    lastDrawnMaskPosition = null; // Reset only for large changes
+                                            if (lockedMaskPosition) {
+                                                const dx = Math.abs(currentBox.x - (lockedMaskPosition.x || 0));
+                                                const dy = Math.abs(currentBox.y - (lockedMaskPosition.y || 0));
+                                                if (dx > 50 || dy > 50) {
+                                                    // Only unlock for very large movements (50+ pixels)
+                                                    lockedMaskPosition = null;
+                                                    lastDrawnMaskPosition = null;
                                                 }
                                             }
                                         }
