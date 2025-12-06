@@ -1071,15 +1071,15 @@
             
             // Get cached image (should be preloaded)
             const img = faceMaskImages[assetPath];
-            if (!img || !img.complete || !img.naturalWidth) {
+            if (!img || !img.complete || !img.naturalWidth || !img.naturalHeight) {
                 // Image not ready yet, skip this frame
                 return;
             }
             
-            // Draw mask immediately
-            ctx.save();
-            ctx.drawImage(img, x, y, width, height);
-            ctx.restore();
+            // Draw mask immediately - no save/restore needed for single drawImage
+            // Use globalCompositeOperation to ensure mask draws on top
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(img, Math.round(x), Math.round(y), Math.round(width), Math.round(height));
         }
         
         // Apply face mask (async version for initial loading - not used in main render loop)
