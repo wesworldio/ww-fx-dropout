@@ -523,6 +523,7 @@
         let lastFaceDetectionTime = 0;
         const faceDetectionInterval = 100; // Detect faces every 100ms (10fps for face detection)
         let cachedDetections = [];
+        let lastValidDetections = []; // Keep last valid detections to prevent flickering
         
         async function processVideoFrame() {
             try {
@@ -550,18 +551,25 @@
                             if (now - lastFaceDetectionTime > faceDetectionInterval) {
                                 try {
                                     const detections = await faceapi.detectAllFaces(videoInput, new faceapi.TinyFaceDetectorOptions());
-                                    cachedDetections = detections || [];
-                                    lastFaceDetectionTime = now;
-                                    if (cachedDetections.length > 0) {
-                                        console.log(`Detected ${cachedDetections.length} face(s)`);
+                                    if (detections && detections.length > 0) {
+                                        cachedDetections = detections;
+                                        lastValidDetections = detections; // Update last valid
+                                    } else {
+                                        // Use last valid detections if no faces detected (prevents flickering)
+                                        cachedDetections = lastValidDetections;
                                     }
+                                    lastFaceDetectionTime = now;
                                 } catch (err) {
                                     console.warn('Face detection error:', err);
-                                    cachedDetections = [];
+                                    // Keep using last valid detections on error
+                                    cachedDetections = lastValidDetections;
                                 }
+                            } else {
+                                // Use cached detections between detection intervals
+                                cachedDetections = lastValidDetections;
                             }
                             
-                            // Apply filters using cached detections
+                            // Apply filters using cached detections (even if empty, prevents flicker)
                             if (cachedDetections && cachedDetections.length > 0) {
                                 applyFilterWithFaceApi(ctx, cachedDetections);
                             }
@@ -694,6 +702,8 @@
         function applyFullImageFilter(ctx) {
             const imageData = ctx.getImageData(0, 0, canvasOutput.width, canvasOutput.height);
             const data = imageData.data;
+            const width = canvasOutput.width;
+            const height = canvasOutput.height;
             
             switch(currentFilter) {
                 case 'black_white':
@@ -706,10 +716,49 @@
                     applyNegative(data);
                     break;
                 case 'pixelate':
-                    applyPixelate(data, canvasOutput.width, canvasOutput.height);
+                    applyPixelate(data, width, height);
                     break;
                 case 'blur':
-                    applyBlur(data, canvasOutput.width, canvasOutput.height);
+                    applyBlur(data, width, height);
+                    break;
+                case 'vintage':
+                    applyVintage(data);
+                    break;
+                case 'neon_glow':
+                    applyNeonGlow(data);
+                    break;
+                case 'sharpen':
+                    applySharpen(data, width, height);
+                    break;
+                case 'emboss':
+                    applyEmboss(data, width, height);
+                    break;
+                case 'red_tint':
+                    applyRedTint(data);
+                    break;
+                case 'blue_tint':
+                    applyBlueTint(data);
+                    break;
+                case 'green_tint':
+                    applyGreenTint(data);
+                    break;
+                case 'rainbow':
+                    applyRainbow(data, width, height);
+                    break;
+                case 'posterize':
+                    applyPosterize(data);
+                    break;
+                case 'sketch':
+                    applySketch(data, width, height);
+                    break;
+                case 'cartoon':
+                    applyCartoon(data, width, height);
+                    break;
+                case 'thermal':
+                    applyThermal(data);
+                    break;
+                case 'bulge':
+                    applyBulge(data, width, height);
                     break;
                 // Add more filters as needed
             }
@@ -1428,8 +1477,28 @@
         function applyTheme(theme) {
             if (theme.colors) {
                 const root = document.documentElement;
+                // Map theme color keys to CSS variable names
+                const colorMap = {
+                    background: 'background-color',
+                    surface: 'surface-color',
+                    surfaceHover: 'surface-hover-color',
+                    text: 'text-color',
+                    textSecondary: 'text-secondary-color',
+                    accent: 'accent-color',
+                    accentHover: 'accent-hover-color',
+                    border: 'border-color',
+                    borderHover: 'border-hover-color',
+                    button: 'button-color',
+                    buttonHover: 'button-hover-color',
+                    statusConnected: 'status-connected-color',
+                    statusError: 'status-error-color',
+                    groupTitle: 'group-title-color',
+                    selectedText: 'selected-text-color'
+                };
+                
                 Object.entries(theme.colors).forEach(([key, value]) => {
-                    root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
+                    const cssVar = colorMap[key] || key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                    root.style.setProperty(`--${cssVar}`, value);
                 });
             }
         }
