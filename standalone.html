@@ -414,6 +414,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.7.4/dist/tf.min.js"></script>
     <script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
     
+    <!-- Shared filter implementations -->
+    <script src="filters.js"></script>
+    
     <script>
         // State
         let localStream = null;
@@ -603,13 +606,69 @@
         // Apply filter to canvas using face-api.js detections
         function applyFilterWithFaceApi(ctx, detections) {
             if (currentFilter.includes('face_mask')) {
-                // Apply face mask to each detected face
+                // Apply face mask to each detected face with proper offsets
                 detections.forEach(detection => {
                     const box = detection.box;
-                    const x = box.x;
-                    const y = box.y;
-                    const width = box.width;
-                    const height = box.height;
+                    let x = box.x;
+                    let y = box.y;
+                    let width = box.width;
+                    let height = box.height;
+                    
+                    // Use landmarks if available for better positioning
+                    if (detection.landmarks) {
+                        // Calculate eye center from landmarks
+                        // face-api.js landmarks: left eye (36-41), right eye (42-47)
+                        // For simplicity, use average of left and right eye positions
+                        const leftEye = detection.landmarks.positions[36] || detection.landmarks.positions[0];
+                        const rightEye = detection.landmarks.positions[42] || detection.landmarks[detection.landmarks.length - 1];
+                        
+                        if (leftEye && rightEye) {
+                            const eyeCenterX = (leftEye.x + rightEye.x) / 2;
+                            const eyeCenterY = (leftEye.y + rightEye.y) / 2;
+                            
+                            // Scale mask larger for better coverage (same as Python: 1.6x)
+                            const scaleFactor = 1.6;
+                            width = box.width * scaleFactor;
+                            height = box.height * scaleFactor;
+                            
+                            // Position mask: center horizontally on eye center
+                            x = eyeCenterX - width / 2;
+                            
+                            // Position vertically so eyes align - place eye center at ~35% from top of mask
+                            // Adjust upward by 40 pixels to better align eyes (same as Python implementation)
+                            y = eyeCenterY - height * 0.35 - 40;
+                        } else {
+                            // Fallback to bounding box with scale factor
+                            const scaleFactor = 1.6;
+                            width = box.width * scaleFactor;
+                            height = box.height * scaleFactor;
+                            
+                            // Center the larger mask on the detected face
+                            const offsetX = (width - box.width) / 2;
+                            const offsetY = (height - box.height) / 2;
+                            x = box.x - offsetX;
+                            y = box.y - offsetY;
+                        }
+                    } else {
+                        // No landmarks, use bounding box with scale factor
+                        const scaleFactor = 1.6;
+                        width = box.width * scaleFactor;
+                        height = box.height * scaleFactor;
+                        
+                        // Center the larger mask on the detected face
+                        const offsetX = (width - box.width) / 2;
+                        const offsetY = (height - box.height) / 2;
+                        x = box.x - offsetX;
+                        y = box.y - offsetY;
+                    }
+                    
+                    // Ensure we don't go out of bounds
+                    const canvasWidth = canvasOutput.width;
+                    const canvasHeight = canvasOutput.height;
+                    if (x + width > canvasWidth) x = canvasWidth - width;
+                    if (y + height > canvasHeight) y = canvasHeight - height;
+                    if (x < 0) x = 0;
+                    if (y < 0) y = 0;
                     
                     applyFaceMask(ctx, x, y, width, height);
                 });
@@ -698,69 +757,38 @@
             ctx.putImageData(faceData, x, y);
         }
         
-        // Apply full image filter
+        // Apply full image filter using shared implementations
         function applyFullImageFilter(ctx) {
             const imageData = ctx.getImageData(0, 0, canvasOutput.width, canvasOutput.height);
             const data = imageData.data;
             const width = canvasOutput.width;
             const height = canvasOutput.height;
             
-            switch(currentFilter) {
-                case 'black_white':
-                    applyBlackWhite(data);
-                    break;
-                case 'sepia':
-                    applySepia(data);
-                    break;
-                case 'negative':
-                    applyNegative(data);
-                    break;
-                case 'pixelate':
-                    applyPixelate(data, width, height);
-                    break;
-                case 'blur':
-                    applyBlur(data, width, height);
-                    break;
-                case 'vintage':
-                    applyVintage(data);
-                    break;
-                case 'neon_glow':
-                    applyNeonGlow(data);
-                    break;
-                case 'sharpen':
-                    applySharpen(data, width, height);
-                    break;
-                case 'emboss':
-                    applyEmboss(data, width, height);
-                    break;
-                case 'red_tint':
-                    applyRedTint(data);
-                    break;
-                case 'blue_tint':
-                    applyBlueTint(data);
-                    break;
-                case 'green_tint':
-                    applyGreenTint(data);
-                    break;
-                case 'rainbow':
-                    applyRainbow(data, width, height);
-                    break;
-                case 'posterize':
-                    applyPosterize(data);
-                    break;
-                case 'sketch':
-                    applySketch(data, width, height);
-                    break;
-                case 'cartoon':
-                    applyCartoon(data, width, height);
-                    break;
-                case 'thermal':
-                    applyThermal(data);
-                    break;
-                case 'bulge':
-                    applyBulge(data, width, height);
-                    break;
-                // Add more filters as needed
+            // Use shared filter implementations
+            const filterMap = {
+                'black_white': () => FilterImplementations.applyBlackWhite(data),
+                'sepia': () => FilterImplementations.applySepia(data),
+                'negative': () => FilterImplementations.applyNegative(data),
+                'pixelate': () => FilterImplementations.applyPixelate(data, width, height),
+                'blur': () => FilterImplementations.applyBlur(data, width, height),
+                'vintage': () => FilterImplementations.applyVintage(data),
+                'neon_glow': () => FilterImplementations.applyNeonGlow(data),
+                'sharpen': () => FilterImplementations.applySharpen(data, width, height),
+                'emboss': () => FilterImplementations.applyEmboss(data, width, height),
+                'red_tint': () => FilterImplementations.applyRedTint(data),
+                'blue_tint': () => FilterImplementations.applyBlueTint(data),
+                'green_tint': () => FilterImplementations.applyGreenTint(data),
+                'rainbow': () => FilterImplementations.applyRainbow(data, width, height),
+                'posterize': () => FilterImplementations.applyPosterize(data),
+                'sketch': () => FilterImplementations.applySketch(data, width, height),
+                'cartoon': () => FilterImplementations.applyCartoon(data, width, height),
+                'thermal': () => FilterImplementations.applyThermal(data),
+                'bulge': () => FilterImplementations.applyBulge(data, width, height)
+            };
+            
+            const filterFunc = filterMap[currentFilter];
+            if (filterFunc) {
+                filterFunc();
             }
             
             ctx.putImageData(imageData, 0, 0);
@@ -1106,6 +1134,73 @@
             return option;
         }
         
+        // Update URL with current FX and pinned playlist
+        function updateURLWithFX(filterValue, playlist = null) {
+            const url = new URL(window.location.href);
+            
+            // Always include pinned FX in playlist if they exist
+            let finalPlaylist = playlist;
+            if (pinnedFilters && pinnedFilters.length > 0) {
+                // Merge pinned filters with provided playlist (pinned first)
+                if (playlist && Array.isArray(playlist)) {
+                    // Remove duplicates, keep pinned order first
+                    const pinnedSet = new Set(pinnedFilters);
+                    const playlistSet = new Set(playlist);
+                    finalPlaylist = [...pinnedFilters, ...playlist.filter(f => !pinnedSet.has(f))];
+                } else {
+                    finalPlaylist = [...pinnedFilters];
+                }
+            }
+            
+            if (finalPlaylist && Array.isArray(finalPlaylist) && finalPlaylist.length > 0) {
+                // Set playlist parameter
+                url.searchParams.set('playlist', finalPlaylist.join(','));
+                // Also set current FX
+                if (filterValue) {
+                    url.searchParams.set('fx', filterValue);
+                }
+            } else if (filterValue) {
+                // Set single FX
+                url.searchParams.set('fx', filterValue);
+                url.searchParams.delete('playlist');
+            } else {
+                // Clear FX parameters
+                url.searchParams.delete('fx');
+                url.searchParams.delete('playlist');
+            }
+            
+            // Update URL without reloading page
+            window.history.pushState({}, '', url);
+        }
+        
+        // Load FX from URL parameters
+        function loadFXFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fxParam = urlParams.get('fx');
+            const playlistParam = urlParams.get('playlist');
+            
+            if (playlistParam) {
+                // Load playlist
+                const playlist = playlistParam.split(',').filter(f => f.trim() !== '');
+                if (playlist.length > 0) {
+                    // Store playlist for cycling
+                    window.fxPlaylist = playlist;
+                    window.fxPlaylistIndex = 0;
+                    
+                    // Load first FX in playlist (or use fx param if provided)
+                    const firstFX = fxParam || playlist[0];
+                    if (firstFX && allFilters.includes(firstFX)) {
+                        selectFilter(firstFX, false); // false = don't update URL (already set)
+                    }
+                }
+            } else if (fxParam) {
+                // Load single FX
+                if (allFilters.includes(fxParam)) {
+                    selectFilter(fxParam, false); // false = don't update URL (already set)
+                }
+            }
+        }
+        
         function selectFilter(filterValue, updateURL = true) {
             currentFilter = filterValue || '';
             filterSelect.value = currentFilter;
@@ -1133,6 +1228,12 @@
             
             fxDropdownMenu.classList.remove('open');
             fxDropdownButton.classList.remove('open');
+            
+            // Update URL if requested
+            if (updateURL) {
+                const playlist = window.fxPlaylist || null;
+                updateURLWithFX(filterValue, playlist);
+            }
         }
         
         function updateCurrentPinIcon(filterValue) {
