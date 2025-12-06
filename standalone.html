@@ -1096,13 +1096,19 @@
                             height = Math.round(lastDrawnMaskPosition.height * 0.8 + height * 0.2);
                         } else {
                             // Use last position if change is small (prevents jitter)
-                            // Don't update stored position, keep using the same one
-                            return; // Skip drawing if position hasn't changed significantly
+                            x = lastDrawnMaskPosition.x;
+                            y = lastDrawnMaskPosition.y;
+                            width = lastDrawnMaskPosition.width;
+                            height = lastDrawnMaskPosition.height;
+                            // Don't update stored position - keep using the same one to prevent jitter
                         }
+                    } else {
+                        // First time drawing - store position
+                        lastDrawnMaskPosition = { x, y, width, height };
                     }
                     
-                    // Store current position for next frame (only if we're actually drawing)
-                    lastDrawnMaskPosition = { x, y, width, height };
+                    // Always draw mask (canvas is cleared every frame, so we need to redraw)
+                    // But use smoothed/stable position to prevent flickering
                     
                     // Draw face mask synchronously (images are preloaded)
                     applyFaceMaskSync(ctx, x, y, width, height);
