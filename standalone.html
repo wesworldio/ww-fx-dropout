@@ -763,6 +763,8 @@
         let lastDrawnMaskPosition = null; // Store last drawn mask position to prevent jitter
         const maskPositionThreshold = 10; // Only update mask position if it moves more than 10 pixels (increased to reduce flickering)
         const maskSmoothingFactor = 0.95; // Use 95% old position, 5% new (very smooth, prevents flickering)
+        let cachedMaskPosition = null; // Cache the calculated mask position to avoid recalculating every frame
+        let lastDetectionHash = null; // Hash of detection to detect when it actually changes
         
         async function processVideoFrame() {
             try {
@@ -1063,6 +1065,11 @@
                         const offsetY = (height - box.height) / 2;
                         x = box.x - offsetX;
                         y = box.y - offsetY;
+                    }
+                    
+                        // Cache the calculated position
+                        cachedMaskPosition = { x, y, width, height };
+                        lastDetectionHash = detectionHash;
                     }
                     
                     // Ensure we don't go out of bounds
