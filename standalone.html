@@ -410,11 +410,9 @@
         <canvas id="canvasOutput"></canvas>
     </div>
     
-    <!-- MediaPipe Face Detection -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/face_detection.js" crossorigin="anonymous"></script>
+    <!-- Face-api.js for face detection (browser-optimized) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-api@0.22.2/dist/face-api.min.js"></script>
     
     <script>
         // State
@@ -422,6 +420,7 @@
         let currentFilter = '';
         let animationFrameId = null;
         let faceDetection = null;
+        let faceApiModelsLoaded = false;
         let camera = null;
         let allFilters = [];
         let pinnedFilters = [];
@@ -476,43 +475,33 @@
             allFilters.push(...categoryFilters);
         });
         
-        // Initialize MediaPipe Face Detection
+        // Initialize face-api.js for face detection
         async function initFaceDetection() {
             try {
-                faceDetection = new FaceDetection({
-                    locateFile: (file) => {
-                        // MediaPipe may pass full paths like "third_party/mediapipe/modules/face_detection/face_detection_short_range.tflite"
-                        // Extract just the filename and use versioned CDN
-                        const filename = file.split('/').pop();
-                        const baseUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4';
-                        const url = `${baseUrl}/${filename}`;
-                        console.log('MediaPipe requesting file:', file, '->', url);
-                        return url;
-                    }
-                });
+                console.log('Loading face-api.js models...');
+                updateStatus('Loading face detection models...', 'connected');
                 
-                faceDetection.setOptions({
-                    modelSelection: 0, // 0 for short-range (more reliable), 1 for full-range
-                    minDetectionConfidence: 0.5
-                });
+                // Load face-api.js models
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-api@0.22.2/weights');
                 
-                faceDetection.onResults(onFaceDetectionResults);
+                faceApiModelsLoaded = true;
+                faceDetection = true; // Mark as available
                 
-                // Wait for MediaPipe to fully initialize by sending a test frame
-                // This helps catch initialization errors early
-                console.log('Face Detection initialized, waiting for ready state...');
+                console.log('Face detection models loaded successfully');
+                updateStatus('Face detection ready', 'connected');
                 
                 return true;
             } catch (error) {
-                console.error('Error initializing Face Detection:', error);
-                updateStatus('Face detection initialization failed', 'error');
+                console.error('Error loading face detection models:', error);
+                updateStatus('Face detection unavailable', 'error');
                 faceDetection = null;
+                faceApiModelsLoaded = false;
                 return false;
             }
         }
         
-        // Face detection results callback
-        function onFaceDetectionResults(results) {
+        // Process video frame with face detection
+        async function processVideoFrame() {
             try {
                 if (!localStream || !videoInput.videoWidth) return;
                 
@@ -528,41 +517,31 @@
                 // Apply filter if selected
                 if (currentFilter) {
                     if (currentFilter.includes('face_mask') || currentFilter.includes('logo')) {
-                        // Face-specific filters
-                        if (results.detections && results.detections.length > 0) {
-                            applyFilter(ctx, results.detections);
+                        // Face-specific filters - detect faces using face-api.js
+                        if (faceApiModelsLoaded) {
+                            try {
+                                const detections = await faceapi.detectAllFaces(videoInput, new faceapi.TinyFaceDetectorOptions());
+                                if (detections && detections.length > 0) {
+                                    applyFilterWithFaceApi(ctx, detections);
+                                }
+                            } catch (err) {
+                                console.warn('Face detection error:', err);
+                            }
                         }
                     } else {
                         // Apply full image filters
                         applyFullImageFilter(ctx);
                     }
                 }
+                
+                // Continue processing
+                requestAnimationFrame(processVideoFrame);
             } catch (error) {
-                console.error('Error in onFaceDetectionResults:', error);
+                console.error('Error in processVideoFrame:', error);
+                requestAnimationFrame(processVideoFrame);
             }
         }
         
-        // Fallback: render video without face detection
-        function renderVideoWithoutFaceDetection() {
-            if (!localStream || !videoInput.videoWidth) return;
-            
-            // Set canvas size to match video
-            if (canvasOutput.width !== videoInput.videoWidth || canvasOutput.height !== videoInput.videoHeight) {
-                canvasOutput.width = videoInput.videoWidth;
-                canvasOutput.height = videoInput.videoHeight;
-            }
-            
-            // Draw video frame
-            ctx.drawImage(videoInput, 0, 0, canvasOutput.width, canvasOutput.height);
-            
-            // Apply filter if selected (only non-face filters)
-            if (currentFilter && !currentFilter.includes('face_mask') && !currentFilter.includes('logo')) {
-                applyFullImageFilter(ctx);
-            }
-            
-            // Continue rendering
-            requestAnimationFrame(renderVideoWithoutFaceDetection);
-        }
         
         // Initialize canvas with default size
         function initCanvas() {
@@ -575,16 +554,16 @@
             }
         }
         
-        // Apply filter to canvas
-        function applyFilter(ctx, detections) {
+        // Apply filter to canvas using face-api.js detections
+        function applyFilterWithFaceApi(ctx, detections) {
             if (currentFilter.includes('face_mask')) {
                 // Apply face mask to each detected face
                 detections.forEach(detection => {
-                    const box = detection.boundingBox;
-                    const x = (box.xCenter - box.width / 2) * canvasOutput.width;
-                    const y = (box.yCenter - box.height / 2) * canvasOutput.height;
-                    const width = box.width * canvasOutput.width;
-                    const height = box.height * canvasOutput.height;
+                    const box = detection.box;
+                    const x = box.x;
+                    const y = box.y;
+                    const width = box.width;
+                    const height = box.height;
                     
                     applyFaceMask(ctx, x, y, width, height);
                 });
@@ -592,11 +571,11 @@
                 // Apply logo to first detected face
                 if (detections.length > 0) {
                     const detection = detections[0];
-                    const box = detection.boundingBox;
-                    const x = (box.xCenter - box.width / 2) * canvasOutput.width;
-                    const y = (box.yCenter - box.height / 2) * canvasOutput.height;
-                    const width = box.width * canvasOutput.width;
-                    const height = box.height * canvasOutput.height;
+                    const box = detection.box;
+                    const x = box.x;
+                    const y = box.y;
+                    const width = box.width;
+                    const height = box.height;
                     
                     applyDropoutLogo(ctx, x, y, width, height);
                 }
@@ -907,65 +886,13 @@
                 }
                 localStorage.setItem('wesworld-fx-camera-active', 'true');
                 
-                videoInput.onloadedmetadata = async () => {
+                videoInput.onloadedmetadata = () => {
                     // Set canvas size to match video
                     canvasOutput.width = videoInput.videoWidth;
                     canvasOutput.height = videoInput.videoHeight;
                     
-                    // Try to start MediaPipe camera, fallback to simple rendering if it fails
-                    if (faceDetection) {
-                        try {
-                            // Test MediaPipe with a single frame first to catch errors early
-                            try {
-                                await faceDetection.send({image: videoInput});
-                                console.log('MediaPipe test frame successful, starting camera...');
-                            } catch (testErr) {
-                                console.warn('MediaPipe test failed, using fallback:', testErr);
-                                faceDetection = null;
-                                renderVideoWithoutFaceDetection();
-                                updateStatus('Camera active (no face detection)', 'connected');
-                                startButton.style.display = 'none';
-                                stopButton.style.display = 'block';
-                                return;
-                            }
-                            
-                            camera = new Camera(videoInput, {
-                                onFrame: async () => {
-                                    try {
-                                        if (faceDetection) {
-                                            await faceDetection.send({image: videoInput});
-                                        }
-                                    } catch (err) {
-                                        console.warn('Face detection error, using fallback rendering:', err);
-                                        // Stop trying face detection and use fallback
-                                        if (camera) {
-                                            camera.stop();
-                                            camera = null;
-                                        }
-                                        faceDetection = null;
-                                        // Start fallback rendering
-                                        renderVideoWithoutFaceDetection();
-                                    }
-                                },
-                                width: videoInput.videoWidth,
-                                height: videoInput.videoHeight
-                            });
-                            camera.start().catch(err => {
-                                console.warn('MediaPipe camera failed, using fallback:', err);
-                                // Fallback to simple rendering
-                                camera = null;
-                                renderVideoWithoutFaceDetection();
-                            });
-                        } catch (err) {
-                            console.warn('MediaPipe initialization failed, using fallback:', err);
-                            // Fallback to simple rendering
-                            renderVideoWithoutFaceDetection();
-                        }
-                    } else {
-                        console.warn('FaceDetection not available, using fallback rendering');
-                        // Use fallback rendering
-                        renderVideoWithoutFaceDetection();
-                    }
+                    // Start processing video frames
+                    processVideoFrame();
                     
                     updateStatus('Camera active', 'connected');
                     startButton.style.display = 'none';
@@ -983,10 +910,6 @@
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
-            }
-            if (camera) {
-                camera.stop();
-                camera = null;
             }
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
