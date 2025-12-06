@@ -2169,6 +2169,37 @@
             });
         }
         
+        // Preload face mask images
+        async function preloadFaceMasks() {
+            const masksToPreload = ['sam', 'ariel'];
+            console.log('Preloading face mask images...');
+            
+            for (const maskName of masksToPreload) {
+                const assetPath = `assets/dropout/face_mask/${maskName}.png`;
+                if (!faceMaskImages[assetPath]) {
+                    try {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        await new Promise((resolve, reject) => {
+                            img.onload = () => {
+                                console.log('Preloaded face mask:', assetPath);
+                                resolve();
+                            };
+                            img.onerror = (err) => {
+                                console.error('Failed to preload face mask:', assetPath, err);
+                                reject(err);
+                            };
+                            img.src = assetPath;
+                        });
+                        faceMaskImages[assetPath] = img;
+                    } catch (error) {
+                        console.error('Error preloading face mask:', assetPath, error);
+                    }
+                }
+            }
+            console.log('Face mask preloading complete');
+        }
+        
         // Initialize
         async function init() {
             // Initialize canvas first
@@ -2196,6 +2227,9 @@
             loadPinnedFilters();
             await loadCameras();
             loadFilters();
+            
+            // Preload face mask images
+            await preloadFaceMasks();
             
             // Load FX from URL parameters (playlist and current FX)
             loadFXFromURL();
