@@ -760,6 +760,8 @@
         let lastSuccessfulMaskTime = 0; // Timestamp of last successful mask draw
         const maskPersistenceTimeout = 5000; // Keep mask visible for 5 seconds after last successful detection
         let lastSuccessfulMaskData = null; // Store last successful mask position and size
+        let lastDrawnMaskPosition = null; // Store last drawn mask position to prevent jitter
+        const maskPositionThreshold = 5; // Only update mask position if it moves more than 5 pixels
         
         async function processVideoFrame() {
             try {
@@ -782,6 +784,7 @@
                     if (currentFilter.includes('face_mask') || currentFilter.includes('logo')) {
                         // Face-specific filters - detect faces using face-api.js
                         if (faceApiModelsLoaded) {
+                            // Get current time for both detection interval and persistence checks
                             const now = Date.now();
                             // Only detect faces periodically to improve performance
                             // Use cached detections between intervals to prevent flickering
@@ -867,6 +870,9 @@
                                             box: { ...maskDataToUse[0].box },
                                             landmarks: maskDataToUse[0].landmarks
                                         };
+                                        // Reset last drawn position when we get new detection
+                                        // This allows smooth transition to new position
+                                        lastDrawnMaskPosition = null;
                                     }
                                 }
                             }
