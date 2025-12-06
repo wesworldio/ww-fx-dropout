@@ -788,6 +788,12 @@
         
         // Apply full image filter using shared implementations
         function applyFullImageFilter(ctx) {
+            // Check if FilterImplementations is available
+            if (typeof FilterImplementations === 'undefined') {
+                console.error('FilterImplementations not loaded - filters.js may not be loaded. Check browser console for 404 errors.');
+                return;
+            }
+            
             const imageData = ctx.getImageData(0, 0, canvasOutput.width, canvasOutput.height);
             const data = imageData.data;
             const width = canvasOutput.width;
