@@ -752,9 +752,10 @@
         
         // Process video frame with face detection
         let lastFaceDetectionTime = 0;
-        const faceDetectionInterval = 200; // Detect faces every 200ms (5fps for face detection) - reduced frequency
+        const faceDetectionInterval = 300; // Detect faces every 300ms (3.3fps for face detection) - reduced frequency to prevent flickering
         let cachedDetections = [];
         let lastValidDetections = []; // Keep last valid detections to prevent flickering
+        let normalizedDetectionsCache = []; // Cache normalized detections to avoid re-processing every frame
         let isDetecting = false; // Prevent multiple simultaneous detections
         
         async function processVideoFrame() {
@@ -793,10 +794,10 @@
                                         // Only update if we got valid detections
                                         cachedDetections = detections;
                                         lastValidDetections = detections; // Update last valid
-                                        console.log('Face detection successful:', detections.length, 'faces detected');
-                                    } else {
-                                        console.log('No faces detected in this frame');
+                                        // Clear normalized cache so it gets re-normalized with new detections
+                                        normalizedDetectionsCache = [];
                                     }
+                                    // If no detections, keep using lastValidDetections (don't clear)
                                     // If no detections, keep using lastValidDetections (don't clear)
                                     lastFaceDetectionTime = now;
                                 } catch (err) {
