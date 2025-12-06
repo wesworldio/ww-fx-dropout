@@ -1072,6 +1072,40 @@
                     if (x < 0) x = 0;
                     if (y < 0) y = 0;
                     
+                    // Round coordinates to prevent sub-pixel jitter
+                    x = Math.round(x);
+                    y = Math.round(y);
+                    width = Math.round(width);
+                    height = Math.round(height);
+                    
+                    // Smooth position changes to prevent flickering
+                    // Only update position if it changed significantly
+                    if (lastDrawnMaskPosition) {
+                        const dx = Math.abs(x - lastDrawnMaskPosition.x);
+                        const dy = Math.abs(y - lastDrawnMaskPosition.y);
+                        const dw = Math.abs(width - lastDrawnMaskPosition.width);
+                        const dh = Math.abs(height - lastDrawnMaskPosition.height);
+                        
+                        // If position changed significantly, update smoothly
+                        if (dx > maskPositionThreshold || dy > maskPositionThreshold || 
+                            dw > maskPositionThreshold || dh > maskPositionThreshold) {
+                            // Smooth interpolation (80% old, 20% new) to prevent sudden jumps
+                            x = Math.round(lastDrawnMaskPosition.x * 0.8 + x * 0.2);
+                            y = Math.round(lastDrawnMaskPosition.y * 0.8 + y * 0.2);
+                            width = Math.round(lastDrawnMaskPosition.width * 0.8 + width * 0.2);
+                            height = Math.round(lastDrawnMaskPosition.height * 0.8 + height * 0.2);
+                        } else {
+                            // Use last position if change is small (prevents jitter)
+                            x = lastDrawnMaskPosition.x;
+                            y = lastDrawnMaskPosition.y;
+                            width = lastDrawnMaskPosition.width;
+                            height = lastDrawnMaskPosition.height;
+                        }
+                    }
+                    
+                    // Store current position for next frame
+                    lastDrawnMaskPosition = { x, y, width, height };
+                    
                     // Draw face mask synchronously (images are preloaded)
                     applyFaceMaskSync(ctx, x, y, width, height);
                 });
