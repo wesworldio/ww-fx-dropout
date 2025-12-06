@@ -1082,49 +1082,13 @@
             ctx.restore();
         }
         
-        // Apply face mask (async version for initial loading)
+        // Apply face mask (async version for initial loading - not used in main render loop)
         async function applyFaceMask(ctx, x, y, width, height) {
-            // Extract mask name from filter (e.g., dropout_face_mask_sam -> sam)
-            const parts = currentFilter.split('_');
-            const maskName = parts[parts.length - 1];
-            
-            // Determine asset path
-            let assetPath = '';
-            if (currentFilter.startsWith('dropout_')) {
-                assetPath = `assets/dropout/face_mask/${maskName}.png`;
-            } else if (currentFilter.startsWith('assets_')) {
-                assetPath = `assets/face_mask/${maskName}.png`;
-            }
-            
-            if (!assetPath) {
-                return;
-            }
-            
-            // Load image if not cached
-            if (!faceMaskImages[assetPath]) {
-                try {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    await new Promise((resolve, reject) => {
-                        img.onload = resolve;
-                        img.onerror = reject;
-                        img.src = assetPath;
-                    });
-                    faceMaskImages[assetPath] = img;
-                } catch (error) {
-                    console.error('Error loading face mask:', assetPath, error);
-                    return;
-                }
-            }
-            
-            const img = faceMaskImages[assetPath];
-            if (!img || !img.complete) {
-                return;
-            }
-            
-            ctx.save();
-            ctx.drawImage(img, x, y, width, height);
-            ctx.restore();
+            // This function is kept for backward compatibility but should not be used in the render loop
+            // Use applyFaceMaskSync instead for synchronous drawing
+            console.warn('applyFaceMask (async) should not be called in render loop - use applyFaceMaskSync');
+            // Fallback to sync version
+            applyFaceMaskSync(ctx, x, y, width, height);
         }
         
         // Apply dropout logo
