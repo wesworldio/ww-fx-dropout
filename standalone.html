@@ -807,67 +807,70 @@
                                         .withFaceLandmarks();
                                     
                                     if (detections && detections.length > 0) {
-                                        // Only update if we got valid detections AND they're significantly different
-                                        // Check if the new detection is significantly different from the last one
-                                        let shouldUpdate = true;
-                                        if (lastValidDetections && lastValidDetections.length > 0 && 
-                                            detections.length > 0) {
-                                            const oldDetection = lastValidDetections[0];
+                                        // If we have a locked position, ONLY check for very large movements to unlock
+                                        // Don't update any detection data unless movement is huge
+                                        if (lockedMaskPosition) {
                                             const newDetection = detections[0];
-                                            const oldBox = (oldDetection.detection && oldDetection.detection.box) || oldDetection.box;
                                             const newBox = (newDetection.detection && newDetection.detection.box) || newDetection.box;
-                                            if (oldBox && newBox) {
-                                                const dx = Math.abs(newBox.x - oldBox.x);
-                                                const dy = Math.abs(newBox.y - oldBox.y);
-                                                const dw = Math.abs(newBox.width - oldBox.width);
-                                                const dh = Math.abs(newBox.height - oldBox.height);
-                                                // Only update if detection changed significantly (more than 15 pixels)
-                                                if (dx < 15 && dy < 15 && dw < 15 && dh < 15) {
-                                                    shouldUpdate = false; // Keep using old detection
+                                            if (newBox) {
+                                                // Calculate what the new position would be (rough estimate from box)
+                                                const scaleFactor = 1.6;
+                                                const newWidth = newBox.width * scaleFactor;
+                                                const newHeight = newBox.height * scaleFactor;
+                                                const offsetX = (newWidth - newBox.width) / 2;
+                                                const offsetY = (newHeight - newBox.height) / 2;
+                                                const estimatedX = newBox.x - offsetX;
+                                                const estimatedY = newBox.y - offsetY;
+                                                
+                                                // Check if movement is LARGE enough to unlock (75+ pixels - very strict)
+                                                const dx = Math.abs(estimatedX - lockedMaskPosition.x);
+                                                const dy = Math.abs(estimatedY - lockedMaskPosition.y);
+                                                
+                                                if (dx > 75 || dy > 75) {
+                                                    // Very large movement detected - unlock position to allow tracking
+                                                    lockedMaskPosition = null;
+                                                    lastDrawnMaskPosition = null;
+                                                    cachedMaskPosition = null;
+                                                    lastDetectionHash = null;
+                                                    // Now update detection data since we unlocked
+                                                    cachedDetections = detections;
+                                                    lastValidDetections = detections;
+                                                    normalizedDetectionsCache = [];
+                                                    lastSuccessfulMaskTime = Date.now();
                                                 }
+                                                // If movement is not large enough, do NOTHING - keep position locked
+                                                // This prevents any flickering from detection updates
                                             }
-                                        }
-                                        
-                                        if (shouldUpdate) {
-                                            cachedDetections = detections;
-                                            lastValidDetections = detections; // Update last valid
-                                            // Clear normalized cache so it gets re-normalized with new detections
-                                            normalizedDetectionsCache = [];
-                                            
-                                            // If we have a locked position, check if the new detection is far enough to unlock
-                                            if (lockedMaskPosition && detections.length > 0) {
+                                        } else {
+                                            // No locked position - normal detection update logic
+                                            // Only update if we got valid detections AND they're significantly different
+                                            let shouldUpdate = true;
+                                            if (lastValidDetections && lastValidDetections.length > 0 && 
+                                                detections.length > 0) {
+                                                const oldDetection = lastValidDetections[0];
                                                 const newDetection = detections[0];
+                                                const oldBox = (oldDetection.detection && oldDetection.detection.box) || oldDetection.box;
                                                 const newBox = (newDetection.detection && newDetection.detection.box) || newDetection.box;
-                                                if (newBox) {
-                                                    // Calculate what the new position would be (rough estimate from box)
-                                                    const scaleFactor = 1.6;
-                                                    const newWidth = newBox.width * scaleFactor;
-                                                    const newHeight = newBox.height * scaleFactor;
-                                                    const offsetX = (newWidth - newBox.width) / 2;
-                                                    const offsetY = (newHeight - newBox.height) / 2;
-                                                    const estimatedX = newBox.x - offsetX;
-                                                    const estimatedY = newBox.y - offsetY;
-                                                    
-                                                    // Check if movement is large enough to unlock (50+ pixels)
-                                                    const dx = Math.abs(estimatedX - lockedMaskPosition.x);
-                                                    const dy = Math.abs(estimatedY - lockedMaskPosition.y);
-                                                    
-                                                    if (dx > maskPositionThreshold || dy > maskPositionThreshold) {
-                                                        // Large movement detected - unlock position to allow tracking
-                                                        lockedMaskPosition = null;
-                                                        lastDrawnMaskPosition = null;
-                                                        cachedMaskPosition = null;
-                                                        lastDetectionHash = null;
+                                                if (oldBox && newBox) {
+                                                    const dx = Math.abs(newBox.x - oldBox.x);
+                                                    const dy = Math.abs(newBox.y - oldBox.y);
+                                                    const dw = Math.abs(newBox.width - oldBox.width);
+                                                    const dh = Math.abs(newBox.height - oldBox.height);
+                                                    // Only update if detection changed significantly (more than 15 pixels)
+                                                    if (dx < 15 && dy < 15 && dw < 15 && dh < 15) {
+                                                        shouldUpdate = false; // Keep using old detection
                                                     }
                                                 }
-                                            } else {
-                                                // No locked position - clear cached mask position to force recalculation
-                                                cachedMaskPosition = null;
-                                                lastDetectionHash = null;
                                             }
                                             
-                                            // Update last successful mask time
-                                            lastSuccessfulMaskTime = Date.now();
+                                            if (shouldUpdate) {
+                                                cachedDetections = detections;
+                                                lastValidDetections = detections;
+                                                normalizedDetectionsCache = [];
+                                                cachedMaskPosition = null;
+                                                lastDetectionHash = null;
+                                                lastSuccessfulMaskTime = Date.now();
+                                            }
                                         }
                                     }
                                     // If no detections, keep using lastValidDetections (don't clear)
