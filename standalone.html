@@ -810,20 +810,21 @@
                             // Always use lastValidDetections for rendering (prevents flickering)
                             // This ensures mask stays visible even if detection fails temporarily
                             if (lastValidDetections && Array.isArray(lastValidDetections) && lastValidDetections.length > 0) {
-                                // Log the structure of the first detection for debugging
-                                if (lastValidDetections[0]) {
-                                    console.log('First detection structure:', {
-                                        hasBox: !!lastValidDetections[0].box,
-                                        boxType: typeof lastValidDetections[0].box,
-                                        boxKeys: lastValidDetections[0].box ? Object.keys(lastValidDetections[0].box) : null,
-                                        boxValue: lastValidDetections[0].box,
-                                        hasLandmarks: !!lastValidDetections[0].landmarks
-                                    });
-                                }
-                                
-                                // Ensure all detections have valid structure before passing
-                                // face-api.js returns detections with box property containing x, y, width, height
-                                const safeDetections = lastValidDetections.filter(d => {
+                                // When using .withFaceLandmarks(), face-api.js returns detections with nested structure:
+                                // detection.detection.box (the bounding box)
+                                // detection.landmarks (the landmarks)
+                                // We need to normalize this structure for our code
+                                const safeDetections = lastValidDetections.map(d => {
+                                    // If detection has nested structure, extract the box
+                                    if (d.detection && d.detection.box) {
+                                        return {
+                                            box: d.detection.box,
+                                            landmarks: d.landmarks
+                                        };
+                                    }
+                                    // Otherwise, assume it's already in the correct format
+                                    return d;
+                                }).filter(d => {
                                     if (!d || typeof d !== 'object') return false;
                                     if (!d.box || typeof d.box !== 'object') return false;
                                     // Check all required box properties
