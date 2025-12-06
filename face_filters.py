@@ -7,6 +7,11 @@ import sys
 import os
 import time
 import json
+try:
+    import mediapipe as mp
+    MEDIAPIPE_AVAILABLE = True
+except ImportError:
+    MEDIAPIPE_AVAILABLE = False
 
 
 class FaceFilter:
@@ -18,6 +23,18 @@ class FaceFilter:
         self.face_cascade = cv2.CascadeClassifier(
             cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
         )
+        # Initialize MediaPipe for facial landmarks
+        if MEDIAPIPE_AVAILABLE:
+            self.mp_face_mesh = mp.solutions.face_mesh
+            self.face_mesh = self.mp_face_mesh.FaceMesh(
+                static_image_mode=False,
+                max_num_faces=1,
+                refine_landmarks=True,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5
+            )
+        else:
+            self.face_mesh = None
         self.config_path = os.path.join(os.path.dirname(__file__), 'config.json')
         self.camera_index = self.load_camera_index()
         self.sam_drops = []
@@ -276,6 +293,94 @@ class FaceFilter:
         
         return result
     
+    def apply_dropout_logo(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """
+        Apply DROPOUT logo to forehead area of detected face.
+        """
+        x, y, w, h = face
+        result = frame.copy()
+        
+        # Try to load DROPOUT logo from assets
+        logo_path = os.path.join(os.path.dirname(__file__), 'assets', 'dropout.png')
+        
+        if os.path.exists(logo_path):
+            logo_img = cv2.imread(logo_path, cv2.IMREAD_UNCHANGED)
+            if logo_img is not None:
+                # Calculate forehead area (top 15% of face height)
+                forehead_y = y + int(h * 0.05)
+                forehead_h = int(h * 0.15)
+                logo_width = int(w * 0.4)  # Logo width is 40% of face width
+                logo_height = int(logo_width * (logo_img.shape[0] / logo_img.shape[1]))  # Maintain aspect ratio
+                
+                # Ensure logo fits in forehead area
+                if logo_height > forehead_h:
+                    logo_height = forehead_h
+                    logo_width = int(logo_height * (logo_img.shape[1] / logo_img.shape[0]))
+                
+                # Resize logo
+                logo_resized = cv2.resize(logo_img, (logo_width, logo_height))
+                
+                # Center logo on forehead
+                logo_x = x + (w - logo_width) // 2
+                logo_y = forehead_y
+                
+                # Ensure we don't go out of bounds
+                frame_h, frame_w = frame.shape[:2]
+                if logo_x + logo_width > frame_w:
+                    logo_x = frame_w - logo_width
+                if logo_y + logo_height > frame_h:
+                    logo_y = frame_h - logo_height
+                if logo_x < 0:
+                    logo_x = 0
+                if logo_y < 0:
+                    logo_y = 0
+                
+                # Extract ROI
+                roi = result[logo_y:logo_y+logo_height, logo_x:logo_x+logo_width]
+                
+                # Blend logo with alpha channel if available
+                if logo_resized.shape[2] == 4:
+                    alpha = logo_resized[:, :, 3:4] / 255.0
+                    logo_bgr = logo_resized[:, :, :3]
+                    
+                    if roi.shape[:2] == (logo_height, logo_width):
+                        blended = (alpha * logo_bgr + (1 - alpha) * roi).astype(np.uint8)
+                        result[logo_y:logo_y+logo_height, logo_x:logo_x+logo_width] = blended
+                    else:
+                        # Handle edge case where ROI is smaller
+                        crop_h, crop_w = roi.shape[:2]
+                        logo_cropped = logo_resized[:crop_h, :crop_w]
+                        if logo_cropped.shape[2] == 4:
+                            alpha_crop = logo_cropped[:, :, 3:4] / 255.0
+                            logo_bgr_crop = logo_cropped[:, :, :3]
+                            blended = (alpha_crop * logo_bgr_crop + (1 - alpha_crop) * roi).astype(np.uint8)
+                            result[logo_y:logo_y+crop_h, logo_x:logo_x+crop_w] = blended
+                else:
+                    # No alpha channel, just overlay
+                    if roi.shape[:2] == (logo_height, logo_width):
+                        result[logo_y:logo_y+logo_height, logo_x:logo_x+logo_width] = logo_resized
+                    else:
+                        crop_h, crop_w = roi.shape[:2]
+                        result[logo_y:logo_y+crop_h, logo_x:logo_x+crop_w] = logo_resized[:crop_h, :crop_w]
+                
+                return result
+        
+        # Fallback: Draw text if logo file doesn't exist
+        forehead_y = y + int(h * 0.1)
+        text_scale = max(0.5, w / 800.0)
+        thickness = max(2, int(text_scale * 2))
+        
+        text = "DROPOUT"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, text_scale, thickness)
+        text_x = x + (w - text_width) // 2
+        text_y = forehead_y + text_height
+        
+        cv2.putText(result, text, (text_x, text_y), font, text_scale, (0, 255, 255), thickness)  # Yellow color
+        
+        return result
+    
     def apply_sam_reich_tattoo(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
         x, y, w, h = face
         result = frame.copy()
@@ -295,34 +400,250 @@ class FaceFilter:
         
         return result
     
-    def apply_sam_face_mask(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+    def detect_facial_landmarks(self, frame: np.ndarray) -> Optional[dict]:
+        """
+        Detect facial landmarks using MediaPipe for better face mask alignment.
+        Returns dict with eye positions, nose position, and face measurements.
+        """
+        if not MEDIAPIPE_AVAILABLE or self.face_mesh is None:
+            return None
+        
+        # Convert BGR to RGB for MediaPipe
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = self.face_mesh.process(rgb_frame)
+        
+        if not results.multi_face_landmarks:
+            return None
+        
+        # Get the first face
+        face_landmarks = results.multi_face_landmarks[0]
+        h, w = frame.shape[:2]
+        
+        # MediaPipe landmark indices (468 landmarks for face mesh)
+        # Left eye: 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246
+        # Right eye: 362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398
+        # Nose tip: 1, 2
+        # Face outline: 10, 151, 9, 175, etc.
+        
+        # Key landmarks for sizing
+        left_eye_outer = face_landmarks.landmark[33]  # Left eye outer corner
+        right_eye_outer = face_landmarks.landmark[263]  # Right eye outer corner
+        nose_tip = face_landmarks.landmark[1]  # Nose tip
+        chin = face_landmarks.landmark[175]  # Chin
+        forehead = face_landmarks.landmark[10]  # Forehead center
+        
+        # Convert normalized coordinates to pixel coordinates
+        left_eye = (int(left_eye_outer.x * w), int(left_eye_outer.y * h))
+        right_eye = (int(right_eye_outer.x * w), int(right_eye_outer.y * h))
+        nose = (int(nose_tip.x * w), int(nose_tip.y * h))
+        chin_point = (int(chin.x * w), int(chin.y * h))
+        forehead_point = (int(forehead.x * w), int(forehead.y * h))
+        
+        # Calculate measurements
+        eye_distance = np.sqrt((right_eye[0] - left_eye[0])**2 + (right_eye[1] - left_eye[1])**2)
+        face_height = np.sqrt((chin_point[0] - forehead_point[0])**2 + (chin_point[1] - forehead_point[1])**2)
+        
+        # Calculate face center and angle
+        eye_center = ((left_eye[0] + right_eye[0]) // 2, (left_eye[1] + right_eye[1]) // 2)
+        face_angle = np.arctan2(right_eye[1] - left_eye[1], right_eye[0] - left_eye[0])
+        
+        return {
+            'left_eye': left_eye,
+            'right_eye': right_eye,
+            'nose': nose,
+            'chin': chin_point,
+            'forehead': forehead_point,
+            'eye_center': eye_center,
+            'eye_distance': eye_distance,
+            'face_height': face_height,
+            'face_angle': face_angle
+        }
+    
+    def apply_face_mask_from_asset(self, frame: np.ndarray, face: Tuple[int, int, int, int], asset_name: str, debug_mode: bool = False, asset_dir: str = 'assets') -> np.ndarray:
+        """
+        Apply a face mask from an asset file using facial landmarks for better sizing and alignment.
+        The asset should be in the assets/ folder or assets/dropout/ folder.
+        
+        Args:
+            frame: Input frame
+            face: Face coordinates (unused, kept for compatibility)
+            asset_name: Name of the asset file (without extension, e.g., 'sam' or 'ariel')
+            debug_mode: If True, use 50% opacity to help align eyes. Default: False
+            asset_dir: Directory to load asset from ('assets' or 'assets/dropout'). Default: 'assets'
+        
+        Returns:
+            Frame with face mask applied
+        """
         result = frame.copy()
-        sam_path = os.path.join(os.path.dirname(__file__), 'assets', 'sam.png')
+        asset_path = os.path.join(os.path.dirname(__file__), asset_dir, f'{asset_name}.png')
         
-        if not os.path.exists(sam_path):
+        if not os.path.exists(asset_path):
+            print(f"Warning: Asset not found at {asset_path}")
             return result
         
-        sam_img = cv2.imread(sam_path, cv2.IMREAD_UNCHANGED)
-        if sam_img is None:
+        asset_img = cv2.imread(asset_path, cv2.IMREAD_UNCHANGED)
+        if asset_img is None:
+            print(f"Warning: Failed to load asset image from {asset_path}")
             return result
         
-        faces = self.detect_all_faces(frame)
-        if not faces:
-            return result
+        print(f"Loaded asset: {asset_name}.png from {asset_dir} (size: {asset_img.shape})")
         
-        for x, y, w, h in faces:
-            sam_resized = cv2.resize(sam_img, (w, h))
+        # Try to get facial landmarks for better sizing
+        landmarks = self.detect_facial_landmarks(frame)
+        
+        if landmarks:
+            # Use landmarks for precise sizing
+            eye_distance = landmarks['eye_distance']
+            face_height = landmarks['face_height']
+            eye_center = landmarks['eye_center']
+            left_eye = landmarks['left_eye']
+            right_eye = landmarks['right_eye']
+            nose = landmarks['nose']
+            chin = landmarks['chin']
+            forehead = landmarks['forehead']
             
-            if sam_resized.shape[2] == 4:
-                alpha = sam_resized[:, :, 3:4] / 255.0
-                sam_bgr = sam_resized[:, :, :3]
-                roi = result[y:y+h, x:x+w]
-                blended = (alpha * sam_bgr + (1 - alpha) * roi).astype(np.uint8)
-                result[y:y+h, x:x+w] = blended
+            # Calculate more accurate face measurements
+            # Use eye distance as primary reference (most stable measurement)
+            # Make mask significantly larger to ensure good coverage - eyes should align
+            face_width = eye_distance * 4.5  # Increased significantly for better coverage
+            
+            # Calculate face height from nose to chin and forehead to nose
+            nose_to_chin = np.sqrt((chin[0] - nose[0])**2 + (chin[1] - nose[1])**2)
+            forehead_to_nose = np.sqrt((nose[0] - forehead[0])**2 + (nose[1] - forehead[1])**2)
+            total_face_height = nose_to_chin + forehead_to_nose
+            # Make mask taller to ensure full face coverage
+            mask_height = total_face_height * 1.35  # 35% larger for better coverage
+            
+            # Maintain aspect ratio of the asset
+            asset_aspect = asset_img.shape[1] / asset_img.shape[0]
+            mask_width_from_height = int(mask_height * asset_aspect)
+            
+            # Use the larger of eye-based width or height-based width
+            mask_w = max(int(face_width), mask_width_from_height)
+            mask_h = int(mask_w / asset_aspect)
+            
+            # Recalculate height if aspect ratio makes it too different
+            if abs(mask_h - mask_height) > mask_height * 0.2:
+                mask_h = int(mask_height)
+                mask_w = int(mask_h * asset_aspect)
+            
+            # Position mask: center horizontally on eye center
+            new_x = int(eye_center[0] - mask_w / 2)
+            
+            # Position vertically so eyes align - place eye center at ~35% from top of mask
+            # Adjust upward by 40 pixels to better align eyes (user feedback)
+            # This positions the mask higher so eyes match up properly
+            new_y = int(eye_center[1] - mask_h * 0.35 - 40)
+            
+        else:
+            # Fallback to bounding box method if landmarks not available
+            faces = self.detect_all_faces(frame)
+            if not faces:
+                return result
+            
+            x, y, w, h = faces[0]
+            # Scale up the face mask to be significantly larger than detected face for better coverage
+            scale_factor = 1.6  # Increased from 1.3 to 1.6 for better coverage
+            mask_w = int(w * scale_factor)
+            mask_h = int(h * scale_factor)
+            
+            # Center the larger mask on the detected face
+            offset_x = int((mask_w - w) / 2)
+            offset_y = int((mask_h - h) / 2)
+            
+            # Calculate new position to center the mask
+            new_x = max(0, x - offset_x)
+            new_y = max(0, y - offset_y)
+        
+        # Ensure we don't go out of bounds
+        frame_h, frame_w = frame.shape[:2]
+        if new_x + mask_w > frame_w:
+            new_x = frame_w - mask_w
+        if new_y + mask_h > frame_h:
+            new_y = frame_h - mask_h
+        if new_x < 0:
+            new_x = 0
+        if new_y < 0:
+            new_y = 0
+        
+        # Resize asset to the calculated size
+        asset_resized = cv2.resize(asset_img, (mask_w, mask_h))
+        
+        # Rotate mask if face is tilted (optional, can be enabled if needed)
+        # if landmarks and abs(landmarks['face_angle']) > 0.1:
+        #     rotation_matrix = cv2.getRotationMatrix2D((mask_w/2, mask_h/2), np.degrees(face_angle), 1.0)
+        #     asset_resized = cv2.warpAffine(asset_resized, rotation_matrix, (mask_w, mask_h), 
+        #                                   flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_TRANSPARENT)
+        
+        # Extract the region of interest from the frame
+        roi = result[new_y:new_y+mask_h, new_x:new_x+mask_w]
+        
+        if asset_resized.shape[2] == 4:
+            alpha = asset_resized[:, :, 3:4] / 255.0
+            asset_bgr = asset_resized[:, :, :3]
+            
+            # Debug mode: use 50% opacity to help align eyes
+            if debug_mode:
+                alpha = alpha * 0.5  # Half opacity for debugging
+            
+            # Handle case where ROI might be smaller than mask (edge cases)
+            if roi.shape[:2] == (mask_h, mask_w):
+                blended = (alpha * asset_bgr + (1 - alpha) * roi).astype(np.uint8)
+                result[new_y:new_y+mask_h, new_x:new_x+mask_w] = blended
             else:
-                result[y:y+h, x:x+w] = sam_resized
+                # If ROI is smaller, crop the mask to match
+                crop_h, crop_w = roi.shape[:2]
+                mask_cropped = asset_resized[:crop_h, :crop_w]
+                if mask_cropped.shape[2] == 4:
+                    alpha_crop = mask_cropped[:, :, 3:4] / 255.0
+                    asset_bgr_crop = mask_cropped[:, :, :3]
+                    # Debug mode: use 50% opacity to help align eyes
+                    if debug_mode:
+                        alpha_crop = alpha_crop * 0.5  # Half opacity for debugging
+                    blended = (alpha_crop * asset_bgr_crop + (1 - alpha_crop) * roi).astype(np.uint8)
+                    result[new_y:new_y+crop_h, new_x:new_x+crop_w] = blended
+        else:
+            # Handle case where ROI might be smaller than mask
+            if roi.shape[:2] == (mask_h, mask_w):
+                result[new_y:new_y+mask_h, new_x:new_x+mask_w] = asset_resized
+            else:
+                crop_h, crop_w = roi.shape[:2]
+                result[new_y:new_y+crop_h, new_x:new_x+crop_w] = asset_resized[:crop_h, :crop_w]
         
         return result
+    
+    def apply_assets_face_mask_sam(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """Apply Sam face mask from assets/ (wrapper for apply_face_mask_from_asset)"""
+        return self.apply_face_mask_from_asset(frame, face, 'sam', asset_dir='assets')
+    
+    def apply_assets_face_mask_ariel(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """Apply Ariel face mask from assets/ (wrapper for apply_face_mask_from_asset)"""
+        return self.apply_face_mask_from_asset(frame, face, 'ariel', asset_dir='assets')
+    
+    def apply_dropout_face_mask_sam(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """Apply Dropout Sam face mask from assets/dropout/face_mask/"""
+        return self.apply_face_mask_from_asset(frame, face, 'sam', asset_dir='assets/dropout/face_mask')
+    
+    def apply_dropout_face_mask_ariel(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """Apply Dropout Ariel face mask from assets/dropout/face_mask/"""
+        return self.apply_face_mask_from_asset(frame, face, 'ariel', asset_dir='assets/dropout/face_mask')
+    
+    # Legacy aliases for backward compatibility
+    def apply_sam_face_mask(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """Legacy alias for assets_face_mask_sam"""
+        return self.apply_assets_face_mask_sam(frame, face)
+    
+    def apply_ariel_face_mask(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """Legacy alias for assets_face_mask_ariel"""
+        return self.apply_assets_face_mask_ariel(frame, face)
+    
+    def apply_dropout_sam_face_mask(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """Legacy alias for dropout_face_mask_sam"""
+        return self.apply_dropout_face_mask_sam(frame, face)
+    
+    def apply_dropout_ariel_face_mask(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
+        """Legacy alias for dropout_face_mask_ariel"""
+        return self.apply_dropout_face_mask_ariel(frame, face)
     
     def apply_black_white(self, frame: np.ndarray, face: Tuple[int, int, int, int]) -> np.ndarray:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -1352,7 +1673,15 @@ class FaceFilter:
             'pinch': self.apply_pinch,
             'wave': self.apply_wave,
             'mirror': self.apply_mirror_split,
+            'assets_face_mask_sam': self.apply_assets_face_mask_sam,
+            'assets_face_mask_ariel': self.apply_assets_face_mask_ariel,
+            'dropout_face_mask_sam': self.apply_dropout_face_mask_sam,
+            'dropout_face_mask_ariel': self.apply_dropout_face_mask_ariel,
+            # Legacy aliases
             'sam_face_mask': self.apply_sam_face_mask,
+            'ariel_face_mask': self.apply_ariel_face_mask,
+            'dropout_sam_face_mask': self.apply_dropout_sam_face_mask,
+            'dropout_ariel_face_mask': self.apply_dropout_ariel_face_mask,
             'twirl': self.apply_twirl,
             'ripple': self.apply_ripple,
             'sphere': self.apply_sphere,
@@ -1398,8 +1727,8 @@ class FaceFilter:
             'kaleidoscope': self.apply_kaleidoscope,
             'glitch': self.apply_glitch,
             'double_vision': self.apply_double_vision,
+            'dropout_logo': self.apply_dropout_logo,
             'sam_reich': self.apply_sam_reich_tattoo,
-            'sam_face_mask': self.apply_sam_face_mask,
             'black_white': self.apply_black_white,
             'sepia': self.apply_sepia,
             'vintage': self.apply_vintage,

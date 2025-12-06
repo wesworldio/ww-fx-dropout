@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WesWorld FX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        
+        #videoContainer {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        #videoFeed {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: var(--surface-color, rgba(26, 26, 26, 0.95));
+            color: var(--text-color, white);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #333);
+            font-size: 14px;
+            min-width: 180px;
+            max-width: 220px;
+            display: none; /* Hidden by default for OBS */
+        }
+        
+        #controls.visible {
+            display: block;
+        }
+        
+        #controls.hidden {
+            display: none !important;
+        }
+        
+        #status.hidden {
+            display: none !important;
+        }
+        
+        .pinned-fx-section {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color, #333);
+        }
+        
+        .pinned-fx-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            margin-bottom: 4px;
+            background: var(--surface-hover-color, #2a2a2a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: move;
+            user-select: none;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .pinned-fx-item:hover {
+            background: var(--accent-color, #5250ef);
+            border-color: var(--accent-color, #5250ef);
+        }
+        
+        .pinned-fx-item.pinned {
+            border-color: var(--accent-color, #5250ef);
+            background: var(--accent-color, #5250ef);
+            color: var(--selected-text-color, #ffffff);
+        }
+        
+        .pinned-fx-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+        
+        .pinned-fx-item.drag-over {
+            border-color: var(--accent-hover-color, #6260ff);
+            background: var(--accent-hover-color, #6260ff);
+        }
+        
+        .pinned-fx-item-text {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .pinned-fx-item-remove {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 14px;
+            line-height: 1;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+        
+        .pinned-fx-item-remove:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .pinned-fx-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-height: 30px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+        
+        #controls label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        
+        .filter-group-title {
+            font-weight: bold;
+            color: #ef5052;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        #controls select,
+        #controls button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            background: var(--surface-color, #1a1a1a);
+            color: var(--text-color, white);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        #controls select:hover,
+        #controls select:focus {
+            border-color: var(--accent-color, #4a9eff);
+            border-width: 2px;
+        }
+        
+        /* Custom grouped dropdown */
+        .fx-dropdown {
+            position: relative;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .fx-dropdown-button {
+            width: 100%;
+            padding: 12px;
+            background: var(--surface-color, #1a1a1a);
+            color: var(--text-color, white);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .fx-dropdown-button:hover,
+        .fx-dropdown-button:focus {
+            background: var(--surface-hover-color, #2a2a2a);
+            border-color: var(--accent-color, #4a9eff);
+            border-width: 2px;
+        }
+        
+        .fx-dropdown-button::after {
+            content: '▼';
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .fx-dropdown-button.open::after {
+            transform: rotate(180deg);
+        }
+        
+        .fx-current-pin {
+            margin-left: auto;
+            margin-right: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+            border-radius: 3px;
+            transition: all 0.2s;
+            user-select: none;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+        }
+        
+        .fx-current-pin:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+        
+        .fx-dropdown-button:hover .fx-current-pin {
+            opacity: 1;
+        }
+        
+        .fx-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--surface-color, #1a1a1a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            margin-top: 4px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .fx-dropdown-menu.open {
+            display: block;
+        }
+        
+        .fx-search-container {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color, #333);
+            background: var(--surface-color, #1a1a1a);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .fx-search-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--background-color, #000);
+            color: var(--text-color, white);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        
+        .fx-search-input::placeholder {
+            color: var(--text-secondary-color, #888);
+        }
+        
+        .fx-search-input:focus {
+            outline: none;
+            border-color: var(--accent-color, #4a9eff);
+            border-width: 2px;
+            background: var(--surface-color, #1a1a1a);
+        }
+        
+        .fx-search-input:hover {
+            border-color: var(--border-hover-color, #444);
+        }
+        
+        .fx-group {
+            border-bottom: 1px solid var(--border-color, #333);
+        }
+        
+        .fx-group:last-child {
+            border-bottom: none;
+        }
+        
+        .fx-group-title {
+            padding: 10px 12px;
+            background: var(--background-color, #000);
+            color: var(--group-title-color, #4a9eff);
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .fx-option {
+            padding: 12px 16px;
+            color: var(--text-color, white);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(74, 158, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .fx-option-image {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid var(--border-color, #333);
+            flex-shrink: 0;
+            background: var(--surface-color, #1a1a1a);
+        }
+        
+        .fx-option-text {
+            flex: 1;
+        }
+        
+        .fx-option-pin {
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 3px;
+            font-size: 14px;
+            line-height: 1;
+            flex-shrink: 0;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fx-option:hover .fx-option-pin {
+            opacity: 0.7;
+        }
+        
+        .fx-option:hover .fx-option-pin:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1);
+        }
+        
+        .fx-option.pinned .fx-option-pin {
+            opacity: 1;
+        }
+        
+        .fx-option.pinned .fx-option-pin:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .fx-option:hover,
+        .fx-option:focus {
+            border-left-color: var(--accent-color, #4a9eff);
+            background: var(--surface-hover-color, #2a2a2a);
+        }
+        
+        .fx-option.selected {
+            border-left-color: var(--accent-color, #4a9eff);
+            border-left-width: 4px;
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-color, white);
+        }
+        
+        .fx-option.none-option {
+            color: #aaa;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .fx-dropdown-button {
+                padding: 14px;
+                font-size: 16px; /* Larger for mobile touch */
+            }
+            
+            .fx-option {
+                padding: 16px;
+                font-size: 16px; /* Larger for mobile touch */
+            }
+            
+            .fx-dropdown-menu {
+                max-height: calc(100vh - 150px);
+            }
+        }
+        
+        #controls button {
+            background: transparent;
+            border: 2px solid var(--button-color, #4a9eff);
+            color: var(--button-color, #4a9eff);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        #controls button:hover {
+            background: var(--button-color, #4a9eff);
+            color: var(--selected-text-color, #ffffff);
+        }
+        
+        #controls button#startButton,
+        #controls button#stopButton {
+            background: var(--button-color, #4a9eff);
+            color: var(--selected-text-color, #ffffff);
+        }
+        
+        #controls button#startButton:hover,
+        #controls button#stopButton:hover {
+            background: var(--button-hover-color, #5aaeff);
+        }
+        
+        #status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            padding: 10px 15px;
+            background: var(--surface-color, rgba(26, 26, 26, 0.95));
+            color: var(--text-color, white);
+            border-radius: 8px;
+            font-size: 12px;
+            border: 1px solid var(--border-color, #333);
+        }
+        
+        #status.connected {
+            border-color: var(--status-connected-color, #4caf50);
+        }
+        
+        #status.error {
+            border-color: var(--status-error-color, #f44336);
+        }
+        
+        #toggleControls {
+            display: none !important; /* Always hidden - use 'H' key to toggle UI */
+        }
+        
+        .theme-selector {
+            margin-bottom: 10px;
+        }
+        
+        .theme-selector label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: var(--text-secondary-color, #cccccc);
+        }
+        
+        .theme-selector select {
+            width: 100%;
+            padding: 6px;
+            background: var(--surface-color, #1a1a1a);
+            color: var(--text-color, white);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .theme-selector select:hover,
+        .theme-selector select:focus {
+            border-color: var(--accent-color, #4a9eff);
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <div class="theme-selector">
+            <label for="themeSelect">Theme:</label>
+            <select id="themeSelect"></select>
+        </div>
+        <label>
+            Camera:
+            <select id="cameraSelect"></select>
+        </label>
+        <label>
+            Search FX:
+            <input type="text" id="fxSearchInput" class="fx-search-input" placeholder="Search FX..." autocomplete="off">
+        </label>
+        <label>
+            Pinned:
+            <div id="pinnedFxContainer"></div>
+        </label>
+        <label>
+            Current FX:
+            <div class="fx-dropdown">
+                <button class="fx-dropdown-button" id="fxDropdownButton" type="button">
+                    <span id="fxSelectedText">None (Original)</span>
+                    <span id="fxCurrentPin" class="fx-current-pin" style="display: none;" title="Pin current FX"></span>
+                </button>
+                <div class="fx-dropdown-menu" id="fxDropdownMenu">
+                    <div id="fxOptionsContainer"></div>
+                </div>
+            </div>
+            <select id="filterSelect" style="display: none;"></select>
+        </label>
+        <button id="startButton">Start Camera</button>
+        <button id="stopButton" style="display: none;">Stop Camera</button>
+    </div>
+    
+    <div id="status">Initializing...</div>
+    
+    <div id="toggleControls" onclick="toggleUI()">Show UI (H)</div>
+    
+    <div id="videoContainer">
+        <video id="videoInput" autoplay playsinline style="display: none;"></video>
+        <img id="videoFeed" alt="Processed video feed">
+    </div>
+    
+    <script>
+        let ws = null;
+        let localStream = null;
+        let videoInput = document.getElementById('videoInput');
+        let videoFeed = document.getElementById('videoFeed');
+        let cameraSelect = document.getElementById('cameraSelect');
+        let filterSelect = document.getElementById('filterSelect');
+        
+        // Filter cycling state
+        let allFilters = []; // Flat list of all filters for cycling
+        let currentFilterIndex = -1; // -1 means "None (Original)"
+        let pinnedFilters = []; // Array of pinned filter names
+        let isRandomCycling = false;
+        let randomCycleInterval = null;
+        let themeSelect = document.getElementById('themeSelect');
+        let startButton = document.getElementById('startButton');
+        let stopButton = document.getElementById('stopButton');
+        let statusDiv = document.getElementById('status');
+        let controlsVisible = false;
+        let animationFrameId = null;
+        let canvas = null;
+        let ctx = null;
+        let isProcessing = false;
+        let pendingFrame = false;
+        let targetFPS = 30;
+        let frameInterval = 1000 / targetFPS;
+        let lastFrameTime = 0;
+        let wasStreaming = false; // Track if camera was active before disconnect
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 10;
+        let currentTheme = 'wesworld'; // Default theme
+        
+        // Initialize canvas for frame capture
+        function initCanvas() {
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                ctx = canvas.getContext('2d');
+            }
+        }
+        
+        // Load and apply theme
+        async function loadTheme(themeName) {
+            try {
+                const response = await fetch(`/api/themes/${themeName}`);
+                const theme = await response.json();
+                
+                if (theme.colors) {
+                    const root = document.documentElement;
+                    root.style.setProperty('--background-color', theme.colors.background);
+                    root.style.setProperty('--surface-color', theme.colors.surface);
+                    root.style.setProperty('--surface-hover-color', theme.colors.surfaceHover);
+                    root.style.setProperty('--text-color', theme.colors.text);
+                    root.style.setProperty('--text-secondary-color', theme.colors.textSecondary);
+                    root.style.setProperty('--accent-color', theme.colors.accent);
+                    root.style.setProperty('--accent-hover-color', theme.colors.accentHover);
+                    root.style.setProperty('--border-color', theme.colors.border);
+                    root.style.setProperty('--border-hover-color', theme.colors.borderHover);
+                    root.style.setProperty('--button-color', theme.colors.button);
+                    root.style.setProperty('--button-hover-color', theme.colors.buttonHover);
+                    root.style.setProperty('--status-connected-color', theme.colors.statusConnected);
+                    root.style.setProperty('--status-error-color', theme.colors.statusError);
+                    root.style.setProperty('--group-title-color', theme.colors.groupTitle);
+                    root.style.setProperty('--selected-text-color', theme.colors.selectedText || '#ffffff');
+                }
+                
+                currentTheme = themeName;
+                // Save theme preference
+                localStorage.setItem('wesworld-fx-theme', themeName);
+            } catch (error) {
+                console.error('Error loading theme:', error);
+            }
+        }
+        
+        // Load available themes
+        async function loadThemes() {
+            try {
+                const response = await fetch('/api/themes');
+                const data = await response.json();
+                
+                themeSelect.innerHTML = '';
+                data.themes.forEach(theme => {
+                    const option = document.createElement('option');
+                    option.value = theme;
+                    // Format theme names properly
+                    let displayName = theme;
+                    if (theme === 'wesworld') {
+                        displayName = 'WesWorld';
+                    } else if (theme === 'dropout') {
+                        displayName = 'Dropout';
+                    } else {
+                        displayName = theme.charAt(0).toUpperCase() + theme.slice(1);
+                    }
+                    option.textContent = displayName;
+                    themeSelect.appendChild(option);
+                });
+                
+                // Load saved theme or use default
+                const savedTheme = localStorage.getItem('wesworld-fx-theme') || 'wesworld';
+                themeSelect.value = savedTheme;
+                await loadTheme(savedTheme);
+            } catch (error) {
+                console.error('Error loading themes:', error);
+            }
+        }
+        
+        // Theme change handler
+        themeSelect.addEventListener('change', async (e) => {
+            await loadTheme(e.target.value);
+        });
+        
+        // Update status
+        function updateStatus(message, type = '') {
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+            // Respect the current UI visibility state
+            if (controlsVisible) {
+                statusDiv.classList.remove('hidden');
+            } else {
+                statusDiv.classList.add('hidden');
+            }
+        }
+        
+        // Toggle UI visibility (controls + status)
+        function toggleUI() {
+            controlsVisible = !controlsVisible;
+            const controls = document.getElementById('controls');
+            const status = document.getElementById('status');
+            
+            if (controlsVisible) {
+                controls.classList.remove('hidden');
+                controls.classList.add('visible');
+                status.classList.remove('hidden');
+            } else {
+                controls.classList.remove('visible');
+                controls.classList.add('hidden');
+                status.classList.add('hidden');
+            }
+        }
+        
+        // Alias for backward compatibility
+        function toggleControls() {
+            toggleUI();
+        }
+        
+        // Get all filters as a flat list (pinned first, then all others)
+        function getAllFiltersFlat() {
+            const pinned = [...pinnedFilters];
+            const all = allFilters.filter(f => !pinned.includes(f));
+            return [...pinned, '', ...all]; // Pinned first, then "None", then rest
+        }
+        
+        // Cycle to next filter
+        function cycleNextFilter() {
+            stopRandomCycle();
+            
+            // Priority: pinned filters > URL playlist > all filters
+            let playlist = null;
+            if (pinnedFilters && pinnedFilters.length > 0) {
+                playlist = pinnedFilters;
+            } else if (window.fxPlaylist && window.fxPlaylist.length > 0) {
+                playlist = window.fxPlaylist;
+            }
+            
+            if (playlist && playlist.length > 0) {
+                // Find current index in playlist
+                const currentFilter = filterSelect.value || '';
+                let index = playlist.indexOf(currentFilter);
+                if (index === -1) index = 0;
+                
+                // Cycle to next
+                index = (index + 1) % playlist.length;
+                selectFilter(playlist[index]);
+                return;
+            }
+            
+            // Fallback to all filters
+            const filters = getAllFiltersFlat();
+            if (filters.length === 0) return;
+            
+            const currentFilter = filterSelect.value || '';
+            let index = filters.indexOf(currentFilter);
+            if (index === -1) index = 0;
+            
+            index = (index + 1) % filters.length;
+            selectFilter(filters[index]);
+        }
+        
+        // Cycle to previous filter
+        function cyclePrevFilter() {
+            stopRandomCycle();
+            
+            // Priority: pinned filters > URL playlist > all filters
+            let playlist = null;
+            if (pinnedFilters && pinnedFilters.length > 0) {
+                playlist = pinnedFilters;
+            } else if (window.fxPlaylist && window.fxPlaylist.length > 0) {
+                playlist = window.fxPlaylist;
+            }
+            
+            if (playlist && playlist.length > 0) {
+                // Find current index in playlist
+                const currentFilter = filterSelect.value || '';
+                let index = playlist.indexOf(currentFilter);
+                if (index === -1) index = 0;
+                
+                // Cycle to previous
+                index = (index - 1 + playlist.length) % playlist.length;
+                selectFilter(playlist[index]);
+                return;
+            }
+            
+            // Fallback to all filters
+            const filters = getAllFiltersFlat();
+            if (filters.length === 0) return;
+            
+            const currentFilter = filterSelect.value || '';
+            let index = filters.indexOf(currentFilter);
+            if (index === -1) index = 0;
+            
+            index = (index - 1 + filters.length) % filters.length;
+            selectFilter(filters[index]);
+        }
+        
+        // Start random cycling
+        function startRandomCycle() {
+            if (isRandomCycling) {
+                stopRandomCycle();
+                return;
+            }
+            
+            // If there's a playlist (pinned filters), use that; otherwise use all filters
+            let filters = [];
+            if (pinnedFilters && pinnedFilters.length > 0) {
+                filters = pinnedFilters;
+            } else {
+                filters = getAllFiltersFlat();
+            }
+            
+            if (filters.length === 0) return;
+            
+            isRandomCycling = true;
+            
+            // Cycle quickly through random filters from the selected list
+            // Don't update URL during random cycling - we'll update it once at the end
+            randomCycleInterval = setInterval(() => {
+                const randomIndex = Math.floor(Math.random() * filters.length);
+                selectFilter(filters[randomIndex], false); // false = don't update URL
+            }, 200); // Change every 200ms
+            
+            // Stop after a random duration (1-3 seconds) and land on a random filter
+            const stopDelay = 1000 + Math.random() * 2000;
+            setTimeout(() => {
+                stopRandomCycle();
+                const finalIndex = Math.floor(Math.random() * filters.length);
+                const finalFilter = filters[finalIndex];
+                // Update URL once with the final selected filter
+                selectFilter(finalFilter, true); // true = update URL now that we're done
+            }, stopDelay);
+        }
+        
+        // Stop random cycling
+        function stopRandomCycle() {
+            if (randomCycleInterval) {
+                clearInterval(randomCycleInterval);
+                randomCycleInterval = null;
+            }
+            isRandomCycling = false;
+        }
+        
+        // Load pinned filters from localStorage
+        function loadPinnedFilters() {
+            try {
+                const saved = localStorage.getItem('wesworld-fx-pinned');
+                if (saved) {
+                    pinnedFilters = JSON.parse(saved);
+                } else {
+                    pinnedFilters = [];
+                }
+                updatePinnedFxDisplay();
+                // Update current pin icon if a filter is selected
+                const currentFilter = filterSelect.value || '';
+                if (currentFilter) {
+                    updateCurrentPinIcon(currentFilter);
+                }
+            } catch (error) {
+                console.error('Error loading pinned filters:', error);
+                pinnedFilters = [];
+            }
+        }
+        
+        // Save pinned filters to localStorage
+        function savePinnedFilters() {
+            try {
+                localStorage.setItem('wesworld-fx-pinned', JSON.stringify(pinnedFilters));
+                // Update URL with pinned playlist
+                const currentFilter = filterSelect.value || '';
+                updateURLWithFX(currentFilter, pinnedFilters);
+            } catch (error) {
+                console.error('Error saving pinned filters:', error);
+            }
+        }
+        
+        // Update the pin icon for the current filter
+        function updateCurrentPinIcon(filterValue) {
+            const fxCurrentPin = document.getElementById('fxCurrentPin');
+            if (!fxCurrentPin || !filterValue) return;
+            
+            const isPinned = pinnedFilters.includes(filterValue);
+            fxCurrentPin.innerHTML = isPinned ? '📌' : '📍';
+            fxCurrentPin.title = isPinned ? 'Unpin current FX' : 'Pin current FX';
+        }
+        
+        // Pin current filter
+        function pinCurrentFilter() {
+            const currentFilter = filterSelect.value || '';
+            if (currentFilter && !pinnedFilters.includes(currentFilter)) {
+                // Add to top of pinned list
+                pinnedFilters.unshift(currentFilter);
+                savePinnedFilters();
+                updatePinnedFxDisplay();
+                updateCurrentPinIcon(currentFilter);
+                // Reload filters to update pin icons
+                loadFilters();
+                // URL is updated in savePinnedFilters()
+            }
+        }
+        
+        // Unpin a filter
+        function unpinFilter(filterName) {
+            pinnedFilters = pinnedFilters.filter(f => f !== filterName);
+            savePinnedFilters();
+            updatePinnedFxDisplay();
+            // Update current pin icon if this is the current filter
+            if (filterSelect.value === filterName) {
+                updateCurrentPinIcon(filterName);
+            }
+            // Reload filters to update pin icons
+            loadFilters();
+            // URL is updated in savePinnedFilters()
+        }
+        
+        // Clear all pinned filters
+        function clearPinnedFilters() {
+            pinnedFilters = [];
+            savePinnedFilters();
+            updatePinnedFxDisplay();
+            // URL is updated in savePinnedFilters()
+        }
+        
+        // Update pinned FX display
+        function updatePinnedFxDisplay() {
+            const container = document.getElementById('pinnedFxContainer');
+            container.innerHTML = '';
+            container.className = 'pinned-fx-container';
+            
+            if (pinnedFilters.length === 0) {
+                container.innerHTML = '<span style="color: var(--text-secondary-color, #cccccc); font-size: 11px;">No pinned FX</span>';
+                return;
+            }
+            
+            pinnedFilters.forEach((filterName, index) => {
+                const item = document.createElement('div');
+                item.className = 'pinned-fx-item pinned';
+                item.draggable = true;
+                item.dataset.filterName = filterName;
+                item.dataset.index = index;
+                
+                const text = document.createElement('span');
+                text.className = 'pinned-fx-item-text';
+                text.textContent = formatFilterName(filterName);
+                text.title = 'Click to select';
+                text.onclick = () => selectFilter(filterName);
+                
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'pinned-fx-item-remove';
+                removeBtn.textContent = '×';
+                removeBtn.title = 'Remove from pinned';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    unpinFilter(filterName);
+                };
+                
+                item.appendChild(text);
+                item.appendChild(removeBtn);
+                
+                // Drag and drop handlers
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', filterName);
+                    item.classList.add('dragging');
+                });
+                
+                item.addEventListener('dragend', (e) => {
+                    item.classList.remove('dragging');
+                    // Remove drag-over class from all items
+                    document.querySelectorAll('.pinned-fx-item').forEach(el => {
+                        el.classList.remove('drag-over');
+                    });
+                });
+                
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    item.classList.add('drag-over');
+                });
+                
+                item.addEventListener('dragleave', (e) => {
+                    item.classList.remove('drag-over');
+                });
+                
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    item.classList.remove('drag-over');
+                    
+                    const draggedFilterName = e.dataTransfer.getData('text/plain');
+                    if (draggedFilterName && draggedFilterName !== filterName) {
+                        // Reorder: move dragged item to this position
+                        const draggedIndex = pinnedFilters.indexOf(draggedFilterName);
+                        const targetIndex = pinnedFilters.indexOf(filterName);
+                        
+                        if (draggedIndex !== -1 && targetIndex !== -1) {
+                            // Remove from old position
+                            pinnedFilters.splice(draggedIndex, 1);
+                            // Insert at new position
+                            pinnedFilters.splice(targetIndex, 0, draggedFilterName);
+                            savePinnedFilters();
+                            updatePinnedFxDisplay();
+                        }
+                    }
+                });
+                
+                container.appendChild(item);
+            });
+        }
+        
+        // Copy pinned filters to clipboard
+        async function copyPinnedFilters() {
+            try {
+                const data = JSON.stringify(pinnedFilters);
+                await navigator.clipboard.writeText(data);
+                updateStatus('Pinned FX copied to clipboard', 'connected');
+            } catch (error) {
+                console.error('Error copying pinned filters:', error);
+                updateStatus('Error copying pinned FX', 'error');
+            }
+        }
+        
+        // Paste pinned filters from clipboard
+        async function pastePinnedFilters() {
+            try {
+                const text = await navigator.clipboard.readText();
+                const parsed = JSON.parse(text);
+                if (Array.isArray(parsed)) {
+                    // Validate that all filters exist
+                    const validFilters = parsed.filter(f => allFilters.includes(f) || f === '');
+                    pinnedFilters = validFilters;
+                    savePinnedFilters();
+                    updatePinnedFxDisplay();
+                    updateStatus(`Pasted ${validFilters.length} pinned FX`, 'connected');
+                } else {
+                    updateStatus('Invalid pinned FX data', 'error');
+                }
+            } catch (error) {
+                console.error('Error pasting pinned filters:', error);
+                updateStatus('Error pasting pinned FX', 'error');
+            }
+        }
+        
+        // Load available cameras
+        async function loadCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                cameraSelect.innerHTML = '';
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+                
+                if (videoDevices.length === 0) {
+                    updateStatus('No cameras found', 'error');
+                    return;
+                }
+                
+                // Restore saved camera selection
+                const savedCameraId = localStorage.getItem('wesworld-fx-camera');
+                if (savedCameraId) {
+                    const cameraExists = Array.from(cameraSelect.options).some(opt => opt.value === savedCameraId);
+                    if (cameraExists) {
+                        cameraSelect.value = savedCameraId;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading cameras:', error);
+                updateStatus('Error loading cameras', 'error');
+            }
+        }
+        
+        // Auto-start camera if it was active before refresh (called after WebSocket connects)
+        function autoStartCameraIfNeeded() {
+            const wasCameraActive = localStorage.getItem('wesworld-fx-camera-active') === 'true';
+            if (wasCameraActive && cameraSelect.value && ws && ws.readyState === WebSocket.OPEN) {
+                console.log('Auto-starting camera after refresh...');
+                startCamera();
+            }
+        }
+        
+        // Format filter name for display
+        function formatFilterName(filter) {
+            if (filter === 'dropout_logo') {
+                return 'DROPOUT';
+            } else if (filter === 'dropout_face_mask_sam' || filter === 'assets_face_mask_sam' || filter === 'sam_face_mask') {
+                return 'Sam';
+            } else if (filter === 'dropout_face_mask_ariel' || filter === 'assets_face_mask_ariel' || filter === 'ariel_face_mask') {
+                return 'Ariel';
+            } else if (filter === 'sam_reich') {
+                return 'Sam Reich';
+            }
+            // Parse hierarchical names: <folder>_<type>_<option>
+            const parts = filter.split('_');
+            if (parts.length >= 3) {
+                // Extract just the option name for display
+                const option = parts[parts.length - 1];
+                return option.charAt(0).toUpperCase() + option.slice(1);
+            }
+            return filter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+        
+        // Update URL with current FX and pinned playlist
+        function updateURLWithFX(filterValue, playlist = null) {
+            const url = new URL(window.location.href);
+            
+            // Always include pinned FX in playlist if they exist
+            let finalPlaylist = playlist;
+            if (pinnedFilters && pinnedFilters.length > 0) {
+                // Merge pinned filters with provided playlist (pinned first)
+                if (playlist && Array.isArray(playlist)) {
+                    // Remove duplicates, keep pinned order first
+                    const pinnedSet = new Set(pinnedFilters);
+                    const playlistSet = new Set(playlist);
+                    finalPlaylist = [...pinnedFilters, ...playlist.filter(f => !pinnedSet.has(f))];
+                } else {
+                    finalPlaylist = [...pinnedFilters];
+                }
+            }
+            
+            if (finalPlaylist && Array.isArray(finalPlaylist) && finalPlaylist.length > 0) {
+                // Set playlist parameter
+                url.searchParams.set('playlist', finalPlaylist.join(','));
+                // Also set current FX
+                if (filterValue) {
+                    url.searchParams.set('fx', filterValue);
+                }
+            } else if (filterValue) {
+                // Set single FX
+                url.searchParams.set('fx', filterValue);
+                url.searchParams.delete('playlist');
+            } else {
+                // Clear FX parameters
+                url.searchParams.delete('fx');
+                url.searchParams.delete('playlist');
+            }
+            
+            // Update URL without reloading page
+            window.history.pushState({}, '', url);
+        }
+        
+        // Load FX from URL parameters
+        function loadFXFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fxParam = urlParams.get('fx');
+            const playlistParam = urlParams.get('playlist');
+            
+            if (playlistParam) {
+                // Load playlist
+                const playlist = playlistParam.split(',').filter(f => f.trim() !== '');
+                if (playlist.length > 0) {
+                    // Store playlist for cycling
+                    window.fxPlaylist = playlist;
+                    window.fxPlaylistIndex = 0;
+                    
+                    // Load first FX in playlist (or use fx param if provided)
+                    const firstFX = fxParam || playlist[0];
+                    if (firstFX && allFilters.includes(firstFX)) {
+                        selectFilter(firstFX, false); // false = don't update URL (already set)
+                    }
+                }
+            } else if (fxParam) {
+                // Load single FX
+                if (allFilters.includes(fxParam)) {
+                    selectFilter(fxParam, false); // false = don't update URL (already set)
+                }
+            }
+        }
+        
+        // Select filter function
+        function selectFilter(filterValue, updateURL = true) {
+            const fxDropdownMenu = document.getElementById('fxDropdownMenu');
+            const fxDropdownButton = document.getElementById('fxDropdownButton');
+            const fxSelectedText = document.getElementById('fxSelectedText');
+            const fxCurrentPin = document.getElementById('fxCurrentPin');
+            
+            // Update selected text
+            if (filterValue === '') {
+                fxSelectedText.textContent = 'None (Original)';
+                if (fxCurrentPin) fxCurrentPin.style.display = 'none';
+            } else {
+                const allOptions = fxDropdownMenu.querySelectorAll('.fx-option');
+                allOptions.forEach(opt => {
+                    if (opt.value === filterValue) {
+                        // Get text from .fx-option-text if it exists, otherwise use textContent
+                        const textElement = opt.querySelector('.fx-option-text');
+                        fxSelectedText.textContent = textElement ? textElement.textContent : opt.textContent;
+                    }
+                });
+                
+                // Show and update pin icon for current filter
+                if (fxCurrentPin) {
+                    fxCurrentPin.style.display = 'flex';
+                    updateCurrentPinIcon(filterValue);
+                }
+            }
+            
+            // Update hidden select
+            filterSelect.value = filterValue;
+            
+            // Update selected state
+            const allOptions = fxDropdownMenu.querySelectorAll('.fx-option');
+            allOptions.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.value === filterValue) {
+                    opt.classList.add('selected');
+                }
+            });
+            
+            // Close dropdown
+            fxDropdownMenu.classList.remove('open');
+            fxDropdownButton.classList.remove('open');
+            
+            // Update URL if requested
+            if (updateURL) {
+                const playlist = window.fxPlaylist || null;
+                updateURLWithFX(filterValue, playlist);
+            }
+            
+            // Send filter change via WebSocket
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const filterMessage = {
+                    type: 'filter',
+                    filter: filterValue || null
+                };
+                console.log('Sending filter change:', filterMessage);
+                ws.send(JSON.stringify(filterMessage));
+                
+                // Clear any pending frames to apply filter immediately
+                pendingFrame = false;
+                isProcessing = false;
+            } else {
+                console.warn('WebSocket not ready, filter change not sent:', filterValue);
+            }
+        }
+        
+        // Cycle through playlist (if one exists)
+        function cyclePlaylistNext() {
+            if (window.fxPlaylist && window.fxPlaylist.length > 0) {
+                window.fxPlaylistIndex = (window.fxPlaylistIndex + 1) % window.fxPlaylist.length;
+                const nextFX = window.fxPlaylist[window.fxPlaylistIndex];
+                selectFilter(nextFX);
+            }
+        }
+        
+        function cyclePlaylistPrev() {
+            if (window.fxPlaylist && window.fxPlaylist.length > 0) {
+                window.fxPlaylistIndex = (window.fxPlaylistIndex - 1 + window.fxPlaylist.length) % window.fxPlaylist.length;
+                const prevFX = window.fxPlaylist[window.fxPlaylistIndex];
+                selectFilter(prevFX);
+            }
+        }
+        
+        // Toggle dropdown
+        function toggleFxDropdown() {
+            const fxDropdownMenu = document.getElementById('fxDropdownMenu');
+            const fxDropdownButton = document.getElementById('fxDropdownButton');
+            const fxSearchInput = document.getElementById('fxSearchInput');
+            
+            const isOpen = fxDropdownMenu.classList.contains('open');
+            if (isOpen) {
+                fxDropdownMenu.classList.remove('open');
+                fxDropdownButton.classList.remove('open');
+                // Clear search when closing
+                if (fxSearchInput) {
+                    fxSearchInput.value = '';
+                    filterFxOptions('');
+                }
+            } else {
+                fxDropdownMenu.classList.add('open');
+                fxDropdownButton.classList.add('open');
+                // Focus search input when opening
+                if (fxSearchInput) {
+                    setTimeout(() => fxSearchInput.focus(), 100);
+                }
+            }
+        }
+        
+        // Helper function to create an FX option with pin icon
+        function createFxOption(filter, isPinned = false) {
+            const option = document.createElement('button');
+            option.className = 'fx-option';
+            option.value = filter;
+            
+            if (isPinned) {
+                option.classList.add('pinned');
+            }
+            
+            // Check if this filter is currently pinned
+            const isCurrentlyPinned = pinnedFilters.includes(filter);
+            if (isCurrentlyPinned) {
+                option.classList.add('pinned');
+            }
+            
+            // For face mask filters, add image preview
+            if (filter.includes('face_mask')) {
+                const optionText = document.createElement('span');
+                optionText.className = 'fx-option-text';
+                optionText.textContent = formatFilterName(filter);
+                
+                const optionImage = document.createElement('img');
+                optionImage.className = 'fx-option-image';
+                
+                // Extract option name from filter (e.g., dropout_face_mask_sam -> sam)
+                const parts = filter.split('_');
+                const optionName = parts[parts.length - 1];
+                
+                // Set image source based on filter hierarchy
+                if (filter.startsWith('dropout_')) {
+                    optionImage.src = `assets/dropout/face_mask/${optionName}.png`;
+                } else if (filter.startsWith('assets_')) {
+                    optionImage.src = `assets/face_mask/${optionName}.png`;
+                }
+                
+                optionImage.alt = formatFilterName(filter);
+                optionImage.onerror = function() {
+                    // Hide image if it fails to load
+                    this.style.display = 'none';
+                };
+                
+                option.appendChild(optionImage);
+                option.appendChild(optionText);
+            } else {
+                // Regular filter without image
+                const optionText = document.createElement('span');
+                optionText.className = 'fx-option-text';
+                optionText.textContent = formatFilterName(filter);
+                option.appendChild(optionText);
+            }
+            
+            // Add pin icon (always show for actual filters, not "None")
+            if (filter) { // Only show pin icon for actual filters, not "None"
+                const pinIcon = document.createElement('span');
+                pinIcon.className = 'fx-option-pin';
+                pinIcon.innerHTML = isCurrentlyPinned ? '📌' : '📍';
+                pinIcon.title = isCurrentlyPinned ? 'Unpin' : 'Pin';
+                pinIcon.onclick = (e) => {
+                    e.stopPropagation(); // Prevent triggering the option click
+                    if (isCurrentlyPinned) {
+                        unpinFilter(filter);
+                    } else {
+                        // No duplicates - check if already exists
+                        if (!pinnedFilters.includes(filter)) {
+                            // Add to top of pinned list
+                            pinnedFilters.unshift(filter);
+                            savePinnedFilters();
+                            updatePinnedFxDisplay();
+                            // Reload filters to update pin icons and move to PINNED section
+                            loadFilters();
+                        }
+                    }
+                };
+                option.appendChild(pinIcon);
+            }
+            
+            // Set click handler for selecting the filter
+            option.onclick = () => selectFilter(filter);
+            
+            return option;
+        }
+        
+        // Filter FX options based on search query
+        function filterFxOptions(searchQuery) {
+            const searchLower = searchQuery.toLowerCase().trim();
+            const optionsContainer = document.getElementById('fxOptionsContainer');
+            const pinnedContainer = document.getElementById('pinnedFxContainer');
+            
+            if (!searchLower) {
+                // Show all options and groups in dropdown
+                if (optionsContainer) {
+                    const allOptions = optionsContainer.querySelectorAll('.fx-option');
+                    const allGroups = optionsContainer.querySelectorAll('.fx-group');
+                    allOptions.forEach(option => {
+                        option.style.display = '';
+                    });
+                    allGroups.forEach(group => {
+                        group.style.display = '';
+                    });
+                }
+                // Show all pinned items
+                if (pinnedContainer) {
+                    const pinnedItems = pinnedContainer.querySelectorAll('.pinned-fx-item');
+                    pinnedItems.forEach(item => {
+                        item.style.display = '';
+                    });
+                }
+                return;
+            }
+            
+            // Helper function to check if a filter matches
+            function matchesFilter(filterValue, displayText) {
+                const filterName = formatFilterName(filterValue).toLowerCase();
+                const text = displayText.toLowerCase();
+                return text.includes(searchLower) || 
+                       filterName.includes(searchLower) || 
+                       filterValue.toLowerCase().includes(searchLower);
+            }
+            
+            // First, filter pinned items (priority results)
+            if (pinnedContainer) {
+                const pinnedItems = pinnedContainer.querySelectorAll('.pinned-fx-item');
+                pinnedItems.forEach(item => {
+                    const filterName = item.dataset.filterName || '';
+                    const text = item.textContent.toLowerCase();
+                    if (matchesFilter(filterName, text)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Then, filter dropdown options
+            if (optionsContainer) {
+                const allGroups = optionsContainer.querySelectorAll('.fx-group');
+                const allOptions = optionsContainer.querySelectorAll('.fx-option');
+                
+                // Filter individual options
+                allOptions.forEach(option => {
+                    // Get text from .fx-option-text if it exists, otherwise use textContent
+                    // Remove pin icon text if present
+                    const textElement = option.querySelector('.fx-option-text');
+                    let text = '';
+                    if (textElement) {
+                        text = textElement.textContent.toLowerCase();
+                    } else {
+                        // For options without .fx-option-text, get textContent but remove pin icon
+                        text = option.textContent.toLowerCase();
+                        // Remove emoji pin icons (📍 and 📌)
+                        text = text.replace(/📍|📌/g, '').trim();
+                    }
+                    
+                    const filterValue = option.value || '';
+                    const filterName = formatFilterName(filterValue).toLowerCase();
+                    
+                    // Check if it's pinned - if so, hide it from dropdown (already shown in pinned)
+                    const isPinned = pinnedFilters.includes(filterValue);
+                    
+                    if (isPinned) {
+                        // Hide pinned items from dropdown when searching (they're shown in pinned section)
+                        option.style.display = 'none';
+                    } else {
+                        // Check if it matches the search
+                        const matches = text.includes(searchLower) || 
+                                      filterName.includes(searchLower) || 
+                                      filterValue.toLowerCase().includes(searchLower);
+                        option.style.display = matches ? '' : 'none';
+                    }
+                });
+                
+                // Handle groups - show if they have visible children
+                allGroups.forEach(group => {
+                    const childOptions = group.querySelectorAll('.fx-option');
+                    let hasVisibleChild = false;
+                    
+                    childOptions.forEach(child => {
+                        if (child.style.display !== 'none') {
+                            hasVisibleChild = true;
+                        }
+                    });
+                    
+                    group.style.display = hasVisibleChild ? '' : 'none';
+                });
+            }
+        }
+        
+        // Load available filters grouped by category
+        async function loadFilters() {
+            const fxDropdownMenu = document.getElementById('fxDropdownMenu');
+            const fxOptionsContainer = document.getElementById('fxOptionsContainer');
+            
+            try {
+                const response = await fetch('/api/filters/categories');
+                const data = await response.json();
+                
+                // Clear existing options
+                if (fxOptionsContainer) {
+                    fxOptionsContainer.innerHTML = '';
+                }
+                filterSelect.innerHTML = '<option value="">None (Original)</option>';
+                
+                // Build flat list of all filters for cycling
+                allFilters = [];
+                if (data.categories) {
+                    Object.values(data.categories).forEach(categoryFilters => {
+                        allFilters.push(...categoryFilters);
+                    });
+                }
+                
+                // Add "None" option
+                const noneOption = document.createElement('button');
+                noneOption.className = 'fx-option none-option';
+                noneOption.textContent = 'None (Original)';
+                noneOption.value = '';
+                noneOption.onclick = () => selectFilter('');
+                if (fxOptionsContainer) {
+                    fxOptionsContainer.appendChild(noneOption);
+                }
+                
+                // Add DROPOUT category first
+                if (data.categories && data.categories['DROPOUT']) {
+                    const dropoutGroup = document.createElement('div');
+                    dropoutGroup.className = 'fx-group';
+                    
+                    const groupTitle = document.createElement('div');
+                    groupTitle.className = 'fx-group-title';
+                    groupTitle.textContent = 'DROPOUT';
+                    dropoutGroup.appendChild(groupTitle);
+                    
+                    data.categories['DROPOUT'].forEach(filter => {
+                        // Skip if this filter is already pinned (it will appear in PINNED section)
+                        if (pinnedFilters.includes(filter)) {
+                            // Still add to hidden select for compatibility
+                            const selectOption = document.createElement('option');
+                            selectOption.value = filter;
+                            selectOption.textContent = formatFilterName(filter);
+                            filterSelect.appendChild(selectOption);
+                            return;
+                        }
+                        
+                        const option = createFxOption(filter);
+                        dropoutGroup.appendChild(option);
+                        
+                        // Also add to hidden select for compatibility
+                        const selectOption = document.createElement('option');
+                        selectOption.value = filter;
+                        selectOption.textContent = formatFilterName(filter);
+                        filterSelect.appendChild(selectOption);
+                    });
+                    
+                    if (fxOptionsContainer) {
+                        fxOptionsContainer.appendChild(dropoutGroup);
+                    }
+                }
+                
+                // Add other categories
+                const categoryOrder = ['Distortion', 'Color & Style'];
+                categoryOrder.forEach(category => {
+                    if (data.categories && data.categories[category]) {
+                        const group = document.createElement('div');
+                        group.className = 'fx-group';
+                        
+                        const groupTitle = document.createElement('div');
+                        groupTitle.className = 'fx-group-title';
+                        groupTitle.textContent = category;
+                        group.appendChild(groupTitle);
+                        
+                        data.categories[category].forEach(filter => {
+                            // Skip if this filter is already pinned (it will appear in PINNED section)
+                            if (pinnedFilters.includes(filter)) {
+                                // Still add to hidden select for compatibility
+                                const selectOption = document.createElement('option');
+                                selectOption.value = filter;
+                                selectOption.textContent = formatFilterName(filter);
+                                filterSelect.appendChild(selectOption);
+                                return;
+                            }
+                            
+                            const option = createFxOption(filter);
+                            group.appendChild(option);
+                            
+                            // Also add to hidden select for compatibility
+                            const selectOption = document.createElement('option');
+                            selectOption.value = filter;
+                            selectOption.textContent = formatFilterName(filter);
+                            filterSelect.appendChild(selectOption);
+                        });
+                        
+                        if (fxOptionsContainer) {
+                            fxOptionsContainer.appendChild(group);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading filters:', error);
+                // Fallback to simple filter list
+                try {
+                    const response = await fetch('/api/filters');
+                    const data = await response.json();
+                    const fxOptionsContainer = document.getElementById('fxOptionsContainer');
+                    if (fxOptionsContainer) {
+                        fxOptionsContainer.innerHTML = '';
+                    }
+                    filterSelect.innerHTML = '<option value="">None (Original)</option>';
+                    
+                    const noneOption = document.createElement('button');
+                    noneOption.className = 'fx-option none-option';
+                    noneOption.textContent = 'None (Original)';
+                    noneOption.onclick = () => selectFilter('');
+                    if (fxOptionsContainer) {
+                        fxOptionsContainer.appendChild(noneOption);
+                    }
+                    
+                    data.filters.forEach(filter => {
+                        const option = createFxOption(filter);
+                        if (fxOptionsContainer) {
+                            fxOptionsContainer.appendChild(option);
+                        }
+                        
+                        const selectOption = document.createElement('option');
+                        selectOption.value = filter;
+                        selectOption.textContent = formatFilterName(filter);
+                        filterSelect.appendChild(selectOption);
+                    });
+                } catch (fallbackError) {
+                    updateStatus('Error loading filters', 'error');
+                }
+            }
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const fxDropdown = document.querySelector('.fx-dropdown');
+            if (fxDropdown && !fxDropdown.contains(e.target)) {
+                const fxDropdownMenu = document.getElementById('fxDropdownMenu');
+                const fxDropdownButton = document.getElementById('fxDropdownButton');
+                fxDropdownMenu.classList.remove('open');
+                fxDropdownButton.classList.remove('open');
+            }
+        });
+        
+        // Connect WebSocket
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                reconnectAttempts = 0; // Reset on successful connection
+                updateStatus('Connected', 'connected');
+                console.log('WebSocket connected');
+                
+                // If filter was selected before disconnect, restore it
+                if (filterSelect.value && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'filter',
+                        filter: filterSelect.value || null
+                    }));
+                }
+                
+                // Update dropdown display
+                const fxSelectedText = document.getElementById('fxSelectedText');
+                if (filterSelect.value) {
+                    const selectedOption = filterSelect.querySelector(`option[value="${filterSelect.value}"]`);
+                    if (selectedOption) {
+                        fxSelectedText.textContent = selectedOption.textContent;
+                    }
+                } else {
+                    fxSelectedText.textContent = 'None (Original)';
+                }
+                
+                // Auto-start camera if it was active before refresh
+                autoStartCameraIfNeeded();
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                
+                if (message.type === 'frame') {
+                    // Display processed frame immediately
+                    videoFeed.src = message.data;
+                    isProcessing = false;
+                    
+                    // Process pending frame if one was skipped
+                    if (pendingFrame) {
+                        pendingFrame = false;
+                        sendFrame();
+                    }
+                } else if (message.type === 'status') {
+                    console.log('Status:', message.message);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateStatus('Connection error', 'error');
+            };
+            
+            ws.onclose = () => {
+                updateStatus('Disconnected - Reconnecting...', 'error');
+                console.log('WebSocket disconnected');
+                
+                // Save state before reconnecting
+                const wasActive = localStream !== null;
+                const selectedFilter = filterSelect.value;
+                const selectedCamera = cameraSelect.value;
+                
+                // Stop current stream
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                }
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                isProcessing = false;
+                pendingFrame = false;
+                
+                // Attempt to reconnect
+                reconnectAttempts++;
+                if (reconnectAttempts <= maxReconnectAttempts) {
+                    setTimeout(() => {
+                        console.log(`Reconnecting... (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                        connectWebSocket();
+                        
+                        // After reconnecting, restore camera if it was active
+                        if (wasActive && selectedCamera) {
+                            setTimeout(() => {
+                                console.log('Restarting camera after reconnect...');
+                    cameraSelect.value = selectedCamera;
+                    filterSelect.value = selectedFilter;
+                    // Update dropdown display
+                    const fxSelectedText = document.getElementById('fxSelectedText');
+                    if (selectedFilter) {
+                        const selectedOption = filterSelect.querySelector(`option[value="${selectedFilter}"]`);
+                        if (selectedOption) {
+                            fxSelectedText.textContent = selectedOption.textContent;
+                        }
+                    } else {
+                        fxSelectedText.textContent = 'None (Original)';
+                    }
+                    startCamera();
+                            }, 1000);
+                        }
+                    }, 2000);
+                } else {
+                    updateStatus('Connection failed - Please refresh', 'error');
+                    console.error('Max reconnection attempts reached');
+                }
+            };
+        }
+        
+        // Send frame to server with rate limiting
+        function sendFrame() {
+            if (!localStream || !ws || ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+            
+            // Check if video is ready
+            if (videoInput.readyState !== videoInput.HAVE_ENOUGH_DATA) {
+                animationFrameId = requestAnimationFrame(sendFrame);
+                return;
+            }
+            
+            // Rate limiting - skip frames if processing is slow
+            const now = Date.now();
+            if (now - lastFrameTime < frameInterval) {
+                animationFrameId = requestAnimationFrame(sendFrame);
+                return;
+            }
+            
+            // Skip if still processing previous frame (prevents queue buildup)
+            if (isProcessing) {
+                pendingFrame = true;
+                animationFrameId = requestAnimationFrame(sendFrame);
+                return;
+            }
+            
+            isProcessing = true;
+            lastFrameTime = now;
+            
+            initCanvas();
+            
+            // Limit resolution for performance (max 1280x720)
+            const maxWidth = 1280;
+            const maxHeight = 720;
+            let width = videoInput.videoWidth;
+            let height = videoInput.videoHeight;
+            
+            if (width > maxWidth || height > maxHeight) {
+                const scale = Math.min(maxWidth / width, maxHeight / height);
+                width = Math.floor(width * scale);
+                height = Math.floor(height * scale);
+            }
+            
+            // Set canvas size
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw current video frame to canvas (scaled if needed)
+            ctx.drawImage(videoInput, 0, 0, width, height);
+            
+            // Convert to base64 with lower quality for speed
+            const frameData = canvas.toDataURL('image/jpeg', 0.6);
+            
+            // Send to server
+            ws.send(JSON.stringify({
+                type: 'frame',
+                data: frameData
+            }));
+            
+            // Continue capturing frames
+            animationFrameId = requestAnimationFrame(sendFrame);
+        }
+        
+        // Start camera
+        async function startCamera() {
+            try {
+                const deviceId = cameraSelect.value;
+                const constraints = {
+                    video: {
+                        deviceId: deviceId ? { exact: deviceId } : undefined,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoInput.srcObject = localStream;
+                
+                // Save camera selection to localStorage
+                if (deviceId) {
+                    localStorage.setItem('wesworld-fx-camera', deviceId);
+                }
+                localStorage.setItem('wesworld-fx-camera-active', 'true');
+                
+                videoInput.onloadedmetadata = () => {
+                    updateStatus('Camera active', 'connected');
+                    startButton.style.display = 'none';
+                    stopButton.style.display = 'block';
+                    
+                    // Set output image size to match input (or max 1280x720)
+                    const maxWidth = 1280;
+                    const maxHeight = 720;
+                    let width = videoInput.videoWidth;
+                    let height = videoInput.videoHeight;
+                    
+                    if (width > maxWidth || height > maxHeight) {
+                        const scale = Math.min(maxWidth / width, maxHeight / height);
+                        width = Math.floor(width * scale);
+                        height = Math.floor(height * scale);
+                    }
+                    
+                    videoFeed.style.width = width + 'px';
+                    videoFeed.style.height = height + 'px';
+                    
+                    // Reset frame timing
+                    lastFrameTime = 0;
+                    isProcessing = false;
+                    pendingFrame = false;
+                    
+                    // Start sending frames
+                    sendFrame();
+                };
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                updateStatus('Camera error: ' + error.message, 'error');
+                localStorage.setItem('wesworld-fx-camera-active', 'false');
+            }
+        }
+        
+        // Stop camera
+        function stopCamera() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            
+            videoInput.srcObject = null;
+            videoFeed.src = '';
+            isProcessing = false;
+            pendingFrame = false;
+            startButton.style.display = 'block';
+            stopButton.style.display = 'none';
+            updateStatus('Camera stopped', '');
+            
+            // Save camera state to localStorage
+            localStorage.setItem('wesworld-fx-camera-active', 'false');
+        }
+        
+        // Keyboard event handlers
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger shortcuts when typing in inputs
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            // 'h' key to toggle UI
+            if (e.key === 'h' || e.key === 'H') {
+                e.preventDefault();
+                toggleUI();
+            }
+            // Up arrow to cycle previous
+            else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                cyclePrevFilter();
+            }
+            // Down arrow to cycle next
+            else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                cycleNextFilter();
+            }
+            // Spacebar to random cycle
+            else if (e.key === ' ') {
+                e.preventDefault();
+                startRandomCycle();
+            }
+        });
+        
+        // Event listeners
+        startButton.addEventListener('click', startCamera);
+        stopButton.addEventListener('click', stopCamera);
+        
+        // Auto-stop and start camera when selection changes
+        cameraSelect.addEventListener('change', async (e) => {
+            const newDeviceId = e.target.value;
+            // Only restart if camera was already active
+            if (localStream) {
+                console.log('Camera selection changed, restarting with new camera...');
+                // Stop current camera
+                stopCamera();
+                // Wait a moment for cleanup, then start new camera
+                setTimeout(() => {
+                    if (newDeviceId) {
+                        startCamera();
+                    }
+                }, 100);
+            }
+        });
+        
+        // Setup dropdown button click
+        const fxDropdownButton = document.getElementById('fxDropdownButton');
+        fxDropdownButton.addEventListener('click', (e) => {
+            // Don't toggle if clicking the pin icon
+            if (e.target.id === 'fxCurrentPin' || e.target.closest('#fxCurrentPin')) {
+                return;
+            }
+            toggleFxDropdown();
+        });
+        
+        // Setup pin icon click on current FX button
+        const fxCurrentPin = document.getElementById('fxCurrentPin');
+        if (fxCurrentPin) {
+            fxCurrentPin.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const currentFilter = filterSelect.value || '';
+                if (currentFilter) {
+                    if (pinnedFilters.includes(currentFilter)) {
+                        unpinFilter(currentFilter);
+                    } else {
+                        pinCurrentFilter();
+                    }
+                }
+            });
+        }
+        
+        // Setup search input (now above Pinned section)
+        const fxSearchInput = document.getElementById('fxSearchInput');
+        if (fxSearchInput) {
+            fxSearchInput.addEventListener('input', (e) => {
+                const searchValue = e.target.value;
+                // Auto-open dropdown when searching to show results
+                if (searchValue.trim()) {
+                    const fxDropdownMenu = document.getElementById('fxDropdownMenu');
+                    const fxDropdownButton = document.getElementById('fxDropdownButton');
+                    if (fxDropdownMenu && !fxDropdownMenu.classList.contains('open')) {
+                        fxDropdownMenu.classList.add('open');
+                        fxDropdownButton.classList.add('open');
+                    }
+                }
+                filterFxOptions(searchValue);
+            });
+            
+            // Handle keyboard events
+            fxSearchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    fxSearchInput.value = '';
+                    filterFxOptions('');
+                } else if (e.key === 'Enter') {
+                    // Select first visible option (prioritize pinned, then dropdown)
+                    const pinnedContainer = document.getElementById('pinnedFxContainer');
+                    const optionsContainer = document.getElementById('fxOptionsContainer');
+                    
+                    let firstVisible = null;
+                    if (pinnedContainer) {
+                        firstVisible = pinnedContainer.querySelector('.pinned-fx-item:not([style*="display: none"])');
+                        if (firstVisible && firstVisible.dataset.filterName) {
+                            selectFilter(firstVisible.dataset.filterName);
+                            return;
+                        }
+                    }
+                    
+                    if (optionsContainer) {
+                        firstVisible = optionsContainer.querySelector('.fx-option:not([style*="display: none"])');
+                        if (firstVisible && firstVisible.value !== undefined) {
+                            selectFilter(firstVisible.value);
+                        }
+                    }
+                }
+            });
+        } else {
+            console.warn('fxSearchInput not found');
+        }
+        
+        // Pin/unpin functionality is now only available via pin icons in FX dropdown rows
+        // Keep select listener for compatibility
+        filterSelect.addEventListener('change', (e) => {
+            selectFilter(e.target.value);
+        });
+        
+        // Initialize playlist state
+        window.fxPlaylist = null;
+        window.fxPlaylistIndex = 0;
+        
+        // Initialize
+        async function init() {
+            await loadThemes(); // Load themes first
+            loadPinnedFilters(); // Load pinned filters
+            await loadCameras();
+            await loadFilters();
+            connectWebSocket();
+            
+            // Load FX from URL after filters are loaded
+            setTimeout(() => {
+                loadFXFromURL();
+            }, 500);
+        }
+        
+        // Start initialization
+        init();
+    </script>
+</body>
+</html>
+

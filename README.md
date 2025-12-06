@@ -433,6 +433,59 @@ python face_filters.py swirl --width 1920 --height 1080 --fps 60 --preview-only
 
 **Note:** Use `python3` on macOS/Linux if `python` points to Python 2, or `python` on Windows. Adjust based on your system's Python installation.
 
+## Web-Based Version
+
+Access the filters through your web browser! Perfect for OBS Browser Source integration.
+
+### Starting the Web Server
+
+**macOS/Linux:**
+```bash
+make web
+```
+
+**Windows:**
+```bash
+python web_server.py
+```
+
+Or directly with uvicorn:
+```bash
+uvicorn web_server:app --host 0.0.0.0 --port 8000
+```
+
+### Using the Web Interface
+
+1. Start the web server (see above)
+2. Open your browser and navigate to `http://localhost:9000`
+3. Click "Show Controls" button (bottom right) to access settings
+4. Select your camera from the dropdown
+5. Click "Start Camera" to begin
+6. Select a filter from the dropdown menu
+7. The filtered video feed will appear in the browser
+
+### OBS Browser Source Integration
+
+The web interface is designed to be minimal - perfect for OBS Browser Source:
+
+1. Start the web server: `make web` or `python web_server.py`
+2. In OBS, add a **Browser Source**
+3. Set the URL to: `http://localhost:9000` (or your server IP if remote)
+4. Set width: `1920` and height: `1080` (or your preferred resolution)
+5. Check "Shutdown source when not visible" if desired
+6. The filtered video feed will appear in OBS
+7. You can hide the controls by clicking "Hide Controls" - the video feed will remain visible
+
+**Note:** For remote access, use your server's IP address instead of `localhost` (e.g., `http://192.168.1.100:9000`)
+
+### Features
+
+- **Camera Selection**: Choose from all available cameras on your device
+- **Real-time Processing**: All filters applied in real-time via WebSocket
+- **Minimal UI**: Controls can be hidden for clean OBS capture
+- **All Filters Available**: Access to all 90+ filters through the web interface
+- **Cross-platform**: Works on any device with a modern web browser
+
 ## OBS Integration
 
 ### Option 1: Virtual Camera (Recommended)
@@ -499,6 +552,91 @@ python face_filters.py sam_reich --preview-only
 python face_filters.py cyberpunk --preview-only
 python face_filters.py cartoon --preview-only
 ```
+
+## Testing
+
+WesWorld FX includes end-to-end (E2E) tests using Playwright to validate web functionality.
+
+### Installing Test Dependencies
+
+**macOS/Linux:**
+```bash
+make test-install
+```
+
+**Windows:**
+```bash
+pip install -r requirements-test.txt
+python -m playwright install chromium
+```
+
+### Running Tests
+
+**macOS/Linux:**
+```bash
+make test-e2e
+```
+
+**Windows:**
+```bash
+pytest tests/test_web_e2e.py -v
+```
+
+### Running Tests in Headed Mode (Visible Browser)
+
+For debugging, run tests with a visible browser:
+
+**macOS/Linux:**
+```bash
+make test-e2e-headed
+```
+
+**Windows:**
+```bash
+set PLAYWRIGHT_HEADLESS=false && pytest tests/test_web_e2e.py -v -s
+```
+
+### What Tests Cover
+
+The E2E test suite validates:
+- ✅ Web server startup and page serving
+- ✅ UI elements and layout
+- ✅ Camera selection functionality
+- ✅ Filter list loading and selection
+- ✅ API endpoints (`/api/filters`)
+- ✅ WebSocket connection establishment
+- ✅ Control visibility toggling
+- ✅ Responsive layout at different viewport sizes
+- ✅ Filter processing and application
+- ✅ Multiple filter categories (distortion, color, effects, etc.)
+
+### Filter Validation
+
+To validate that filters are working correctly with the web server:
+
+**macOS/Linux:**
+```bash
+# In one terminal, start the server
+make web
+
+# In another terminal, validate filters
+make validate-filters
+```
+
+**Windows:**
+```bash
+# Terminal 1: Start server
+python web_server.py
+
+# Terminal 2: Validate filters
+python scripts/validate_filters.py
+```
+
+This will test that filters can be applied to test frames and verify the processing pipeline.
+
+**Note:** Make sure the web server is NOT running when executing E2E tests, as the test suite will start its own instance. However, `validate-filters` requires the server to be running.
+
+For detailed testing documentation, see [docs/testing.md](docs/testing.md).
 
 ## Troubleshooting
 

@@ -1,0 +1,21 @@
+{
+  "name": "Dropout",
+  "colors": {
+    "background": "#0a0a0a",
+    "surface": "#1a1a1a",
+    "surfaceHover": "#2a2a2a",
+    "text": "#ffffff",
+    "textSecondary": "#e0e0e0",
+    "accent": "#feea3b",
+    "accentHover": "#fff04a",
+    "border": "#333333",
+    "borderHover": "#feea3b",
+    "button": "#feea3b",
+    "buttonHover": "#fff04a",
+    "statusConnected": "#4caf50",
+    "statusError": "#ff4444",
+    "groupTitle": "#feea3b",
+    "selectedText": "#000000"
+  }
+}
+

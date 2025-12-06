@@ -1,0 +1,21 @@
+{
+  "name": "WesWorld",
+  "colors": {
+    "background": "#000000",
+    "surface": "#1a1a1a",
+    "surfaceHover": "#2a2a2a",
+    "text": "#ffffff",
+    "textSecondary": "#cccccc",
+    "accent": "#5250ef",
+    "accentHover": "#6260ff",
+    "border": "#333333",
+    "borderHover": "#5250ef",
+    "button": "#5250ef",
+    "buttonHover": "#6260ff",
+    "statusConnected": "#4caf50",
+    "statusError": "#f44336",
+    "groupTitle": "#5250ef",
+    "selectedText": "#ffffff"
+  }
+}
+
