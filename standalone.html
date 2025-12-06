@@ -1797,6 +1797,14 @@
             // Initialize canvas first
             initCanvas();
             
+            // Check if FilterImplementations loaded
+            if (typeof FilterImplementations === 'undefined') {
+                console.error('FilterImplementations not loaded! Check if static/filters.js is accessible.');
+                updateStatus('Filter library failed to load', 'error');
+            } else {
+                console.log('FilterImplementations loaded successfully');
+            }
+            
             // Wait for face-api.js to load
             try {
                 await waitForFaceApi();
