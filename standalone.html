@@ -482,9 +482,11 @@
             try {
                 faceDetection = new FaceDetection({
                     locateFile: (file) => {
-                        // Handle different file types - all use the same base path
+                        // MediaPipe may pass full paths like "third_party/mediapipe/modules/face_detection/face_detection_short_range.tflite"
+                        // Extract just the filename
+                        const filename = file.split('/').pop();
                         const baseUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection';
-                        return `${baseUrl}/${file}`;
+                        return `${baseUrl}/${filename}`;
                     }
                 });
                 
