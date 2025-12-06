@@ -534,9 +534,10 @@
         
         // Process video frame with face detection
         let lastFaceDetectionTime = 0;
-        const faceDetectionInterval = 100; // Detect faces every 100ms (10fps for face detection)
+        const faceDetectionInterval = 200; // Detect faces every 200ms (5fps for face detection) - reduced frequency
         let cachedDetections = [];
         let lastValidDetections = []; // Keep last valid detections to prevent flickering
+        let isDetecting = false; // Prevent multiple simultaneous detections
         
         async function processVideoFrame() {
             try {
@@ -561,33 +562,34 @@
                         if (faceApiModelsLoaded) {
                             const now = Date.now();
                             // Only detect faces periodically to improve performance
-                            if (now - lastFaceDetectionTime > faceDetectionInterval) {
+                            // Use cached detections between intervals to prevent flickering
+                            if (now - lastFaceDetectionTime > faceDetectionInterval && !isDetecting) {
+                                isDetecting = true;
                                 try {
                                     // Use withFaceLandmarks to get eye positions for proper mask alignment
                                     const detections = await faceapi
                                         .detectAllFaces(videoInput, new faceapi.TinyFaceDetectorOptions())
                                         .withFaceLandmarks();
+                                    
                                     if (detections && detections.length > 0) {
+                                        // Only update if we got valid detections
                                         cachedDetections = detections;
                                         lastValidDetections = detections; // Update last valid
-                                    } else {
-                                        // Use last valid detections if no faces detected (prevents flickering)
-                                        cachedDetections = lastValidDetections;
                                     }
+                                    // If no detections, keep using lastValidDetections (don't clear)
                                     lastFaceDetectionTime = now;
                                 } catch (err) {
                                     console.warn('Face detection error:', err);
-                                    // Keep using last valid detections on error
-                                    cachedDetections = lastValidDetections;
+                                    // Keep using last valid detections on error (don't clear)
+                                } finally {
+                                    isDetecting = false;
                                 }
-                            } else {
-                                // Use cached detections between detection intervals
-                                cachedDetections = lastValidDetections;
                             }
                             
-                            // Apply filters using cached detections (even if empty, prevents flicker)
-                            if (cachedDetections && cachedDetections.length > 0) {
-                                applyFilterWithFaceApi(ctx, cachedDetections);
+                            // Always use lastValidDetections for rendering (prevents flickering)
+                            // This ensures mask stays visible even if detection fails temporarily
+                            if (lastValidDetections && lastValidDetections.length > 0) {
+                                applyFilterWithFaceApi(ctx, lastValidDetections);
                             }
                         }
                     } else {
