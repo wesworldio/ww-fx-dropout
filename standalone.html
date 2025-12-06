@@ -1027,45 +1027,6 @@
                 }
             }
         }
-                        // No landmarks, use bounding box with scale factor
-                        const scaleFactor = 1.6;
-                        width = box.width * scaleFactor;
-                        height = box.height * scaleFactor;
-                        
-                        // Center the larger mask on the detected face
-                        const offsetX = (width - box.width) / 2;
-                        const offsetY = (height - box.height) / 2;
-                        x = box.x - offsetX;
-                        y = box.y - offsetY;
-                    }
-                    
-                    // Ensure we don't go out of bounds
-                    const canvasWidth = canvasOutput.width;
-                    const canvasHeight = canvasOutput.height;
-                    if (x + width > canvasWidth) x = canvasWidth - width;
-                    if (y + height > canvasHeight) y = canvasHeight - height;
-                    if (x < 0) x = 0;
-                    if (y < 0) y = 0;
-                    
-                    // Call applyFaceMask - it's async but we don't await to keep frame rate up
-                    applyFaceMask(ctx, x, y, width, height).catch(err => {
-                        console.error('Error in applyFaceMask:', err);
-                    });
-                });
-            } else if (currentFilter === 'dropout_logo') {
-                // Apply logo to first detected face
-                if (detections.length > 0 && detections[0] && detections[0].box) {
-                    const detection = detections[0];
-                    const box = detection.box;
-                    const x = box.x;
-                    const y = box.y;
-                    const width = box.width;
-                    const height = box.height;
-                    
-                    applyDropoutLogo(ctx, x, y, width, height);
-                }
-            }
-        }
         
         // Apply face mask
         async function applyFaceMask(ctx, x, y, width, height) {
