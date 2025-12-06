@@ -479,52 +479,57 @@
         
         // Initialize MediaPipe Face Detection
         function initFaceDetection() {
-            faceDetection = new FaceDetection({
-                locateFile: (file) => {
-                    // Handle different file types
-                    if (file.endsWith('.wasm')) {
-                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
-                    } else if (file.endsWith('.tflite')) {
-                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
-                    } else if (file.endsWith('.binarypb')) {
-                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
+            try {
+                faceDetection = new FaceDetection({
+                    locateFile: (file) => {
+                        // Handle different file types - all use the same base path
+                        const baseUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection';
+                        return `${baseUrl}/${file}`;
                     }
-                    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
-                }
-            });
-            
-            faceDetection.setOptions({
-                modelSelection: 0, // 0 for short-range (more reliable), 1 for full-range
-                minDetectionConfidence: 0.5
-            });
-            
-            faceDetection.onResults(onFaceDetectionResults);
+                });
+                
+                faceDetection.setOptions({
+                    modelSelection: 0, // 0 for short-range (more reliable), 1 for full-range
+                    minDetectionConfidence: 0.5
+                });
+                
+                faceDetection.onResults(onFaceDetectionResults);
+                
+                console.log('Face Detection initialized successfully');
+            } catch (error) {
+                console.error('Error initializing Face Detection:', error);
+                updateStatus('Face detection initialization failed', 'error');
+            }
         }
         
         // Face detection results callback
         function onFaceDetectionResults(results) {
-            if (!localStream || !videoInput.videoWidth) return;
-            
-            // Set canvas size to match video
-            if (canvasOutput.width !== videoInput.videoWidth || canvasOutput.height !== videoInput.videoHeight) {
-                canvasOutput.width = videoInput.videoWidth;
-                canvasOutput.height = videoInput.videoHeight;
-            }
-            
-            // Draw video frame
-            ctx.drawImage(videoInput, 0, 0, canvasOutput.width, canvasOutput.height);
-            
-            // Apply filter if selected
-            if (currentFilter) {
-                if (currentFilter.includes('face_mask') || currentFilter.includes('logo')) {
-                    // Face-specific filters
-                    if (results.detections && results.detections.length > 0) {
-                        applyFilter(ctx, results.detections);
-                    }
-                } else {
-                    // Apply full image filters
-                    applyFullImageFilter(ctx);
+            try {
+                if (!localStream || !videoInput.videoWidth) return;
+                
+                // Set canvas size to match video
+                if (canvasOutput.width !== videoInput.videoWidth || canvasOutput.height !== videoInput.videoHeight) {
+                    canvasOutput.width = videoInput.videoWidth;
+                    canvasOutput.height = videoInput.videoHeight;
                 }
+                
+                // Draw video frame
+                ctx.drawImage(videoInput, 0, 0, canvasOutput.width, canvasOutput.height);
+                
+                // Apply filter if selected
+                if (currentFilter) {
+                    if (currentFilter.includes('face_mask') || currentFilter.includes('logo')) {
+                        // Face-specific filters
+                        if (results.detections && results.detections.length > 0) {
+                            applyFilter(ctx, results.detections);
+                        }
+                    } else {
+                        // Apply full image filters
+                        applyFullImageFilter(ctx);
+                    }
+                }
+            } catch (error) {
+                console.error('Error in onFaceDetectionResults:', error);
             }
         }
         
@@ -878,17 +883,29 @@
                     
                     // Start MediaPipe camera
                     if (faceDetection) {
-                        camera = new Camera(videoInput, {
-                            onFrame: async () => {
-                                await faceDetection.send({image: videoInput});
-                            },
-                            width: videoInput.videoWidth,
-                            height: videoInput.videoHeight
-                        });
-                        camera.start().catch(err => {
-                            console.error('Camera start error:', err);
-                            updateStatus('Camera error: ' + err.message, 'error');
-                        });
+                        try {
+                            camera = new Camera(videoInput, {
+                                onFrame: async () => {
+                                    try {
+                                        if (faceDetection) {
+                                            await faceDetection.send({image: videoInput});
+                                        }
+                                    } catch (err) {
+                                        console.error('Error sending frame to face detection:', err);
+                                        // Continue even if face detection fails
+                                    }
+                                },
+                                width: videoInput.videoWidth,
+                                height: videoInput.videoHeight
+                            });
+                            camera.start().catch(err => {
+                                console.error('Camera start error:', err);
+                                updateStatus('Camera error: ' + err.message, 'error');
+                            });
+                        } catch (err) {
+                            console.error('Error creating Camera:', err);
+                            updateStatus('Camera initialization error: ' + err.message, 'error');
+                        }
                     } else {
                         console.error('FaceDetection not initialized');
                         updateStatus('Face detection not ready', 'error');
