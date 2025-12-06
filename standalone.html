@@ -1273,10 +1273,27 @@
                 return;
             }
             
-            // Draw mask immediately - no save/restore needed for single drawImage
-            // Use globalCompositeOperation to ensure mask draws on top
+            // Save context state to prevent any side effects
+            ctx.save();
+            
+            // Use exact pixel coordinates (no rounding needed since we already rounded)
+            const drawX = Math.round(x);
+            const drawY = Math.round(y);
+            const drawW = Math.round(width);
+            const drawH = Math.round(height);
+            
+            // Set composite operation to ensure mask draws correctly
             ctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(img, Math.round(x), Math.round(y), Math.round(width), Math.round(height));
+            
+            // Disable image smoothing for crisp rendering
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Draw mask with exact coordinates
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            
+            // Restore context state
+            ctx.restore();
         }
         
         // Apply face mask (async version - deprecated, use applyFaceMaskSync instead)
