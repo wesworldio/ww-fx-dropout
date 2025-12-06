@@ -535,6 +535,28 @@
             }
         }
         
+        // Fallback: render video without face detection
+        function renderVideoWithoutFaceDetection() {
+            if (!localStream || !videoInput.videoWidth) return;
+            
+            // Set canvas size to match video
+            if (canvasOutput.width !== videoInput.videoWidth || canvasOutput.height !== videoInput.videoHeight) {
+                canvasOutput.width = videoInput.videoWidth;
+                canvasOutput.height = videoInput.videoHeight;
+            }
+            
+            // Draw video frame
+            ctx.drawImage(videoInput, 0, 0, canvasOutput.width, canvasOutput.height);
+            
+            // Apply filter if selected (only non-face filters)
+            if (currentFilter && !currentFilter.includes('face_mask') && !currentFilter.includes('logo')) {
+                applyFullImageFilter(ctx);
+            }
+            
+            // Continue rendering
+            requestAnimationFrame(renderVideoWithoutFaceDetection);
+        }
+        
         // Initialize canvas with default size
         function initCanvas() {
             if (canvasOutput.width === 0 || canvasOutput.height === 0) {
@@ -883,7 +905,7 @@
                     canvasOutput.width = videoInput.videoWidth;
                     canvasOutput.height = videoInput.videoHeight;
                     
-                    // Start MediaPipe camera
+                    // Try to start MediaPipe camera, fallback to simple rendering if it fails
                     if (faceDetection) {
                         try {
                             camera = new Camera(videoInput, {
@@ -893,24 +915,35 @@
                                             await faceDetection.send({image: videoInput});
                                         }
                                     } catch (err) {
-                                        console.error('Error sending frame to face detection:', err);
-                                        // Continue even if face detection fails
+                                        console.warn('Face detection error, using fallback rendering:', err);
+                                        // Stop trying face detection and use fallback
+                                        if (camera) {
+                                            camera.stop();
+                                            camera = null;
+                                        }
+                                        faceDetection = null;
+                                        // Start fallback rendering
+                                        renderVideoWithoutFaceDetection();
                                     }
                                 },
                                 width: videoInput.videoWidth,
                                 height: videoInput.videoHeight
                             });
                             camera.start().catch(err => {
-                                console.error('Camera start error:', err);
-                                updateStatus('Camera error: ' + err.message, 'error');
+                                console.warn('MediaPipe camera failed, using fallback:', err);
+                                // Fallback to simple rendering
+                                camera = null;
+                                renderVideoWithoutFaceDetection();
                             });
                         } catch (err) {
-                            console.error('Error creating Camera:', err);
-                            updateStatus('Camera initialization error: ' + err.message, 'error');
+                            console.warn('MediaPipe initialization failed, using fallback:', err);
+                            // Fallback to simple rendering
+                            renderVideoWithoutFaceDetection();
                         }
                     } else {
-                        console.error('FaceDetection not initialized');
-                        updateStatus('Face detection not ready', 'error');
+                        console.warn('FaceDetection not available, using fallback rendering');
+                        // Use fallback rendering
+                        renderVideoWithoutFaceDetection();
                     }
                     
                     updateStatus('Camera active', 'connected');
