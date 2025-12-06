@@ -758,8 +758,9 @@
         let normalizedDetectionsCache = []; // Cache normalized detections to avoid re-processing every frame
         let isDetecting = false; // Prevent multiple simultaneous detections
         let lastSuccessfulMaskTime = 0; // Timestamp of last successful mask draw
-        const maskPersistenceTimeout = 5000; // Keep mask visible for 5 seconds after last successful detection
+        const maskPersistenceTimeout = Infinity; // Keep mask visible forever - never hide it
         let lastSuccessfulMaskData = null; // Store last successful mask position and size
+        let lastKnownMaskPosition = null; // Store the last known mask position (x, y, width, height) - always keep visible
         let lastDrawnMaskPosition = null; // Store last drawn mask position to prevent jitter
         const maskPositionThreshold = 20; // Only update mask position if it moves more than 20 pixels (very high threshold to prevent flickering)
         const maskSmoothingFactor = 0.98; // Use 98% old position, 2% new (extremely smooth, prevents flickering)
@@ -936,9 +937,14 @@
                                 shouldDrawMask = true;
                             }
                             
-                            // Draw mask if we have data to use
+                            // Always draw mask if we have any data (never hide it)
                             if (shouldDrawMask && maskDataToUse && maskDataToUse.length > 0) {
                                 applyFilterWithFaceApi(ctx, maskDataToUse);
+                            } else if (lastKnownMaskPosition) {
+                                // Even if no detection, draw mask at last known position
+                                // This ensures mask never disappears
+                                applyFaceMaskSync(ctx, lastKnownMaskPosition.x, lastKnownMaskPosition.y, 
+                                                 lastKnownMaskPosition.width, lastKnownMaskPosition.height);
                             }
                         }
                     } else {
