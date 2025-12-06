@@ -757,6 +757,9 @@
         let lastValidDetections = []; // Keep last valid detections to prevent flickering
         let normalizedDetectionsCache = []; // Cache normalized detections to avoid re-processing every frame
         let isDetecting = false; // Prevent multiple simultaneous detections
+        let lastSuccessfulMaskTime = 0; // Timestamp of last successful mask draw
+        const maskPersistenceTimeout = 5000; // Keep mask visible for 5 seconds after last successful detection
+        let lastSuccessfulMaskData = null; // Store last successful mask position and size
         
         async function processVideoFrame() {
             try {
@@ -796,8 +799,11 @@
                                         lastValidDetections = detections; // Update last valid
                                         // Clear normalized cache so it gets re-normalized with new detections
                                         normalizedDetectionsCache = [];
+                                        // Update last successful mask time
+                                        lastSuccessfulMaskTime = Date.now();
                                     }
                                     // If no detections, keep using lastValidDetections (don't clear)
+                                    // The mask will persist for 5 seconds using lastSuccessfulMaskData
                                     // If no detections, keep using lastValidDetections (don't clear)
                                     lastFaceDetectionTime = now;
                                 } catch (err) {
