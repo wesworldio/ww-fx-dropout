@@ -849,6 +849,13 @@
                     if (!detection || !detection.box) return;
                     
                     const box = detection.box;
+                    // Validate box has all required properties
+                    if (typeof box.x !== 'number' || typeof box.y !== 'number' || 
+                        typeof box.width !== 'number' || typeof box.height !== 'number') {
+                        console.warn('Invalid box structure:', box);
+                        return;
+                    }
+                    
                     let x = box.x;
                     let y = box.y;
                     let width = box.width;
