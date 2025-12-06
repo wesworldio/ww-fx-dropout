@@ -35,6 +35,9 @@
             max-height: 100%;
             object-fit: contain;
             display: block;
+            background: #000;
+            width: 100%;
+            height: 100%;
         }
         
         #controls {
@@ -517,6 +520,17 @@
             }
         }
         
+        // Initialize canvas with default size
+        function initCanvas() {
+            if (canvasOutput.width === 0 || canvasOutput.height === 0) {
+                canvasOutput.width = 1280;
+                canvasOutput.height = 720;
+                // Fill with black background
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvasOutput.width, canvasOutput.height);
+            }
+        }
+        
         // Apply filter to canvas
         function applyFilter(ctx, detections) {
             if (currentFilter.includes('face_mask')) {
@@ -850,21 +864,27 @@
                 localStorage.setItem('wesworld-fx-camera-active', 'true');
                 
                 videoInput.onloadedmetadata = () => {
+                    // Set canvas size to match video
                     canvasOutput.width = videoInput.videoWidth;
                     canvasOutput.height = videoInput.videoHeight;
                     
                     // Start MediaPipe camera
-                    camera = new Camera(videoInput, {
-                        onFrame: async () => {
-                            await faceDetection.send({image: videoInput});
-                        },
-                        width: videoInput.videoWidth,
-                        height: videoInput.videoHeight
-                    });
-                    camera.start().catch(err => {
-                        console.error('Camera start error:', err);
-                        updateStatus('Camera error: ' + err.message, 'error');
-                    });
+                    if (faceDetection) {
+                        camera = new Camera(videoInput, {
+                            onFrame: async () => {
+                                await faceDetection.send({image: videoInput});
+                            },
+                            width: videoInput.videoWidth,
+                            height: videoInput.videoHeight
+                        });
+                        camera.start().catch(err => {
+                            console.error('Camera start error:', err);
+                            updateStatus('Camera error: ' + err.message, 'error');
+                        });
+                    } else {
+                        console.error('FaceDetection not initialized');
+                        updateStatus('Face detection not ready', 'error');
+                    }
                     
                     updateStatus('Camera active', 'connected');
                     startButton.style.display = 'none';
@@ -1427,16 +1447,23 @@
         
         // Initialize
         async function init() {
+            // Initialize canvas first
+            initCanvas();
+            
             initFaceDetection();
             await loadThemes();
             loadPinnedFilters();
             await loadCameras();
             loadFilters();
-            autoStartCameraIfNeeded();
-            updateStatus('Ready', 'connected');
+            
             // Show UI initially
             controlsVisible = true;
             controls.classList.add('visible');
+            updateStatus('Ready - Click "Start Camera" to begin', 'connected');
+            
+            // Auto-start camera if it was active before
+            autoStartCameraIfNeeded();
+            
             setTimeout(() => {
                 if (controlsVisible) {
                     toggleUI();
