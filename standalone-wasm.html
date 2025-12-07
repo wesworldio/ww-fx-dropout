@@ -1,0 +1,4056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="WesWorld FX - High-performance face filters using WebAssembly. Works on desktop, mobile, and all modern browsers.">
+    <title>WesWorld FX - WASM Edition</title>
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        #videoContainer {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #000;
+        }
+        
+        #videoInput {
+            display: none;
+        }
+        
+        #canvasOutput {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            background: #000;
+            width: 100%;
+            height: 100%;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+        
+        /* Controls panel */
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: var(--surface-color, rgba(26, 26, 26, 0.95));
+            color: var(--text-color, white);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #333);
+            font-size: 14px;
+            min-width: 180px;
+            max-width: 220px;
+            transition: opacity 0.3s, transform 0.3s;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            max-height: calc(100vh - 20px);
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 768px) {
+            #controls {
+                min-width: 200px;
+                max-width: 90vw;
+                font-size: 16px;
+                padding: 16px;
+            }
+        }
+        
+        #controls.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        #controls.hidden {
+            opacity: 0;
+            transform: translateX(-100%);
+            pointer-events: none;
+        }
+        
+        /* Status widget removed - camera status shown in settings section */
+        #status {
+            display: none !important;
+        }
+        
+        #loadingIndicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            background: rgba(26, 26, 26, 0.95);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color, #333);
+        }
+        
+        #loadingIndicator.hidden {
+            display: none;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid var(--accent-color, #5250ef);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .settings-section,
+        .fx-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color, #333);
+        }
+        
+        .settings-section:last-child,
+        .fx-section:last-child {
+            border-bottom: none;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--group-title-color, #5250ef);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title::before {
+            content: '▶';
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .section-title.expanded::before {
+            transform: rotate(90deg);
+        }
+        
+        .settings-section-content {
+            display: none;
+        }
+        
+        .settings-section.expanded .settings-section-content {
+            display: block;
+        }
+        
+        .fx-dropdown-menu {
+            display: none;
+        }
+        
+        .all-fx-container:has(.fx-search-input:focus) .fx-dropdown-menu {
+            display: block;
+        }
+        
+        .camera-status {
+            padding: 8px 12px;
+            background: var(--surface-hover-color, #2a2a2a);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        
+        .camera-status.connected {
+            color: var(--status-connected-color, #4caf50);
+        }
+        
+        .camera-status.stopped {
+            color: var(--text-secondary-color, #cccccc);
+        }
+        
+        .camera-status.error {
+            color: var(--status-error-color, #f44336);
+        }
+        
+        .current-fx-display {
+            padding: 12px;
+            background: var(--surface-color, #1a1a1a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            min-height: 20px;
+        }
+        
+        .current-fx-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .clear-filter-button {
+            padding: 4px 8px;
+            background: transparent;
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            color: var(--text-color, white);
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            transition: all 0.2s;
+            min-width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .clear-filter-button:hover {
+            background: var(--status-error-color, #f44336);
+            border-color: var(--status-error-color, #f44336);
+            color: white;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: var(--text-secondary-color, #cccccc);
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 8px;
+            background: var(--surface-color, #1a1a1a);
+            color: var(--text-color, white);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--accent-color, #5250ef);
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: 2px solid var(--button-color, #4a9eff);
+            color: var(--button-color, #4a9eff);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            touch-action: manipulation;
+        }
+        
+        button:hover, button:active {
+            background: var(--button-color, #4a9eff);
+            color: var(--selected-text-color, #ffffff);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        button#startButton,
+        button#stopButton {
+            background: var(--button-color, #4a9eff);
+            color: var(--selected-text-color, #ffffff);
+        }
+        
+        button#startButton:hover,
+        button#stopButton:hover {
+            background: var(--button-hover-color, #5aaeff);
+        }
+        
+        @media (max-width: 768px) {
+            select, input, button {
+                font-size: 16px;
+                padding: 12px;
+            }
+            button {
+                min-height: 44px;
+            }
+        }
+        
+        /* FX Dropdown */
+        .fx-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        
+        .fx-dropdown-button {
+            width: 100%;
+            padding: 12px;
+            background: var(--surface-color, #1a1a1a);
+            color: var(--text-color, white);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .fx-dropdown-button:hover {
+            border-color: var(--accent-color, #5250ef);
+        }
+        
+        .fx-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--surface-color, #1a1a1a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            margin-top: 4px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .fx-dropdown-menu.open {
+            display: block;
+        }
+        
+        .all-fx-container {
+            width: 100%;
+        }
+        
+        .all-fx-container .fx-dropdown-menu {
+            position: relative;
+            top: auto;
+            left: auto;
+            right: auto;
+            margin-top: 8px;
+            max-height: 400px;
+            display: none; /* Hidden by default */
+        }
+        
+        /* Show FX list when search input is focused or has value, or when dropdown is hovered */
+        .all-fx-container:has(.fx-search-input:focus) .fx-dropdown-menu,
+        .all-fx-container:has(.fx-search-input:not(:placeholder-shown)) .fx-dropdown-menu,
+        .all-fx-container:has(.fx-dropdown-menu:hover) .fx-dropdown-menu,
+        .all-fx-container .fx-dropdown-menu:hover {
+            display: block;
+        }
+        
+        .all-fx-container .pinned-fx-container {
+            margin-bottom: 8px;
+        }
+        
+        /* Spotlight-style search trigger */
+        .fx-search-trigger {
+            width: 100%;
+            padding: 12px;
+            background: var(--surface-color, #1a1a1a);
+            color: var(--text-secondary-color, #cccccc);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            margin-top: 4px;
+        }
+        
+        .fx-search-trigger:hover {
+            background: var(--surface-hover-color, #2a2a2a);
+            border-color: var(--accent-color, #5250ef);
+        }
+        
+        .fx-search-trigger span {
+            font-size: 16px;
+        }
+        
+        /* Spotlight-style search modal */
+        .fx-search-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10000;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 10vh;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .fx-search-modal.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .fx-search-modal-content {
+            width: 90%;
+            max-width: 600px;
+            background: var(--surface-color, #1a1a1a);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            animation: slideDown 0.2s ease-out;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .fx-search-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color, #333);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .fx-search-header .fx-search-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--surface-hover-color, #2a2a2a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 8px;
+            font-size: 16px;
+            color: var(--text-color, white);
+        }
+        
+        .fx-search-header .fx-search-input:focus {
+            outline: none;
+            border-color: var(--accent-color, #5250ef);
+            box-shadow: 0 0 0 3px rgba(82, 80, 239, 0.2);
+        }
+        
+        .fx-search-close {
+            padding: 8px 12px;
+            background: transparent;
+            border: 1px solid var(--border-color, #333);
+            border-radius: 6px;
+            color: var(--text-color, white);
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            transition: all 0.2s;
+        }
+        
+        .fx-search-close:hover {
+            background: var(--surface-hover-color, #2a2a2a);
+            border-color: var(--accent-color, #5250ef);
+        }
+        
+        .fx-search-results {
+            overflow-y: auto;
+            max-height: calc(70vh - 80px);
+            padding: 8px;
+        }
+        
+        .fx-search-results .fx-dropdown-menu,
+        .fx-search-results #fxOptionsContainer {
+            display: block !important;
+            position: relative;
+            top: auto;
+            left: auto;
+            right: auto;
+            margin: 0;
+            max-height: none;
+            border: none;
+            background: transparent;
+        }
+        
+        .fx-search-results .fx-group {
+            margin-bottom: 8px;
+        }
+        
+        .fx-search-results .fx-option {
+            padding: 12px 16px;
+        }
+        
+        .fx-group {
+            margin-bottom: 10px;
+        }
+        
+        .fx-group-title {
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--group-title-color, #5250ef);
+            text-transform: uppercase;
+            background: var(--surface-hover-color, #2a2a2a);
+            border-bottom: 1px solid var(--border-color, #333);
+        }
+        
+        .fx-option {
+            padding: 12px 16px;
+            color: var(--text-color, white);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        
+        .fx-option:hover {
+            background: var(--surface-hover-color, #2a2a2a);
+        }
+        
+        .fx-option.selected {
+            background: var(--accent-color, #5250ef);
+            color: var(--selected-text-color, #ffffff);
+        }
+        
+        .fx-option-image {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-color, #333);
+        }
+        
+        .fx-option-text {
+            flex: 1;
+        }
+        
+        .fx-option-pin {
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .fx-option-pin:hover {
+            opacity: 1;
+        }
+        
+        .fx-current-pin {
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .fx-current-pin:hover {
+            opacity: 1;
+        }
+        
+        .fx-search-input {
+            width: 100%;
+            padding: 8px;
+            background: var(--surface-color, #1a1a1a);
+            color: var(--text-color, white);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .pinned-fx-container {
+            margin-bottom: 10px;
+            min-height: 20px;
+        }
+        
+        .pinned-fx-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            margin-bottom: 4px;
+            background: var(--surface-hover-color, #2a2a2a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .pinned-fx-item:hover {
+            background: var(--accent-color, #5250ef);
+            border-color: var(--accent-color, #5250ef);
+        }
+        
+        .pinned-fx-item-text {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .pinned-fx-item-remove {
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0.7;
+            padding: 0 4px;
+        }
+        
+        .pinned-fx-item-remove:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingIndicator">
+        <div class="spinner"></div>
+        <div>Loading WASM module...</div>
+    </div>
+    
+    <div id="controls" class="visible">
+        <!-- Settings Section -->
+        <div class="settings-section">
+            <div class="section-title" id="settingsToggle">Settings</div>
+            <div class="settings-section-content">
+                <label>
+                    Theme:
+                    <select id="themeSelect">
+                        <option value="wesworld">WesWorld</option>
+                        <option value="dropout">Dropout</option>
+                    </select>
+                </label>
+                <label>
+                    Camera:
+                    <select id="cameraSelect"></select>
+                </label>
+                <div class="camera-status">
+                    <span id="cameraStatusText">Camera: Stopped</span>
+                </div>
+                <button id="startButton">Start Camera</button>
+                <button id="stopButton" style="display: none;">Stop Camera</button>
+                <label style="margin-top: 10px; display: block;">
+                    Test Image:
+                    <input type="file" id="testImageInput" accept="image/*" style="display: none;">
+                    <button type="button" id="loadTestImageButton" style="width: 100%; margin-top: 5px;">Load Test Image</button>
+                    <button type="button" id="loadRefImageButton" style="width: 100%; margin-top: 5px;">Load ref-1.png</button>
+                    <button type="button" id="clearTestImageButton" style="width: 100%; margin-top: 5px; display: none;">Clear Test Image</button>
+                </label>
+            </div>
+        </div>
+        
+        <!-- FX Section -->
+        <div class="fx-section">
+            <div class="section-title">FX</div>
+            <label>
+                Current FX:
+                <div class="current-fx-display">
+                    <span id="fxSelectedText">None (Original)</span>
+                    <div class="current-fx-actions">
+                        <span id="fxCurrentPin" class="fx-current-pin" style="display: none;" title="Pin current FX"></span>
+                        <button id="clearFilterButton" class="clear-filter-button" type="button" title="Clear filter (C)" style="display: none;">✕</button>
+                    </div>
+                </div>
+            </label>
+            <label>
+                Add / Change FX:
+                <div class="all-fx-container">
+                    <div id="pinnedFxContainer" class="pinned-fx-container"></div>
+                    <button id="fxSearchTrigger" class="fx-search-trigger" type="button">
+                        <span>🔍</span> Search FX...
+                    </button>
+                </div>
+            </label>
+            
+            <!-- Spotlight-style FX Search Modal -->
+            <div id="fxSearchModal" class="fx-search-modal">
+                <div class="fx-search-modal-content">
+                    <div class="fx-search-header">
+                        <input type="text" id="fxSearchInput" class="fx-search-input" placeholder="Search FX..." autocomplete="off">
+                        <button class="fx-search-close" id="fxSearchClose" type="button">✕</button>
+                    </div>
+                    <div class="fx-search-results" id="fxSearchResults">
+                        <div id="fxOptionsContainer" class="fx-dropdown-menu"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="status" class="hidden">Initializing...</div>
+    
+    <div id="videoContainer">
+        <video id="videoInput" autoplay playsinline></video>
+        <canvas id="canvasOutput"></canvas>
+    </div>
+    
+    <!-- MediaPipe Face Detection (WASM) -->
+    <script type="module">
+        import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3';
+        
+        // State
+        let faceLandmarker = null;
+        let wasmModule = null;
+        let localStream = null;
+        let testImage = null; // For testing with static images
+        let isProcessing = false;
+        let currentFilter = '';
+        let frameCount = 0;
+        let animationFrameId = null;
+        let allFilters = [];
+        let pinnedFilters = [];
+        let controlsVisible = true;
+        let isRandomCycling = false;
+        let randomCycleInterval = null;
+        let faceMaskImages = {}; // Cache for face mask images
+        
+        // Filter categories (matching original)
+        const FILTER_CATEGORIES = {
+            'DROPOUT': ['dropout_logo', 'dropout_face_mask_sam', 'dropout_face_mask_ariel'],
+            'Distortion': ['bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
+                          'twirl', 'ripple', 'sphere', 'tunnel', 'water_ripple',
+                          'radial_blur', 'cylinder', 'barrel', 'pincushion', 'whirlpool', 'radial_zoom',
+                          'concave', 'convex', 'spiral', 'radial_stretch', 'radial_compress',
+                          'vertical_wave', 'horizontal_wave', 'skew_horizontal', 'skew_vertical',
+                          'rotate_zoom', 'radial_wave', 'zoom_in', 'zoom_out', 'fast_zoom_in',
+                          'fast_zoom_out', 'shake', 'pulse', 'spiral_zoom', 'extreme_closeup',
+                          'puzzle', 'rotate', 'rotate_45', 'rotate_90', 'flip_horizontal',
+                          'flip_vertical', 'flip_both', 'quad_mirror', 'tile', 'radial_tile',
+                          'zoom_blur', 'melt', 'kaleidoscope', 'glitch', 'double_vision'],
+            'Color & Style': ['black_white', 'sepia', 'vintage', 'neon_glow',
+                             'pixelate', 'blur', 'sharpen', 'emboss', 'red_tint', 'blue_tint',
+                             'green_tint', 'rainbow', 'negative', 'posterize', 'sketch', 'cartoon',
+                             'thermal', 'ice', 'ocean', 'plasma', 'jet', 'turbo', 'inferno',
+                             'magma', 'viridis', 'cool', 'hot', 'spring', 'summer', 'autumn',
+                             'winter', 'rainbow_shift', 'acid_trip', 'vhs', 'retro', 'cyberpunk',
+                             'anime', 'glow', 'solarize', 'edge_detect', 'halftone']
+        };
+        
+        // Build flat filter list
+        Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
+            allFilters.push(...categoryFilters);
+        });
+        
+        // Elements
+        const videoInput = document.getElementById('videoInput');
+        const canvasOutput = document.getElementById('canvasOutput');
+        const ctx = canvasOutput.getContext('2d', { willReadFrequently: true });
+        const cameraSelect = document.getElementById('cameraSelect');
+        const fxDropdownButton = document.getElementById('fxDropdownButton'); // May be null if removed
+        const fxDropdownMenu = document.getElementById('fxDropdownMenu'); // May be null if removed
+        const fxSelectedText = document.getElementById('fxSelectedText');
+        const fxCurrentPin = document.getElementById('fxCurrentPin');
+        const clearFilterButton = document.getElementById('clearFilterButton');
+        const fxOptionsContainer = document.getElementById('fxOptionsContainer');
+        const fxSearchInput = document.getElementById('fxSearchInput');
+        const fxSearchTrigger = document.getElementById('fxSearchTrigger');
+        const fxSearchModal = document.getElementById('fxSearchModal');
+        const fxSearchClose = document.getElementById('fxSearchClose');
+        const pinnedFxContainer = document.getElementById('pinnedFxContainer');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const statusDiv = document.getElementById('status');
+        const cameraStatusText = document.getElementById('cameraStatusText');
+        const controls = document.getElementById('controls');
+        const themeSelect = document.getElementById('themeSelect');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const testImageInput = document.getElementById('testImageInput');
+        const loadTestImageButton = document.getElementById('loadTestImageButton');
+        const loadRefImageButton = document.getElementById('loadRefImageButton');
+        const clearTestImageButton = document.getElementById('clearTestImageButton');
+        
+        // Check WASM support
+        const wasmSupported = typeof WebAssembly !== 'undefined';
+        
+        // Format filter name for display
+        function formatFilterName(filter) {
+            if (!filter) return 'None (Original)';
+            return filter.split('_').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+        
+        // Update status (status widget removed, only update camera status in settings)
+        function updateStatus(message, className = '') {
+            // Status widget is hidden, but keep function for compatibility
+            // Update camera status text in settings section
+            if (cameraStatusText) {
+                if (className === 'connected' && message.includes('Camera')) {
+                    cameraStatusText.textContent = 'Camera: Active';
+                    cameraStatusText.parentElement.className = 'camera-status connected';
+                } else if (message.includes('Camera stopped') || message.includes('Stopped')) {
+                    cameraStatusText.textContent = 'Camera: Stopped';
+                    cameraStatusText.parentElement.className = 'camera-status stopped';
+                } else if (className === 'error' && message.includes('Camera')) {
+                    cameraStatusText.textContent = 'Camera: Error';
+                    cameraStatusText.parentElement.className = 'camera-status error';
+                }
+            }
+        }
+        
+        // Initialize MediaPipe Face Landmarker
+        async function initFaceDetection() {
+            try {
+                // Suppress MediaPipe console warnings and info messages (they're informational, not errors)
+                // Must be done BEFORE importing MediaPipe to catch all messages
+                const originalWarn = console.warn;
+                const originalInfo = console.info;
+                
+                console.warn = function(...args) {
+                    // Filter out MediaPipe internal warnings
+                    const message = args.join(' ');
+                    if (message.includes('Face blendshape model contains CPU only ops') ||
+                        message.includes('OpenGL error checking is disabled') ||
+                        message.includes('Sets FaceBlendshapesGraph acceleration')) {
+                        return; // Suppress these warnings
+                    }
+                    originalWarn.apply(console, args);
+                };
+                
+                console.info = function(...args) {
+                    // Filter out MediaPipe GL version info (it's just informational)
+                    const message = args.join(' ');
+                    if (message.includes('GL version:') || 
+                        message.includes('renderer:') ||
+                        message.includes('Graph successfully started') ||
+                        message.includes('Created TensorFlow Lite') ||
+                        message.includes('XNNPACK delegate')) {
+                        return; // Suppress these info messages
+                    }
+                    originalInfo.apply(console, args);
+                };
+                
+                // Also suppress errors from vision_wasm_internal.js (they're actually warnings/info)
+                const originalError = console.error;
+                console.error = function(...args) {
+                    const message = args.join(' ');
+                    // Don't suppress actual errors, just MediaPipe internal log messages that come through as errors
+                    if (message.includes('vision_wasm_internal') && 
+                        (message.includes('W1207') || message.includes('I1207') ||
+                         message.includes('INFO:') || message.includes('Created TensorFlow'))) {
+                        return; // Suppress MediaPipe internal log messages
+                    }
+                    originalError.apply(console, args);
+                };
+                
+                const vision = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                );
+                
+                faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+                        delegate: "GPU"
+                    },
+                    outputFaceBlendshapes: false,
+                    runningMode: "VIDEO",
+                    numFaces: 1
+                });
+                
+                console.log('MediaPipe Face Landmarker initialized');
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize MediaPipe:', error);
+                return false;
+            }
+        }
+        
+        // Initialize WASM module (placeholder - will load actual module when built)
+        async function initWasm() {
+            if (!wasmSupported) {
+                console.warn('WebAssembly not supported. Using JavaScript filters.');
+                return false;
+            }
+            
+            try {
+                // TODO: Load actual WASM module when built
+                // const wwfx = new WWFXWasm();
+                // await wwfx.init('wasm/wwfx_module.wasm');
+                // wasmModule = wwfx;
+                
+                console.log('WASM module placeholder (using JS filters)');
+                return true;
+            } catch (error) {
+                console.error('Failed to load WASM module:', error);
+                return false;
+            }
+        }
+        
+        // Load cameras
+        async function loadCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                cameraSelect.innerHTML = '';
+                
+                videoDevices.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Camera ${cameraSelect.options.length + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+                
+                // Load saved camera
+                const savedCamera = localStorage.getItem('wesworld-fx-camera');
+                if (savedCamera) {
+                    cameraSelect.value = savedCamera;
+                }
+            } catch (error) {
+                console.error('Error loading cameras:', error);
+            }
+        }
+        
+        // Load pinned filters
+        function loadPinnedFilters() {
+            try {
+                const saved = localStorage.getItem('wesworld-fx-pinned');
+                if (saved) {
+                    pinnedFilters = JSON.parse(saved);
+                } else {
+                    pinnedFilters = [];
+                }
+                updatePinnedFxDisplay();
+            } catch (error) {
+                console.error('Error loading pinned filters:', error);
+                pinnedFilters = [];
+            }
+        }
+        
+        // Save pinned filters
+        function savePinnedFilters() {
+            try {
+                localStorage.setItem('wesworld-fx-pinned', JSON.stringify(pinnedFilters));
+            } catch (error) {
+                console.error('Error saving pinned filters:', error);
+            }
+        }
+        
+        // Update pinned FX display
+        function updatePinnedFxDisplay() {
+            pinnedFxContainer.innerHTML = '';
+            
+            if (pinnedFilters.length === 0) {
+                return;
+            }
+            
+            pinnedFilters.forEach(filterName => {
+                const item = document.createElement('div');
+                item.className = 'pinned-fx-item';
+                item.dataset.filterName = filterName;
+                // Make entire item clickable to load filter
+                item.onclick = () => selectFilter(filterName);
+                
+                const text = document.createElement('span');
+                text.className = 'pinned-fx-item-text';
+                text.textContent = formatFilterName(filterName);
+                
+                const remove = document.createElement('span');
+                remove.className = 'pinned-fx-item-remove';
+                remove.textContent = '×';
+                remove.onclick = (e) => {
+                    e.stopPropagation();
+                    unpinFilter(filterName);
+                };
+                
+                item.appendChild(text);
+                item.appendChild(remove);
+                pinnedFxContainer.appendChild(item);
+            });
+        }
+        
+        // Pin current filter
+        function pinCurrentFilter() {
+            if (currentFilter && !pinnedFilters.includes(currentFilter)) {
+                pinnedFilters.unshift(currentFilter);
+                savePinnedFilters();
+                updatePinnedFxDisplay();
+                updateCurrentPinIcon();
+                loadFilters();
+            }
+        }
+        
+        // Unpin filter
+        function unpinFilter(filterName) {
+            pinnedFilters = pinnedFilters.filter(f => f !== filterName);
+            savePinnedFilters();
+            updatePinnedFxDisplay();
+            if (currentFilter === filterName) {
+                updateCurrentPinIcon();
+            }
+            loadFilters();
+        }
+        
+        // Update current pin icon
+        function updateCurrentPinIcon() {
+            if (!currentFilter) {
+                fxCurrentPin.style.display = 'none';
+                return;
+            }
+            
+            fxCurrentPin.style.display = 'flex';
+            const isPinned = pinnedFilters.includes(currentFilter);
+            fxCurrentPin.innerHTML = isPinned ? '📌' : '📍';
+            fxCurrentPin.title = isPinned ? 'Unpin current FX' : 'Pin current FX';
+        }
+        
+        // Load filters
+        function loadFilters() {
+            fxOptionsContainer.innerHTML = '';
+            
+            // Add "None" option
+            const noneOption = document.createElement('button');
+            noneOption.className = 'fx-option' + (currentFilter === '' ? ' selected' : '');
+            noneOption.textContent = 'None (Original)';
+            noneOption.value = '';
+            noneOption.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                selectFilter('');
+                closeFxSearchModal();
+            };
+            fxOptionsContainer.appendChild(noneOption);
+            
+            // Add filters by category
+            Object.entries(FILTER_CATEGORIES).forEach(([category, filters]) => {
+                const group = document.createElement('div');
+                group.className = 'fx-group';
+                
+                const groupTitle = document.createElement('div');
+                groupTitle.className = 'fx-group-title';
+                groupTitle.textContent = category;
+                group.appendChild(groupTitle);
+                
+                filters.forEach(filter => {
+                    // Skip if pinned (shown in pinned section)
+                    if (pinnedFilters.includes(filter)) return;
+                    
+                    const option = createFxOption(filter);
+                    group.appendChild(option);
+                });
+                
+                if (group.children.length > 1) { // Has title + at least one option
+                    fxOptionsContainer.appendChild(group);
+                }
+            });
+        }
+        
+        // Create FX option
+        function createFxOption(filter) {
+            const option = document.createElement('button');
+            option.className = 'fx-option' + (currentFilter === filter ? ' selected' : '');
+            option.value = filter;
+            
+            if (filter.includes('face_mask')) {
+                const optionText = document.createElement('span');
+                optionText.className = 'fx-option-text';
+                optionText.textContent = formatFilterName(filter);
+                
+                const optionImage = document.createElement('img');
+                optionImage.className = 'fx-option-image';
+                const parts = filter.split('_');
+                const optionName = parts[parts.length - 1];
+                if (filter.startsWith('dropout_')) {
+                    optionImage.src = `assets/dropout/face_mask/${optionName}.png`;
+                }
+                optionImage.alt = formatFilterName(filter);
+                optionImage.onerror = function() {
+                    this.style.display = 'none';
+                };
+                
+                option.appendChild(optionImage);
+                option.appendChild(optionText);
+            } else {
+                const optionText = document.createElement('span');
+                optionText.className = 'fx-option-text';
+                optionText.textContent = formatFilterName(filter);
+                option.appendChild(optionText);
+            }
+            
+            if (filter) {
+                const pinIcon = document.createElement('span');
+                pinIcon.className = 'fx-option-pin';
+                pinIcon.innerHTML = pinnedFilters.includes(filter) ? '📌' : '📍';
+                pinIcon.title = pinnedFilters.includes(filter) ? 'Unpin' : 'Pin';
+                pinIcon.onclick = (e) => {
+                    e.stopPropagation();
+                    if (pinnedFilters.includes(filter)) {
+                        unpinFilter(filter);
+                    } else {
+                        if (!pinnedFilters.includes(filter)) {
+                            pinnedFilters.unshift(filter);
+                            savePinnedFilters();
+                            updatePinnedFxDisplay();
+                            loadFilters();
+                        }
+                    }
+                };
+                option.appendChild(pinIcon);
+            }
+            
+            option.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                selectFilter(filter);
+                closeFxSearchModal();
+            };
+            return option;
+        }
+        
+        // Open FX search modal
+        function openFxSearchModal() {
+            console.log('openFxSearchModal called', { fxSearchModal, fxSearchInput });
+            if (fxSearchModal) {
+                fxSearchModal.classList.add('active');
+                // Force display style to ensure it shows
+                fxSearchModal.style.display = 'flex';
+                console.log('Modal class added, active:', fxSearchModal.classList.contains('active'));
+                console.log('Modal style display:', fxSearchModal.style.display);
+                // Load filters if not already loaded
+                if (fxOptionsContainer && fxOptionsContainer.children.length === 0) {
+                    loadFilters();
+                }
+                // Focus search input after modal opens
+                setTimeout(() => {
+                    if (fxSearchInput) {
+                        fxSearchInput.focus();
+                        console.log('Search input focused');
+                    }
+                }, 100);
+            } else {
+                console.error('fxSearchModal element not found!');
+            }
+        }
+        
+        // Close FX search modal
+        function closeFxSearchModal() {
+            if (fxSearchModal) {
+                fxSearchModal.classList.remove('active');
+                fxSearchModal.style.display = 'none';
+                // Clear search
+                if (fxSearchInput) {
+                    fxSearchInput.value = '';
+                    filterFxOptions('');
+                }
+            }
+        }
+        
+        // Preload face mask images
+        async function preloadFaceMasks() {
+            const masksToPreload = ['sam', 'ariel'];
+            console.log('Preloading face mask images...');
+            
+            for (const maskName of masksToPreload) {
+                const assetPath = `assets/dropout/face_mask/${maskName}.png`;
+                if (!faceMaskImages[assetPath]) {
+                    try {
+                        const img = new Image();
+                        
+                        // For file:// protocol, don't set crossOrigin
+                        if (window.location.protocol !== 'file:') {
+                            img.crossOrigin = 'anonymous';
+                        }
+                        
+                        await new Promise((resolve) => {
+                            img.onload = () => {
+                                console.log('Preloaded face mask:', assetPath);
+                                faceMaskImages[assetPath] = img;
+                                resolve();
+                            };
+                            img.onerror = (err) => {
+                                // For file:// protocol, this is expected - images will load on-demand
+                                if (window.location.protocol === 'file:') {
+                                    console.log('Face mask will load on-demand (file:// protocol):', assetPath);
+                                } else {
+                                    console.warn('Failed to preload face mask:', assetPath);
+                                }
+                                resolve(); // Don't reject, just continue - will try to load on-demand
+                            };
+                            img.src = assetPath;
+                        });
+                    } catch (error) {
+                        // Silently handle errors - will try to load on-demand
+                        if (window.location.protocol !== 'file:') {
+                            console.warn('Error preloading face mask:', assetPath, error);
+                        }
+                    }
+                }
+            }
+            console.log('Face mask preloading complete');
+        }
+        
+        // Apply face mask to canvas with eye alignment
+        function applyFaceMask(ctx, faceRect, faceLandmarks, filterName) {
+            // Extract mask name from filter (e.g., dropout_face_mask_sam -> sam)
+            const parts = filterName.split('_');
+            const maskName = parts[parts.length - 1];
+            
+            // Determine asset path
+            let assetPath = '';
+            if (filterName.startsWith('dropout_')) {
+                assetPath = `assets/dropout/face_mask/${maskName}.png`;
+            } else if (filterName.startsWith('assets_')) {
+                assetPath = `assets/face_mask/${maskName}.png`;
+            }
+            
+            if (!assetPath) {
+                return;
+            }
+            
+            // Get cached image (should be preloaded)
+            let img = faceMaskImages[assetPath];
+            
+            // If image not loaded yet, try to load it synchronously (for file:// protocol)
+            if (!img || !img.complete || !img.naturalWidth || !img.naturalHeight) {
+                // Try to load the image if we're on file:// protocol
+                if (window.location.protocol === 'file:') {
+                    try {
+                        const newImg = new Image();
+                        newImg.src = assetPath;
+                        if (newImg.complete && newImg.naturalWidth > 0) {
+                            img = newImg;
+                            faceMaskImages[assetPath] = newImg;
+                        } else {
+                            // Image not ready, skip this frame
+                            return;
+                        }
+                    } catch (e) {
+                        return;
+                    }
+                } else {
+                    // Image not ready yet, skip this frame
+                    return;
+                }
+            }
+            
+            // Save context state
+            ctx.save();
+            
+            // Calculate eye positions from MediaPipe landmarks
+            // MediaPipe Face Landmarker provides 468 landmarks
+            // Left eye landmarks: 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246
+            // Right eye landmarks: 362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398
+            let leftEyeX = 0, leftEyeY = 0, rightEyeX = 0, rightEyeY = 0;
+            let leftEyeCount = 0, rightEyeCount = 0;
+            
+            if (faceLandmarks && faceLandmarks.length >= 468) {
+                // Left eye key points
+                const leftEyeIndices = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246];
+                // Right eye key points
+                const rightEyeIndices = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398];
+                
+                for (const idx of leftEyeIndices) {
+                    if (faceLandmarks[idx]) {
+                        leftEyeX += faceLandmarks[idx].x * canvasOutput.width;
+                        leftEyeY += faceLandmarks[idx].y * canvasOutput.height;
+                        leftEyeCount++;
+                    }
+                }
+                
+                for (const idx of rightEyeIndices) {
+                    if (faceLandmarks[idx]) {
+                        rightEyeX += faceLandmarks[idx].x * canvasOutput.width;
+                        rightEyeY += faceLandmarks[idx].y * canvasOutput.height;
+                        rightEyeCount++;
+                    }
+                }
+                
+                if (leftEyeCount > 0 && rightEyeCount > 0) {
+                    leftEyeX /= leftEyeCount;
+                    leftEyeY /= leftEyeCount;
+                    rightEyeX /= rightEyeCount;
+                    rightEyeY /= rightEyeCount;
+                } else {
+                    // Fallback to bounding box center if eye detection fails
+                    leftEyeX = faceRect.x + faceRect.width * 0.35;
+                    leftEyeY = faceRect.y + faceRect.height * 0.4;
+                    rightEyeX = faceRect.x + faceRect.width * 0.65;
+                    rightEyeY = faceRect.y + faceRect.height * 0.4;
+                }
+            } else {
+                // Fallback to bounding box if no landmarks
+                leftEyeX = faceRect.x + faceRect.width * 0.35;
+                leftEyeY = faceRect.y + faceRect.height * 0.4;
+                rightEyeX = faceRect.x + faceRect.width * 0.65;
+                rightEyeY = faceRect.y + faceRect.height * 0.4;
+            }
+            
+            // Calculate eye center and eye distance
+            const eyeCenterX = (leftEyeX + rightEyeX) / 2;
+            const eyeCenterY = (leftEyeY + rightEyeY) / 2;
+            const eyeDistance = Math.sqrt(
+                Math.pow(rightEyeX - leftEyeX, 2) + 
+                Math.pow(rightEyeY - leftEyeY, 2)
+            );
+            
+            // Get additional facial landmarks for dynamic sizing
+            let noseX = 0, noseY = 0, chinX = 0, chinY = 0, foreheadX = 0, foreheadY = 0;
+            let hasLandmarks = false;
+            
+            if (faceLandmarks && faceLandmarks.length >= 468) {
+                // MediaPipe landmark indices:
+                // Nose tip: 1, 2
+                // Chin: 175, 199
+                // Forehead center: 10
+                const noseTip = faceLandmarks[1] || faceLandmarks[2];
+                const chin = faceLandmarks[175] || faceLandmarks[199];
+                const forehead = faceLandmarks[10];
+                
+                if (noseTip && chin && forehead) {
+                    noseX = noseTip.x * canvasOutput.width;
+                    noseY = noseTip.y * canvasOutput.height;
+                    chinX = chin.x * canvasOutput.width;
+                    chinY = chin.y * canvasOutput.height;
+                    foreheadX = forehead.x * canvasOutput.width;
+                    foreheadY = forehead.y * canvasOutput.height;
+                    hasLandmarks = true;
+                }
+            }
+            
+            // Dynamic mask sizing based on face measurements (matching Python implementation)
+            const maskAspectRatio = img.naturalWidth / img.naturalHeight;
+            let drawW, drawH;
+            
+            if (hasLandmarks && eyeDistance > 0) {
+                // Use landmarks for precise dynamic sizing
+                // Calculate face width from eye distance (most stable measurement)
+                const faceWidth = eyeDistance * 4.5; // Increased for better coverage
+                
+                // Calculate face height from nose to chin and forehead to nose
+                const noseToChin = Math.sqrt(
+                    Math.pow(chinX - noseX, 2) + 
+                    Math.pow(chinY - noseY, 2)
+                );
+                const foreheadToNose = Math.sqrt(
+                    Math.pow(noseX - foreheadX, 2) + 
+                    Math.pow(noseY - foreheadY, 2)
+                );
+                const totalFaceHeight = noseToChin + foreheadToNose;
+                
+                // Make mask taller to ensure full face coverage
+                const maskHeight = totalFaceHeight * 1.35; // 35% larger for better coverage
+                
+                // Calculate width from height to maintain aspect ratio
+                const maskWidthFromHeight = maskHeight * maskAspectRatio;
+                
+                // Use the larger of eye-based width or height-based width
+                drawW = Math.max(faceWidth, maskWidthFromHeight);
+                drawH = drawW / maskAspectRatio;
+                
+                // Recalculate height if aspect ratio makes it too different
+                if (Math.abs(drawH - maskHeight) > maskHeight * 0.2) {
+                    drawH = maskHeight;
+                    drawW = drawH * maskAspectRatio;
+                }
+            } else {
+                // Fallback to bounding box method with dynamic scaling
+                // Scale based on face size - larger faces get proportionally larger masks
+                const baseFaceSize = 200; // Base face size for reference
+                const currentFaceSize = Math.max(faceRect.width, faceRect.height);
+                const sizeRatio = currentFaceSize / baseFaceSize;
+                
+                // Dynamic scale factor: 1.4x for small faces, 1.8x for large faces
+                const dynamicScale = 1.4 + (sizeRatio * 0.4);
+                
+                drawW = faceRect.width * dynamicScale;
+                drawH = faceRect.height * dynamicScale;
+                
+                // Maintain mask aspect ratio
+                if (maskAspectRatio > (drawW / drawH)) {
+                    drawH = drawW / maskAspectRatio;
+                } else {
+                    drawW = drawH * maskAspectRatio;
+                }
+            }
+            
+            // Position mask: center horizontally on eye center
+            const drawX = eyeCenterX - drawW / 2;
+            
+            // Position vertically so eyes align - place eye center at ~35% from top of mask
+            // Adjust upward by 40 pixels to better align eyes (matching Python implementation)
+            const drawY = eyeCenterY - drawH * 0.35 - 40;
+            
+            // Set composite operation
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Draw mask
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            
+            // Restore context state
+            ctx.restore();
+        }
+        
+        // Clear filter function
+        function clearFilter() {
+            selectFilter('');
+            closeFxSearchModal();
+        }
+        
+        // Select filter
+        function selectFilter(filterValue) {
+            currentFilter = filterValue || '';
+            
+            if (currentFilter === '') {
+                fxSelectedText.textContent = 'None (Original)';
+                fxCurrentPin.style.display = 'none';
+                if (clearFilterButton) {
+                    clearFilterButton.style.display = 'none';
+                }
+            } else {
+                fxSelectedText.textContent = formatFilterName(currentFilter);
+                updateCurrentPinIcon();
+                if (clearFilterButton) {
+                    clearFilterButton.style.display = 'flex';
+                }
+            }
+            
+            // Update selected state
+            if (fxOptionsContainer) {
+                const allOptions = fxOptionsContainer.querySelectorAll('.fx-option');
+                allOptions.forEach(opt => {
+                    opt.classList.remove('selected');
+                    if (opt.value === currentFilter) {
+                        opt.classList.add('selected');
+                    }
+                });
+            }
+        }
+        
+        // Cycle to next filter
+        function cycleNextFilter() {
+            // If we have pinned filters, cycle through those first
+            if (pinnedFilters.length > 0) {
+                if (currentFilter === '') {
+                    // Start with first pinned filter
+                    selectFilter(pinnedFilters[0]);
+                } else {
+                    const currentIndex = pinnedFilters.indexOf(currentFilter);
+                    if (currentIndex >= 0) {
+                        // Cycle within pinned filters
+                        const nextIndex = (currentIndex + 1) % pinnedFilters.length;
+                        selectFilter(pinnedFilters[nextIndex]);
+                    } else {
+                        // Current filter not in pinned, go to first pinned
+                        selectFilter(pinnedFilters[0]);
+                    }
+                }
+            } else {
+                // Cycle through all filters
+                const filters = ['', ...allFilters];
+                const currentIndex = filters.indexOf(currentFilter);
+                const nextIndex = (currentIndex + 1) % filters.length;
+                selectFilter(filters[nextIndex]);
+            }
+        }
+        
+        // Cycle to previous filter
+        function cyclePrevFilter() {
+            // If we have pinned filters, cycle through those first
+            if (pinnedFilters.length > 0) {
+                if (currentFilter === '') {
+                    // Start with last pinned filter
+                    selectFilter(pinnedFilters[pinnedFilters.length - 1]);
+                } else {
+                    const currentIndex = pinnedFilters.indexOf(currentFilter);
+                    if (currentIndex >= 0) {
+                        // Cycle within pinned filters
+                        const prevIndex = (currentIndex - 1 + pinnedFilters.length) % pinnedFilters.length;
+                        selectFilter(pinnedFilters[prevIndex]);
+                    } else {
+                        // Current filter not in pinned, go to last pinned
+                        selectFilter(pinnedFilters[pinnedFilters.length - 1]);
+                    }
+                }
+            } else {
+                // Cycle through all filters
+                const filters = ['', ...allFilters];
+                const currentIndex = filters.indexOf(currentFilter);
+                const prevIndex = (currentIndex - 1 + filters.length) % filters.length;
+                selectFilter(filters[prevIndex]);
+            }
+        }
+        
+        // Filter FX options based on search query
+        function filterFxOptions(searchQuery) {
+            const searchLower = searchQuery.toLowerCase().trim();
+            const optionsContainer = document.getElementById('fxOptionsContainer');
+            const pinnedContainer = document.getElementById('pinnedFxContainer');
+            
+            if (!searchLower) {
+                if (optionsContainer) {
+                    const allOptions = optionsContainer.querySelectorAll('.fx-option');
+                    const allGroups = optionsContainer.querySelectorAll('.fx-group');
+                    allOptions.forEach(option => option.style.display = '');
+                    allGroups.forEach(group => group.style.display = '');
+                }
+                if (pinnedContainer) {
+                    const pinnedItems = pinnedContainer.querySelectorAll('.pinned-fx-item');
+                    pinnedItems.forEach(item => item.style.display = '');
+                }
+                return;
+            }
+            
+            function matchesFilter(filterValue, displayText) {
+                const filterName = formatFilterName(filterValue).toLowerCase();
+                const text = displayText.toLowerCase();
+                return text.includes(searchLower) || filterName.includes(searchLower) || filterValue.toLowerCase().includes(searchLower);
+            }
+            
+            if (pinnedContainer) {
+                const pinnedItems = pinnedContainer.querySelectorAll('.pinned-fx-item');
+                pinnedItems.forEach(item => {
+                    const filterName = item.dataset.filterName || '';
+                    const text = item.textContent.toLowerCase();
+                    item.style.display = matchesFilter(filterName, text) ? '' : 'none';
+                });
+            }
+            
+            if (optionsContainer) {
+                const allOptions = optionsContainer.querySelectorAll('.fx-option');
+                const allGroups = optionsContainer.querySelectorAll('.fx-group');
+                
+                allOptions.forEach(option => {
+                    const filterValue = option.value || '';
+                    const optionText = option.textContent || '';
+                    option.style.display = matchesFilter(filterValue, optionText) ? '' : 'none';
+                });
+                
+                // Hide groups that have no visible options
+                allGroups.forEach(group => {
+                    const visibleOptions = group.querySelectorAll('.fx-option[style=""]');
+                    group.style.display = visibleOptions.length > 0 ? '' : 'none';
+                });
+            }
+        }
+        
+        // Start random cycle (roulette) - cycles through filters like a slot machine
+        function startRandomCycle() {
+            if (isRandomCycling) {
+                console.log('Roulette already running');
+                return;
+            }
+            isRandomCycling = true;
+            const filters = pinnedFilters.length > 0 ? pinnedFilters : allFilters;
+            if (filters.length === 0) {
+                console.log('No filters available for roulette');
+                isRandomCycling = false;
+                return;
+            }
+            console.log('Starting roulette with', filters.length, 'filters');
+            let cycles = 0;
+            const maxCycles = 10;
+            randomCycleInterval = setInterval(() => {
+                const randomFilter = filters[Math.floor(Math.random() * filters.length)];
+                selectFilter(randomFilter);
+                cycles++;
+                if (cycles >= maxCycles) {
+                    clearInterval(randomCycleInterval);
+                    randomCycleInterval = null;
+                    const finalFilter = filters[Math.floor(Math.random() * filters.length)];
+                    selectFilter(finalFilter);
+                    isRandomCycling = false;
+                    console.log('Roulette finished on:', finalFilter);
+                }
+            }, 100);
+        }
+        
+        // Load test image
+        function loadTestImage(imageFile) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        testImage = img;
+                        clearTestImageButton.style.display = 'block';
+                        console.log('Test image loaded:', img.width, 'x', img.height);
+                        // Stop camera if running
+                        if (localStream) {
+                            stopCamera();
+                        }
+                        // Start processing the test image
+                        processVideoFrame();
+                        resolve();
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(imageFile);
+            });
+        }
+        
+        // Load reference image from file path
+        async function loadRefImage() {
+            // For file:// protocol, relative paths work better than absolute paths
+            const imagePath = 'tests/ref-1.png';
+            
+            try {
+                const img = new Image();
+                await new Promise((resolve, reject) => {
+                    img.onload = () => {
+                        testImage = img;
+                        clearTestImageButton.style.display = 'block';
+                        console.log('Reference image loaded:', img.width, 'x', img.height);
+                        if (localStream) {
+                            stopCamera();
+                        }
+                        processVideoFrame();
+                        resolve();
+                    };
+                    img.onerror = (err) => {
+                        // If relative path fails, prompt user to use file input
+                        console.warn('Could not load reference image from relative path. Please use "Load Test Image" button.');
+                        console.log('Tried to load:', imagePath);
+                        console.log('Current location:', window.location.href);
+                        
+                        // Show helpful message
+                        const useFileInput = confirm(
+                            'Could not load reference image automatically.\n\n' +
+                            'This is normal when using file:// protocol.\n\n' +
+                            'Click OK to open file picker, then select:\n' +
+                            'tests/ref-1.png\n\n' +
+                            'Or click Cancel to try again later.'
+                        );
+                        
+                        if (useFileInput) {
+                            // Trigger file input
+                            if (testImageInput) {
+                                testImageInput.click();
+                            }
+                        }
+                        reject(new Error('Could not load image from path'));
+                    };
+                    // Try relative path (works for file:// protocol)
+                    img.src = imagePath;
+                });
+            } catch (error) {
+                console.error('Error loading reference image:', error);
+                // Fallback: prompt user to use file input
+                if (testImageInput) {
+                    const useFileInput = confirm(
+                        'Could not load reference image automatically.\n\n' +
+                        'Please click OK to open file picker and select:\n' +
+                        'tests/ref-1.png'
+                    );
+                    if (useFileInput) {
+                        testImageInput.click();
+                    }
+                }
+            }
+        }
+        
+        // Clear test image
+        function clearTestImage() {
+            testImage = null;
+            clearTestImageButton.style.display = 'none';
+            // Clear canvas
+            if (ctx && canvasOutput) {
+                ctx.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
+            }
+        }
+        
+        // Process video frame or test image
+        async function processVideoFrame() {
+            // Check if we have everything we need
+            const hasVideo = localStream && videoInput && videoInput.readyState >= 2;
+            const hasTestImage = testImage && testImage.complete;
+            
+            if (isProcessing || !canvasOutput || !ctx || (!hasVideo && !hasTestImage)) {
+                if (hasVideo || hasTestImage) {
+                    animationFrameId = requestAnimationFrame(processVideoFrame);
+                }
+                return;
+            }
+            
+            // Check if video is ready (only if using video)
+            if (hasVideo && (videoInput.readyState < 2 || videoInput.videoWidth === 0 || videoInput.videoHeight === 0)) {
+                animationFrameId = requestAnimationFrame(processVideoFrame);
+                return;
+            }
+            
+            isProcessing = true;
+            
+            try {
+                // Set canvas size to match video
+                if (canvasOutput.width !== videoInput.videoWidth || 
+                    canvasOutput.height !== videoInput.videoHeight) {
+                    canvasOutput.width = videoInput.videoWidth;
+                    canvasOutput.height = videoInput.videoHeight;
+                }
+                
+                // Draw video frame to canvas FIRST (always show the video)
+                ctx.drawImage(videoInput, 0, 0, canvasOutput.width, canvasOutput.height);
+                
+                // Only process if we have a filter
+                if (currentFilter) {
+                    // Detect faces using MediaPipe (for face masks and logo) - do this first
+                    let faceRect = null;
+                    let faceLandmarks = null;
+                    if (faceLandmarker && (currentFilter.includes('face_mask') || currentFilter.includes('logo'))) {
+                        try {
+                            // Use test image if available, otherwise use video
+                            const source = testImage || videoInput;
+                            const results = faceLandmarker.detectForVideo(source, performance.now());
+                            
+                            if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+                                faceLandmarks = results.faceLandmarks[0];
+                                
+                                // Calculate bounding box from landmarks
+                                // Use key facial landmarks for better accuracy
+                                // MediaPipe provides 468 landmarks, we'll use key points
+                                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                                
+                                for (const landmark of faceLandmarks) {
+                                    const x = landmark.x * canvasOutput.width;
+                                    const y = landmark.y * canvasOutput.height;
+                                    minX = Math.min(minX, x);
+                                    minY = Math.min(minY, y);
+                                    maxX = Math.max(maxX, x);
+                                    maxY = Math.max(maxY, y);
+                                }
+                                
+                                // Add padding for better mask coverage
+                                const padding = 20;
+                                const width = maxX - minX;
+                                const height = maxY - minY;
+                                
+                                faceRect = {
+                                    x: Math.max(0, minX - padding),
+                                    y: Math.max(0, minY - padding),
+                                    width: Math.min(canvasOutput.width - minX + padding, width + padding * 2),
+                                    height: Math.min(canvasOutput.height - minY + padding, height + padding * 2),
+                                    confidence: 1.0,
+                                    landmarks: faceLandmarks
+                                };
+                            }
+                        } catch (error) {
+                            console.warn('Face detection error:', error);
+                        }
+                    }
+                    
+                    // For face masks, we don't need to read image data - just draw the mask
+                    if (currentFilter.includes('face_mask')) {
+                        // Apply face masks directly (no image data needed)
+                        if (faceRect && faceLandmarks) {
+                            applyFaceMask(ctx, faceRect, faceLandmarks, currentFilter);
+                        }
+                    } else {
+                        // For other filters, try to get image data (may fail due to CORS)
+                        let imageData = null;
+                        try {
+                            imageData = ctx.getImageData(0, 0, canvasOutput.width, canvasOutput.height);
+                        } catch (error) {
+                            // Canvas is tainted (CORS issue) - can't apply pixel-based filters
+                            // This is expected for file:// protocol or cross-origin video
+                            console.warn('Cannot read canvas data (CORS/tainted canvas). Some filters may not work.');
+                            // Continue without applying filter - at least show the video
+                        }
+                        
+                        if (imageData) {
+                            // Apply filter
+                            if (currentFilter && wasmModule) {
+                                // Use WASM filter processing
+                                wasmModule.processFrame(canvasOutput, canvasOutput, currentFilter, faceRect, frameCount);
+                            } else if (currentFilter) {
+                                // Fallback to JavaScript filters
+                                applyJSFilter(imageData, currentFilter, faceRect);
+                                ctx.putImageData(imageData, 0, 0);
+                            }
+                        }
+                    }
+                }
+                
+                frameCount++;
+            } catch (error) {
+                console.error('Error processing frame:', error);
+            } finally {
+                isProcessing = false;
+            }
+            
+            // Continue processing
+            if (localStream && videoInput && !videoInput.paused) {
+                animationFrameId = requestAnimationFrame(processVideoFrame);
+            }
+        }
+        
+        // Theme definitions
+        const THEMES = {
+            wesworld: {
+                name: "WesWorld",
+                colors: {
+                    background: "#000000",
+                    surface: "#1a1a1a",
+                    surfaceHover: "#2a2a2a",
+                    text: "#ffffff",
+                    textSecondary: "#cccccc",
+                    accent: "#5250ef",
+                    accentHover: "#6260ff",
+                    border: "#333333",
+                    borderHover: "#5250ef",
+                    button: "#5250ef",
+                    buttonHover: "#6260ff",
+                    statusConnected: "#4caf50",
+                    statusError: "#f44336",
+                    groupTitle: "#5250ef",
+                    selectedText: "#ffffff"
+                }
+            },
+            dropout: {
+                name: "Dropout",
+                colors: {
+                    background: "#0a0a0a",
+                    surface: "#1a1a1a",
+                    surfaceHover: "#2a2a2a",
+                    text: "#ffffff",
+                    textSecondary: "#e0e0e0",
+                    accent: "#feea3b",
+                    accentHover: "#fff04a",
+                    border: "#333333",
+                    borderHover: "#feea3b",
+                    button: "#feea3b",
+                    buttonHover: "#fff04a",
+                    statusConnected: "#4caf50",
+                    statusError: "#ff4444",
+                    groupTitle: "#feea3b",
+                    selectedText: "#000000"
+                }
+            }
+        };
+        
+        // Load and apply theme
+        function loadThemes() {
+            // Populate theme dropdown
+            themeSelect.innerHTML = '';
+            Object.keys(THEMES).forEach(themeKey => {
+                const option = document.createElement('option');
+                option.value = themeKey;
+                option.textContent = THEMES[themeKey].name;
+                themeSelect.appendChild(option);
+            });
+            
+            // Load saved theme or use default (wesworld)
+            const savedTheme = localStorage.getItem('wesworld-fx-theme') || 'wesworld';
+            if (THEMES[savedTheme]) {
+                themeSelect.value = savedTheme;
+                applyTheme(THEMES[savedTheme]);
+            } else {
+                applyTheme(THEMES.wesworld);
+            }
+        }
+        
+        // Apply theme to page
+        function applyTheme(theme) {
+            if (theme && theme.colors) {
+                const root = document.documentElement;
+                const colorMap = {
+                    background: 'background-color',
+                    surface: 'surface-color',
+                    surfaceHover: 'surface-hover-color',
+                    text: 'text-color',
+                    textSecondary: 'text-secondary-color',
+                    accent: 'accent-color',
+                    accentHover: 'accent-hover-color',
+                    border: 'border-color',
+                    borderHover: 'border-hover-color',
+                    button: 'button-color',
+                    buttonHover: 'button-hover-color',
+                    statusConnected: 'status-connected-color',
+                    statusError: 'status-error-color',
+                    groupTitle: 'group-title-color',
+                    selectedText: 'selected-text-color'
+                };
+                
+                Object.entries(theme.colors).forEach(([key, value]) => {
+                    const cssVar = colorMap[key] || key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                    root.style.setProperty(`--${cssVar}`, value);
+                });
+            }
+        }
+        
+        // JavaScript filter implementations (complete set)
+        const FilterImplementations = {
+            applyBlackWhite(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                    data[i] = gray; data[i + 1] = gray; data[i + 2] = gray;
+                }
+            },
+            applySepia(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i], g = data[i + 1], b = data[i + 2];
+                    data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
+                    data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
+                    data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
+                }
+            },
+            applyNegative(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = 255 - data[i]; data[i + 1] = 255 - data[i + 1]; data[i + 2] = 255 - data[i + 2];
+                }
+            },
+            applyVintage(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, data[i] * 0.9 + 20);
+                    data[i + 1] = Math.min(255, data[i + 1] * 0.85 + 15);
+                    data[i + 2] = Math.min(255, data[i + 2] * 0.8 + 10);
+                }
+            },
+            applyNeonGlow(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = Math.min(255, brightness * 1.5);
+                    data[i + 1] = Math.min(255, brightness * 1.2);
+                    data[i + 2] = Math.min(255, brightness * 2);
+                }
+            },
+            applyRedTint(data) {
+                for (let i = 0; i < data.length; i += 4) data[i] = Math.min(255, data[i] * 1.5);
+            },
+            applyBlueTint(data) {
+                for (let i = 0; i < data.length; i += 4) data[i + 2] = Math.min(255, data[i + 2] * 1.5);
+            },
+            applyGreenTint(data) {
+                for (let i = 0; i < data.length; i += 4) data[i + 1] = Math.min(255, data[i + 1] * 1.5);
+            },
+            applyPosterize(data) {
+                const levels = 4;
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.floor(data[i] / (256 / levels)) * (256 / levels);
+                    data[i + 1] = Math.floor(data[i + 1] / (256 / levels)) * (256 / levels);
+                    data[i + 2] = Math.floor(data[i + 2] / (256 / levels)) * (256 / levels);
+                }
+            },
+            applyThermal(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    if (gray < 85) {
+                        data[i] = 0; data[i + 1] = 0; data[i + 2] = gray * 3;
+                    } else if (gray < 170) {
+                        data[i] = (gray - 85) * 3; data[i + 1] = 255; data[i + 2] = 255;
+                    } else {
+                        data[i] = 255; data[i + 1] = 255 - (gray - 170) * 3; data[i + 2] = 0;
+                    }
+                }
+            },
+            applyPixelate(data, width, height) {
+                const pixelSize = 10;
+                for (let y = 0; y < height; y += pixelSize) {
+                    for (let x = 0; x < width; x += pixelSize) {
+                        let r = 0, g = 0, b = 0, count = 0;
+                        for (let dy = 0; dy < pixelSize && y + dy < height; dy++) {
+                            for (let dx = 0; dx < pixelSize && x + dx < width; dx++) {
+                                const idx = ((y + dy) * width + (x + dx)) * 4;
+                                r += data[idx]; g += data[idx + 1]; b += data[idx + 2]; count++;
+                            }
+                        }
+                        r = Math.floor(r / count); g = Math.floor(g / count); b = Math.floor(b / count);
+                        for (let dy = 0; dy < pixelSize && y + dy < height; dy++) {
+                            for (let dx = 0; dx < pixelSize && x + dx < width; dx++) {
+                                const idx = ((y + dy) * width + (x + dx)) * 4;
+                                data[idx] = r; data[idx + 1] = g; data[idx + 2] = b;
+                            }
+                        }
+                    }
+                }
+            },
+            applyBulge(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < radius) {
+                            const angle = Math.atan2(dy, dx);
+                            const r = dist / radius;
+                            const newR = r * (1 - strength * (1 - r));
+                            const newX = Math.round(centerX + Math.cos(angle) * newR * radius);
+                            const newY = Math.round(centerY + Math.sin(angle) * newR * radius);
+                            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                                const srcIdx = (y * width + x) * 4;
+                                const dstIdx = (newY * width + newX) * 4;
+                                data[srcIdx] = temp[dstIdx];
+                                data[srcIdx + 1] = temp[dstIdx + 1];
+                                data[srcIdx + 2] = temp[dstIdx + 2];
+                                data[srcIdx + 3] = temp[dstIdx + 3];
+                            }
+                        }
+                    }
+                }
+            },
+            applySwirl(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 2.0;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < radius) {
+                            const angle = Math.atan2(dy, dx);
+                            const maxAngle = strength * (1 - dist / radius);
+                            const newAngle = angle + maxAngle;
+                            const newX = Math.round(centerX + dist * Math.cos(newAngle));
+                            const newY = Math.round(centerY + dist * Math.sin(newAngle));
+                            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                                const srcIdx = (y * width + x) * 4;
+                                const dstIdx = (newY * width + newX) * 4;
+                                data[srcIdx] = temp[dstIdx];
+                                data[srcIdx + 1] = temp[dstIdx + 1];
+                                data[srcIdx + 2] = temp[dstIdx + 2];
+                                data[srcIdx + 3] = temp[dstIdx + 3];
+                            }
+                        }
+                    }
+                }
+            },
+            applyStretch(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const stretchX = 1.5, stretchY = 0.7;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / stretchX;
+                        const dy = (y - centerY) / stretchY;
+                        const newX = Math.round(centerX + dx);
+                        const newY = Math.round(centerY + dy);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyFisheye(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.8;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const newDist = normalizedDist * (1 - strength * normalizedDist * normalizedDist) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyPinch(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.6;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const newDist = normalizedDist * (1 + strength * (1 - normalizedDist)) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyWave(data, width, height) {
+                const centerY = height / 2;
+                const amplitude = 30, frequency = 0.05;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const offset = Math.sin((y - centerY) * frequency) * amplitude;
+                        const newX = Math.round(x + offset);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyMirror(data, width, height) {
+                const centerX = width / 2;
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < centerX; x++) {
+                        const srcIdx = (y * width + x) * 4;
+                        const dstIdx = (y * width + (width - x - 1)) * 4;
+                        data[dstIdx] = data[srcIdx];
+                        data[dstIdx + 1] = data[srcIdx + 1];
+                        data[dstIdx + 2] = data[srcIdx + 2];
+                        data[dstIdx + 3] = data[srcIdx + 3];
+                    }
+                }
+            },
+            applyFlipHorizontal(data, width, height) {
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcIdx = (y * width + x) * 4;
+                        const dstIdx = (y * width + (width - x - 1)) * 4;
+                        data[srcIdx] = temp[dstIdx];
+                        data[srcIdx + 1] = temp[dstIdx + 1];
+                        data[srcIdx + 2] = temp[dstIdx + 2];
+                        data[srcIdx + 3] = temp[dstIdx + 3];
+                    }
+                }
+            },
+            applyFlipVertical(data, width, height) {
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcIdx = (y * width + x) * 4;
+                        const dstIdx = ((height - y - 1) * width + x) * 4;
+                        data[srcIdx] = temp[dstIdx];
+                        data[srcIdx + 1] = temp[dstIdx + 1];
+                        data[srcIdx + 2] = temp[dstIdx + 2];
+                        data[srcIdx + 3] = temp[dstIdx + 3];
+                    }
+                }
+            },
+            applyRotate90(data, width, height) {
+                const temp = new Uint8ClampedArray(data);
+                const newWidth = height, newHeight = width;
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcIdx = (y * width + x) * 4;
+                        const newX = height - y - 1;
+                        const newY = x;
+                        const dstIdx = (newY * newWidth + newX) * 4;
+                        if (dstIdx < data.length) {
+                            data[dstIdx] = temp[srcIdx];
+                            data[dstIdx + 1] = temp[srcIdx + 1];
+                            data[dstIdx + 2] = temp[srcIdx + 2];
+                            data[dstIdx + 3] = temp[srcIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyBlur(data, width, height) {
+                const radius = 5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        let r = 0, g = 0, b = 0, count = 0;
+                        for (let dy = -radius; dy <= radius; dy++) {
+                            for (let dx = -radius; dx <= radius; dx++) {
+                                const nx = x + dx, ny = y + dy;
+                                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                    const idx = (ny * width + nx) * 4;
+                                    r += temp[idx]; g += temp[idx + 1]; b += temp[idx + 2]; count++;
+                                }
+                            }
+                        }
+                        const idx = (y * width + x) * 4;
+                        data[idx] = r / count; data[idx + 1] = g / count; data[idx + 2] = b / count;
+                    }
+                }
+            },
+            applySharpen(data, width, height) {
+                const kernel = [[0, -1, 0], [-1, 5, -1], [0, -1, 0]];
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let r = 0, g = 0, b = 0;
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4;
+                                const weight = kernel[ky + 1][kx + 1];
+                                r += temp[idx] * weight; g += temp[idx + 1] * weight; b += temp[idx + 2] * weight;
+                            }
+                        }
+                        const idx = (y * width + x) * 4;
+                        data[idx] = Math.max(0, Math.min(255, r));
+                        data[idx + 1] = Math.max(0, Math.min(255, g));
+                        data[idx + 2] = Math.max(0, Math.min(255, b));
+                    }
+                }
+            },
+            applyEmboss(data, width, height) {
+                const kernel = [[-2, -1, 0], [-1, 1, 1], [0, 1, 2]];
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let r = 0, g = 0, b = 0;
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4;
+                                const weight = kernel[ky + 1][kx + 1];
+                                r += temp[idx] * weight; g += temp[idx + 1] * weight; b += temp[idx + 2] * weight;
+                            }
+                        }
+                        const idx = (y * width + x) * 4;
+                        const gray = (r + g + b) / 3;
+                        data[idx] = Math.max(0, Math.min(255, gray + 128));
+                        data[idx + 1] = Math.max(0, Math.min(255, gray + 128));
+                        data[idx + 2] = Math.max(0, Math.min(255, gray + 128));
+                    }
+                }
+            },
+            applySketch(data, width, height) {
+                this.applyBlur(data, width, height);
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const inverted = 255 - gray;
+                    data[i] = data[i + 1] = data[i + 2] = Math.min(255, inverted);
+                }
+            },
+            applyCartoon(data, width, height) {
+                this.applyBlur(data, width, height);
+                this.applyPosterize(data);
+            },
+            applyRainbow(data, width, height) {
+                for (let y = 0; y < height; y++) {
+                    const hue = (y / height) * 360;
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                        const rgb = this.hslToRgb(hue / 360, 1, gray / 255);
+                        data[idx] = rgb[0]; data[idx + 1] = rgb[1]; data[idx + 2] = rgb[2];
+                    }
+                }
+            },
+            applyRainbowShift(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const hue = (gray / 255 + 0.5) % 1;
+                    const rgb = this.hslToRgb(hue, 1, 0.5);
+                    data[i] = rgb[0]; data[i + 1] = rgb[1]; data[i + 2] = rgb[2];
+                }
+            },
+            applyIce(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = Math.min(255, gray * 0.8);
+                    data[i + 1] = Math.min(255, gray * 1.2);
+                    data[i + 2] = Math.min(255, gray * 1.5);
+                }
+            },
+            applyOcean(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = Math.min(255, gray * 0.5);
+                    data[i + 1] = Math.min(255, gray * 0.8);
+                    data[i + 2] = Math.min(255, gray * 1.2);
+                }
+            },
+            applyPlasma(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const hue = (gray / 255) * 0.7;
+                    const rgb = this.hslToRgb(hue, 1, 0.5);
+                    data[i] = rgb[0]; data[i + 1] = rgb[1]; data[i + 2] = rgb[2];
+                }
+            },
+            applyJet(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const normalized = gray / 255;
+                    if (normalized < 0.25) {
+                        data[i] = 0;
+                        data[i + 1] = 0;
+                        data[i + 2] = Math.min(255, normalized * 4 * 255);
+                    } else if (normalized < 0.5) {
+                        data[i] = 0;
+                        data[i + 1] = Math.min(255, (normalized - 0.25) * 4 * 255);
+                        data[i + 2] = 255;
+                    } else if (normalized < 0.75) {
+                        data[i] = Math.min(255, (normalized - 0.5) * 4 * 255);
+                        data[i + 1] = 255;
+                        data[i + 2] = Math.min(255, 255 - (normalized - 0.5) * 4 * 255);
+                    } else {
+                        data[i] = 255;
+                        data[i + 1] = Math.min(255, 255 - (normalized - 0.75) * 4 * 255);
+                        data[i + 2] = 0;
+                    }
+                }
+            },
+            applyTurbo(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const normalized = gray / 255;
+                    const hue = normalized * 0.8;
+                    const rgb = this.hslToRgb(hue, 1, 0.5);
+                    data[i] = rgb[0]; data[i + 1] = rgb[1]; data[i + 2] = rgb[2];
+                }
+            },
+            applyInferno(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const normalized = gray / 255;
+                    if (normalized < 0.5) {
+                        data[i] = Math.min(255, normalized * 2 * 255);
+                        data[i + 1] = 0;
+                        data[i + 2] = 0;
+                    } else {
+                        data[i] = 255;
+                        data[i + 1] = Math.min(255, (normalized - 0.5) * 2 * 255);
+                        data[i + 2] = Math.min(255, (normalized - 0.5) * 2 * 128);
+                    }
+                }
+            },
+            applyMagma(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const normalized = gray / 255;
+                    data[i] = Math.min(255, normalized * 255);
+                    data[i + 1] = Math.min(255, normalized * normalized * 128);
+                    data[i + 2] = Math.min(255, normalized * normalized * normalized * 255);
+                }
+            },
+            applyViridis(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const normalized = gray / 255;
+                    const hue = normalized * 0.6;
+                    const rgb = this.hslToRgb(hue, 1, normalized * 0.5 + 0.3);
+                    data[i] = rgb[0]; data[i + 1] = rgb[1]; data[i + 2] = rgb[2];
+                }
+            },
+            applyCool(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = Math.min(255, gray * 0.5);
+                    data[i + 1] = Math.min(255, gray);
+                    data[i + 2] = Math.min(255, gray * 1.5);
+                }
+            },
+            applyHot(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const normalized = gray / 255;
+                    if (normalized < 0.33) {
+                        data[i] = Math.min(255, normalized * 3 * 255);
+                        data[i + 1] = 0;
+                        data[i + 2] = 0;
+                    } else if (normalized < 0.66) {
+                        data[i] = 255;
+                        data[i + 1] = Math.min(255, (normalized - 0.33) * 3 * 255);
+                        data[i + 2] = 0;
+                    } else {
+                        data[i] = 255;
+                        data[i + 1] = 255;
+                        data[i + 2] = Math.min(255, (normalized - 0.66) * 3 * 255);
+                    }
+                }
+            },
+            applySpring(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = 255;
+                    data[i + 1] = Math.min(255, gray);
+                    data[i + 2] = Math.min(255, gray * 0.5);
+                }
+            },
+            applySummer(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = Math.min(255, gray);
+                    data[i + 1] = Math.min(255, gray * 1.2);
+                    data[i + 2] = Math.min(255, gray * 0.3);
+                }
+            },
+            applyAutumn(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = 255;
+                    data[i + 1] = Math.min(255, gray);
+                    data[i + 2] = 0;
+                }
+            },
+            applyWinter(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = 0;
+                    data[i + 1] = Math.min(255, gray * 0.5);
+                    data[i + 2] = Math.min(255, gray);
+                }
+            },
+            applyVHS(data, width, height) {
+                // Add noise
+                for (let i = 0; i < data.length; i += 4) {
+                    const noise = Math.random() * 30;
+                    data[i] = Math.min(255, data[i] + noise);
+                    data[i + 1] = Math.min(255, data[i + 1] + noise);
+                    data[i + 2] = Math.min(255, data[i + 2] + noise);
+                }
+                // Add scanlines
+                for (let y = 0; y < height; y += 3) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        data[idx] = Math.min(255, data[idx] * 0.8);
+                        data[idx + 1] = Math.min(255, data[idx + 1] * 1.2);
+                        data[idx + 2] = Math.min(255, data[idx + 2] * 0.8);
+                    }
+                }
+            },
+            applyRetro(data, width, height) {
+                this.applySepia(data);
+                this.applyVHS(data, width, height);
+            },
+            applyCyberpunk(data, width, height) {
+                // Shift hue to cyan/magenta
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const hue = (gray / 255 + 0.5) % 1;
+                    const rgb = this.hslToRgb(hue, 1, 0.6);
+                    data[i] = rgb[0]; data[i + 1] = rgb[1]; data[i + 2] = rgb[2];
+                }
+                // Increase contrast
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, (data[i] - 128) * 1.5 + 128);
+                    data[i + 1] = Math.min(255, (data[i + 1] - 128) * 1.5 + 128);
+                    data[i + 2] = Math.min(255, (data[i + 2] - 128) * 1.5 + 128);
+                }
+            },
+            hslToRgb(h, s, l) {
+                let r, g, b;
+                if (s === 0) {
+                    r = g = b = l;
+                } else {
+                    const hue2rgb = (p, q, t) => {
+                        if (t < 0) t += 1; if (t > 1) t -= 1;
+                        if (t < 1/6) return p + (q - p) * 6 * t;
+                        if (t < 1/2) return q;
+                        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                        return p;
+                    };
+                    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    const p = 2 * l - q;
+                    r = hue2rgb(p, q, h + 1/3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1/3);
+                }
+                return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+            },
+            applyAnime(data, width, height) {
+                this.applyBlur(data, width, height);
+                // Increase saturation
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = Math.min(255, gray + (data[i] - gray) * 1.5);
+                    data[i + 1] = Math.min(255, gray + (data[i + 1] - gray) * 1.5);
+                    data[i + 2] = Math.min(255, gray + (data[i + 2] - gray) * 1.5);
+                }
+            },
+            applyGlow(data, width, height) {
+                const temp = new Uint8ClampedArray(data);
+                this.applyBlur(data, width, height);
+                // Blend original with blurred
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, temp[i] * 1.2 + data[i] * 0.3);
+                    data[i + 1] = Math.min(255, temp[i + 1] * 1.2 + data[i + 1] * 0.3);
+                    data[i + 2] = Math.min(255, temp[i + 2] * 1.2 + data[i + 2] * 0.3);
+                }
+            },
+            applySolarize(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const threshold = 128;
+                    data[i] = data[i] > threshold ? 255 - data[i] : data[i];
+                    data[i + 1] = data[i + 1] > threshold ? 255 - data[i + 1] : data[i + 1];
+                    data[i + 2] = data[i + 2] > threshold ? 255 - data[i + 2] : data[i + 2];
+                }
+            },
+            applyEdgeDetect(data, width, height) {
+                const kernelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+                const kernelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let gx = 0, gy = 0;
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4;
+                                const gray = (temp[idx] + temp[idx + 1] + temp[idx + 2]) / 3;
+                                gx += gray * kernelX[ky + 1][kx + 1];
+                                gy += gray * kernelY[ky + 1][kx + 1];
+                            }
+                        }
+                        const magnitude = Math.sqrt(gx * gx + gy * gy);
+                        const idx = (y * width + x) * 4;
+                        const val = Math.min(255, magnitude);
+                        data[idx] = val;
+                        data[idx + 1] = val;
+                        data[idx + 2] = val;
+                    }
+                }
+            },
+            applyHalftone(data, width, height) {
+                const temp = new Uint8ClampedArray(data);
+                const dotSize = 4;
+                for (let y = 0; y < height; y += dotSize) {
+                    for (let x = 0; x < width; x += dotSize) {
+                        let gray = 0, count = 0;
+                        for (let dy = 0; dy < dotSize && y + dy < height; dy++) {
+                            for (let dx = 0; dx < dotSize && x + dx < width; dx++) {
+                                const idx = ((y + dy) * width + (x + dx)) * 4;
+                                gray += (temp[idx] + temp[idx + 1] + temp[idx + 2]) / 3;
+                                count++;
+                            }
+                        }
+                        gray = gray / count;
+                        const radius = (1 - gray / 255) * (dotSize / 2);
+                        for (let dy = 0; dy < dotSize && y + dy < height; dy++) {
+                            for (let dx = 0; dx < dotSize && x + dx < width; dx++) {
+                                const idx = ((y + dy) * width + (x + dx)) * 4;
+                                const dist = Math.sqrt((dx - dotSize/2) ** 2 + (dy - dotSize/2) ** 2);
+                                if (dist < radius) {
+                                    data[idx] = 0;
+                                    data[idx + 1] = 0;
+                                    data[idx + 2] = 0;
+                                } else {
+                                    data[idx] = 255;
+                                    data[idx + 1] = 255;
+                                    data[idx + 2] = 255;
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            applyAcidTrip(data, width, height) {
+                this.applySwirl(data, width, height);
+                this.applyRainbow(data, width, height);
+            },
+            applyTwirl(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 3.0;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < radius) {
+                            const angle = Math.atan2(dy, dx);
+                            const maxAngle = strength * (1 - dist / radius);
+                            const newAngle = angle + maxAngle;
+                            const newX = Math.round(centerX + dist * Math.cos(newAngle));
+                            const newY = Math.round(centerY + dist * Math.sin(newAngle));
+                            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                                const srcIdx = (y * width + x) * 4;
+                                const dstIdx = (newY * width + newX) * 4;
+                                data[srcIdx] = temp[dstIdx];
+                                data[srcIdx + 1] = temp[dstIdx + 1];
+                                data[srcIdx + 2] = temp[dstIdx + 2];
+                                data[srcIdx + 3] = temp[dstIdx + 3];
+                            }
+                        }
+                    }
+                }
+            },
+            applyRipple(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const frequency = 0.1, amplitude = 20;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const ripple = Math.sin(dist * frequency) * amplitude;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(x + ripple * Math.cos(angle));
+                        const newY = Math.round(y + ripple * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySphere(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const newDist = normalizedDist * (1 - strength * normalizedDist) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyTunnel(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const maxDist = Math.min(width, height) / 2, strength = 0.8;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / maxDist, 1);
+                        const newDist = normalizedDist * (1 + strength * normalizedDist) * maxDist;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyWaterRipple(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const frequency = 0.05, amplitude = 15;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const ripple = Math.sin(dist * frequency) * amplitude;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(x + ripple * Math.cos(angle));
+                        const newY = Math.round(y + ripple * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRadialBlur(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const maxDist = Math.min(width, height) / 2, blurStrength = 5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const offset = blurStrength * (dist / maxDist);
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(x + offset * Math.cos(angle));
+                        const newY = Math.round(y + offset * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyCylinder(data, width, height) {
+                const centerX = width / 2;
+                const strength = 0.3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX;
+                        const newX = Math.round(centerX + dx * (1 - strength * (dx / (width / 2)) ** 2));
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyBarrel(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const newDist = normalizedDist * (1 + strength * normalizedDist * normalizedDist) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyPincushion(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const newDist = normalizedDist * (1 - strength * normalizedDist) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyWhirlpool(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 4.0;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const maxAngle = strength * (1 - Math.min(dist / radius, 1));
+                        const newAngle = angle + maxAngle;
+                        const newDist = dist * 0.9;
+                        const newX = Math.round(centerX + newDist * Math.cos(newAngle));
+                        const newY = Math.round(centerY + newDist * Math.sin(newAngle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRadialZoom(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const maxDist = Math.min(width, height) / 2, zoomStrength = 0.5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const zoomFactor = 1.0 + zoomStrength * (1.0 - dist / maxDist);
+                        const newX = Math.round(centerX + dx / zoomFactor);
+                        const newY = Math.round(centerY + dy / zoomFactor);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyConcave(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.6;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const newDist = normalizedDist * (1 - strength * normalizedDist) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyConvex(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const newDist = normalizedDist * (1 + strength * normalizedDist) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySpiral(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, turns = 2.0;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const spiralAngle = angle + turns * Math.PI * (dist / radius);
+                        const newX = Math.round(centerX + dist * Math.cos(spiralAngle));
+                        const newY = Math.round(centerY + dist * Math.sin(spiralAngle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRadialStretch(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const maxDist = Math.min(width, height) / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const stretchFactor = 1.0 + 0.5 * (dist / maxDist);
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + dist * stretchFactor * Math.cos(angle));
+                        const newY = Math.round(centerY + dist * stretchFactor * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRadialCompress(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const maxDist = Math.min(width, height) / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const compressFactor = 1.0 - 0.3 * (dist / maxDist);
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + dist * compressFactor * Math.cos(angle));
+                        const newY = Math.round(centerY + dist * compressFactor * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyVerticalWave(data, width, height) {
+                const centerX = width / 2;
+                const amplitude = 25, frequency = 0.05;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const offset = Math.sin((x - centerX) * frequency) * amplitude;
+                        const newY = Math.round(y + offset);
+                        if (newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + x) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyHorizontalWave(data, width, height) {
+                const centerY = height / 2;
+                const amplitude = 25, frequency = 0.05;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const offset = Math.sin((y - centerY) * frequency) * amplitude;
+                        const newX = Math.round(x + offset);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySkewHorizontal(data, width, height) {
+                const centerY = height / 2, strength = 0.3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const offset = (y - centerY) * strength;
+                        const newX = Math.round(x + offset);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySkewVertical(data, width, height) {
+                const centerX = width / 2, strength = 0.3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const offset = (x - centerX) * strength;
+                        const newY = Math.round(y + offset);
+                        if (newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + x) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRotateZoom(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const maxDist = Math.min(width, height) / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const rotation = 2.0 * Math.PI * (dist / maxDist);
+                        const zoomFactor = 1.0 + 0.3 * (dist / maxDist);
+                        const newAngle = angle + rotation;
+                        const newDist = dist / zoomFactor;
+                        const newX = Math.round(centerX + newDist * Math.cos(newAngle));
+                        const newY = Math.round(centerY + newDist * Math.sin(newAngle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRadialWave(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const frequency = 0.1, amplitude = 15;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const radialWave = Math.sin(dist * frequency) * amplitude;
+                        const newAngle = angle + radialWave / Math.max(dist, 1);
+                        const newX = Math.round(centerX + dist * Math.cos(newAngle));
+                        const newY = Math.round(centerY + dist * Math.sin(newAngle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyZoomIn(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const zoomFactor = 1.3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const newX = Math.round(centerX + dx / zoomFactor);
+                        const newY = Math.round(centerY + dy / zoomFactor);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyZoomOut(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const zoomFactor = 0.8;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const newX = Math.round(centerX + dx / zoomFactor);
+                        const newY = Math.round(centerY + dy / zoomFactor);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRotate(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const rotationAngle = Math.PI / 4;
+                const cosA = Math.cos(rotationAngle);
+                const sinA = Math.sin(rotationAngle);
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const newX = Math.round(centerX + dx * cosA - dy * sinA);
+                        const newY = Math.round(centerY + dx * sinA + dy * cosA);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRotate45(data, width, height) {
+                this.applyRotate(data, width, height);
+            },
+            applyFlipBoth(data, width, height) {
+                this.applyFlipHorizontal(data, width, height);
+                this.applyFlipVertical(data, width, height);
+            },
+            applyQuadMirror(data, width, height) {
+                const h = height / 2, w = width / 2;
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const srcIdx = (y * width + x) * 4;
+                        // Top-right
+                        const trIdx = (y * width + (width - x - 1)) * 4;
+                        data[trIdx] = data[srcIdx];
+                        data[trIdx + 1] = data[srcIdx + 1];
+                        data[trIdx + 2] = data[srcIdx + 2];
+                        data[trIdx + 3] = data[srcIdx + 3];
+                        // Bottom-left
+                        const blIdx = ((height - y - 1) * width + x) * 4;
+                        data[blIdx] = data[srcIdx];
+                        data[blIdx + 1] = data[srcIdx + 1];
+                        data[blIdx + 2] = data[srcIdx + 2];
+                        data[blIdx + 3] = data[srcIdx + 3];
+                        // Bottom-right
+                        const brIdx = ((height - y - 1) * width + (width - x - 1)) * 4;
+                        data[brIdx] = data[srcIdx];
+                        data[brIdx + 1] = data[srcIdx + 1];
+                        data[brIdx + 2] = data[srcIdx + 2];
+                        data[brIdx + 3] = data[srcIdx + 3];
+                    }
+                }
+            },
+            applyTile(data, width, height) {
+                const smallW = width / 4, smallH = height / 4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcX = x % smallW;
+                        const srcY = y % smallH;
+                        const srcIdx = (Math.floor(srcY) * width + Math.floor(srcX)) * 4;
+                        const dstIdx = (y * width + x) * 4;
+                        data[dstIdx] = temp[srcIdx];
+                        data[dstIdx + 1] = temp[srcIdx + 1];
+                        data[dstIdx + 2] = temp[srcIdx + 2];
+                        data[dstIdx + 3] = temp[srcIdx + 3];
+                    }
+                }
+            },
+            applyRadialTile(data, width, height) {
+                const smallW = width / 3, smallH = height / 3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcX = (x % smallW) + Math.floor(x / smallW) * smallW;
+                        const srcY = (y % smallH) + Math.floor(y / smallH) * smallH;
+                        const srcIdx = (Math.floor(srcY) * width + Math.floor(srcX)) * 4;
+                        const dstIdx = (y * width + x) * 4;
+                        if (srcIdx < data.length && dstIdx < data.length) {
+                            data[dstIdx] = temp[srcIdx];
+                            data[dstIdx + 1] = temp[srcIdx + 1];
+                            data[dstIdx + 2] = temp[srcIdx + 2];
+                            data[dstIdx + 3] = temp[srcIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyZoomBlur(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const maxDist = Math.min(width, height) / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const zoomFactor = 1.0 + (dist / maxDist) * 0.3;
+                        const newX = Math.round(centerX + dx / zoomFactor);
+                        const newY = Math.round(centerY + dy / zoomFactor);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyMelt(data, width, height) {
+                const strength = 30;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const offset = Math.sin(x * 0.05) * strength;
+                        const newY = Math.round(y + offset);
+                        if (newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + x) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyKaleidoscope(data, width, height) {
+                const h = height / 2, w = width / 2;
+                const temp = new Uint8ClampedArray(data);
+                // Copy top-left quadrant to all quadrants
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const srcIdx = (y * width + x) * 4;
+                        // Top-right (flipped horizontally)
+                        const trIdx = (y * width + (width - x - 1)) * 4;
+                        data[trIdx] = temp[srcIdx];
+                        data[trIdx + 1] = temp[srcIdx + 1];
+                        data[trIdx + 2] = temp[srcIdx + 2];
+                        data[trIdx + 3] = temp[srcIdx + 3];
+                        // Bottom-left (flipped vertically)
+                        const blIdx = ((height - y - 1) * width + x) * 4;
+                        data[blIdx] = temp[srcIdx];
+                        data[blIdx + 1] = temp[srcIdx + 1];
+                        data[blIdx + 2] = temp[srcIdx + 2];
+                        data[blIdx + 3] = temp[srcIdx + 3];
+                        // Bottom-right (flipped both)
+                        const brIdx = ((height - y - 1) * width + (width - x - 1)) * 4;
+                        data[brIdx] = temp[srcIdx];
+                        data[brIdx + 1] = temp[srcIdx + 1];
+                        data[brIdx + 2] = temp[srcIdx + 2];
+                        data[brIdx + 3] = temp[srcIdx + 3];
+                    }
+                }
+            },
+            applyGlitch(data, width, height) {
+                for (let y = 0; y < height; y += 20) {
+                    const offset = Math.random() * 20 - 10;
+                    for (let x = 0; x < width; x++) {
+                        const newX = Math.round(x + offset);
+                        if (newX >= 0 && newX < width && y + 10 < height) {
+                            const srcIdx = ((y + 10) * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            if (dstIdx < data.length && srcIdx < data.length) {
+                                data[dstIdx] = data[srcIdx];
+                                data[dstIdx + 1] = data[srcIdx + 1];
+                                data[dstIdx + 2] = data[srcIdx + 2];
+                            }
+                        }
+                    }
+                }
+            },
+            applyDoubleVision(data, width, height) {
+                const temp = new Uint8ClampedArray(data);
+                const offset = 10;
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        const shiftedX = x + offset;
+                        if (shiftedX < width) {
+                            const shiftedIdx = (y * width + shiftedX) * 4;
+                            data[idx] = Math.min(255, (temp[idx] + temp[shiftedIdx]) / 2);
+                            data[idx + 1] = Math.min(255, (temp[idx + 1] + temp[shiftedIdx + 1]) / 2);
+                            data[idx + 2] = Math.min(255, (temp[idx + 2] + temp[shiftedIdx + 2]) / 2);
+                        }
+                    }
+                }
+            },
+            applyFastZoomIn(data, width, height, frameCount) {
+                const centerX = width / 2, centerY = height / 2;
+                const fps = 30;
+                const animationSpeed = 2.0;
+                const zoomFactor = 1.0 + (frameCount / fps * animationSpeed) % 2.0;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const newX = Math.round(centerX + dx / zoomFactor);
+                        const newY = Math.round(centerY + dy / zoomFactor);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyFastZoomOut(data, width, height, frameCount) {
+                const centerX = width / 2, centerY = height / 2;
+                const fps = 30;
+                const animationSpeed = 2.0;
+                let zoomFactor = 1.5 - (frameCount / fps * animationSpeed) % 1.0;
+                zoomFactor = Math.max(0.5, zoomFactor);
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const newX = Math.round(centerX + dx / zoomFactor);
+                        const newY = Math.round(centerY + dy / zoomFactor);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyShake(data, width, height, frameCount) {
+                const fps = 30;
+                const animationSpeed = 20.0;
+                const shakeAmount = 15;
+                const offsetX = Math.sin(frameCount / fps * animationSpeed * 2 * Math.PI) * shakeAmount;
+                const offsetY = Math.cos(frameCount / fps * animationSpeed * 2 * Math.PI) * shakeAmount;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const newX = Math.round(x + offsetX);
+                        const newY = Math.round(y + offsetY);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyPulse(data, width, height, frameCount) {
+                const centerX = width / 2, centerY = height / 2;
+                const fps = 30;
+                const animationSpeed = 3.0;
+                const animationCycle = (frameCount / fps * animationSpeed * 2 * Math.PI) % (2 * Math.PI);
+                const zoomFactor = 1.0 + 0.15 * Math.sin(animationCycle);
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const newX = Math.round(centerX + dx / zoomFactor);
+                        const newY = Math.round(centerY + dy / zoomFactor);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySpiralZoom(data, width, height, frameCount) {
+                const centerX = width / 2, centerY = height / 2;
+                const fps = 30;
+                const animationSpeed = 2.0;
+                const animationCycle = (frameCount / fps * animationSpeed * 2 * Math.PI) % (2 * Math.PI);
+                const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const zoomFactor = 1.0 + 0.3 * Math.sin(dist / maxDist * 4 * Math.PI + animationCycle);
+                        const newAngle = angle + animationCycle * 0.5;
+                        const newDist = dist / zoomFactor;
+                        const newX = Math.round(centerX + newDist * Math.cos(newAngle));
+                        const newY = Math.round(centerY + newDist * Math.sin(newAngle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyExtremeCloseup(data, width, height, frameCount) {
+                const centerX = width / 2, centerY = height / 2;
+                const fps = 30;
+                const animationSpeed = 1.5;
+                const animationCycle = (frameCount / fps * animationSpeed * 2 * Math.PI) % (2 * Math.PI);
+                let zoomFactor = 1.0 + 2.5 * (0.5 + 0.5 * Math.sin(animationCycle));
+                zoomFactor = Math.max(1.0, Math.min(zoomFactor, 4.0));
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const newX = Math.round(centerX + dx / zoomFactor);
+                        const newY = Math.round(centerY + dy / zoomFactor);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyPuzzle(data, width, height) {
+                // Simplified puzzle effect - just shuffle blocks
+                const cols = 10, rows = 8;
+                const pieceW = width / cols, pieceH = height / rows;
+                const temp = new Uint8ClampedArray(data);
+                const pieces = [];
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        pieces.push({row, col, targetRow: (row + 2) % rows, targetCol: (col + 3) % cols});
+                    }
+                }
+                for (const piece of pieces) {
+                    for (let y = 0; y < pieceH && piece.row * pieceH + y < height; y++) {
+                        for (let x = 0; x < pieceW && piece.col * pieceW + x < width; x++) {
+                            const srcY = piece.row * pieceH + y;
+                            const srcX = piece.col * pieceW + x;
+                            const dstY = piece.targetRow * pieceH + y;
+                            const dstX = piece.targetCol * pieceW + x;
+                            if (dstY < height && dstX < width) {
+                                const srcIdx = (srcY * width + srcX) * 4;
+                                const dstIdx = (dstY * width + dstX) * 4;
+                                data[dstIdx] = temp[srcIdx];
+                                data[dstIdx + 1] = temp[srcIdx + 1];
+                                data[dstIdx + 2] = temp[srcIdx + 2];
+                                data[dstIdx + 3] = temp[srcIdx + 3];
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        // JavaScript filter fallback
+        function applyJSFilter(imageData, filterType, faceRect) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            
+            // Map filter names to implementations
+            const filterMap = {
+                'black_white': () => FilterImplementations.applyBlackWhite(data),
+                'sepia': () => FilterImplementations.applySepia(data),
+                'negative': () => FilterImplementations.applyNegative(data),
+                'vintage': () => FilterImplementations.applyVintage(data),
+                'neon_glow': () => FilterImplementations.applyNeonGlow(data),
+                'red_tint': () => FilterImplementations.applyRedTint(data),
+                'blue_tint': () => FilterImplementations.applyBlueTint(data),
+                'green_tint': () => FilterImplementations.applyGreenTint(data),
+                'posterize': () => FilterImplementations.applyPosterize(data),
+                'thermal': () => FilterImplementations.applyThermal(data),
+                'pixelate': () => FilterImplementations.applyPixelate(data, width, height),
+                'bulge': () => FilterImplementations.applyBulge(data, width, height),
+                'swirl': () => FilterImplementations.applySwirl(data, width, height),
+                'stretch': () => FilterImplementations.applyStretch(data, width, height),
+                'fisheye': () => FilterImplementations.applyFisheye(data, width, height),
+                'pinch': () => FilterImplementations.applyPinch(data, width, height),
+                'wave': () => FilterImplementations.applyWave(data, width, height),
+                'mirror': () => FilterImplementations.applyMirror(data, width, height),
+                'flip_horizontal': () => FilterImplementations.applyFlipHorizontal(data, width, height),
+                'flip_vertical': () => FilterImplementations.applyFlipVertical(data, width, height),
+                'flip_both': () => FilterImplementations.applyFlipBoth(data, width, height),
+                'rotate': () => FilterImplementations.applyRotate(data, width, height),
+                'rotate_45': () => FilterImplementations.applyRotate45(data, width, height),
+                'rotate_90': () => FilterImplementations.applyRotate90(data, width, height),
+                'blur': () => FilterImplementations.applyBlur(data, width, height),
+                'sharpen': () => FilterImplementations.applySharpen(data, width, height),
+                'emboss': () => FilterImplementations.applyEmboss(data, width, height),
+                'sketch': () => FilterImplementations.applySketch(data, width, height),
+                'cartoon': () => FilterImplementations.applyCartoon(data, width, height),
+                'rainbow': () => FilterImplementations.applyRainbow(data, width, height),
+                'rainbow_shift': () => FilterImplementations.applyRainbowShift(data),
+                'ice': () => FilterImplementations.applyIce(data),
+                'ocean': () => FilterImplementations.applyOcean(data),
+                'plasma': () => FilterImplementations.applyPlasma(data),
+                'jet': () => FilterImplementations.applyJet(data),
+                'turbo': () => FilterImplementations.applyTurbo(data),
+                'inferno': () => FilterImplementations.applyInferno(data),
+                'magma': () => FilterImplementations.applyMagma(data),
+                'viridis': () => FilterImplementations.applyViridis(data),
+                'cool': () => FilterImplementations.applyCool(data),
+                'hot': () => FilterImplementations.applyHot(data),
+                'spring': () => FilterImplementations.applySpring(data),
+                'summer': () => FilterImplementations.applySummer(data),
+                'autumn': () => FilterImplementations.applyAutumn(data),
+                'winter': () => FilterImplementations.applyWinter(data),
+                'vhs': () => FilterImplementations.applyVHS(data, width, height),
+                'retro': () => FilterImplementations.applyRetro(data, width, height),
+                'cyberpunk': () => FilterImplementations.applyCyberpunk(data, width, height),
+                'anime': () => FilterImplementations.applyAnime(data, width, height),
+                'glow': () => FilterImplementations.applyGlow(data, width, height),
+                'solarize': () => FilterImplementations.applySolarize(data),
+                'edge_detect': () => FilterImplementations.applyEdgeDetect(data, width, height),
+                'halftone': () => FilterImplementations.applyHalftone(data, width, height),
+                'acid_trip': () => FilterImplementations.applyAcidTrip(data, width, height),
+                'twirl': () => FilterImplementations.applyTwirl(data, width, height),
+                'ripple': () => FilterImplementations.applyRipple(data, width, height),
+                'sphere': () => FilterImplementations.applySphere(data, width, height),
+                'tunnel': () => FilterImplementations.applyTunnel(data, width, height),
+                'water_ripple': () => FilterImplementations.applyWaterRipple(data, width, height),
+                'radial_blur': () => FilterImplementations.applyRadialBlur(data, width, height),
+                'cylinder': () => FilterImplementations.applyCylinder(data, width, height),
+                'barrel': () => FilterImplementations.applyBarrel(data, width, height),
+                'pincushion': () => FilterImplementations.applyPincushion(data, width, height),
+                'whirlpool': () => FilterImplementations.applyWhirlpool(data, width, height),
+                'radial_zoom': () => FilterImplementations.applyRadialZoom(data, width, height),
+                'concave': () => FilterImplementations.applyConcave(data, width, height),
+                'convex': () => FilterImplementations.applyConvex(data, width, height),
+                'spiral': () => FilterImplementations.applySpiral(data, width, height),
+                'radial_stretch': () => FilterImplementations.applyRadialStretch(data, width, height),
+                'radial_compress': () => FilterImplementations.applyRadialCompress(data, width, height),
+                'vertical_wave': () => FilterImplementations.applyVerticalWave(data, width, height),
+                'horizontal_wave': () => FilterImplementations.applyHorizontalWave(data, width, height),
+                'skew_horizontal': () => FilterImplementations.applySkewHorizontal(data, width, height),
+                'skew_vertical': () => FilterImplementations.applySkewVertical(data, width, height),
+                'rotate_zoom': () => FilterImplementations.applyRotateZoom(data, width, height),
+                'radial_wave': () => FilterImplementations.applyRadialWave(data, width, height),
+                'zoom_in': () => FilterImplementations.applyZoomIn(data, width, height),
+                'zoom_out': () => FilterImplementations.applyZoomOut(data, width, height),
+                'fast_zoom_in': () => FilterImplementations.applyFastZoomIn(data, width, height, frameCount),
+                'fast_zoom_out': () => FilterImplementations.applyFastZoomOut(data, width, height, frameCount),
+                'shake': () => FilterImplementations.applyShake(data, width, height, frameCount),
+                'pulse': () => FilterImplementations.applyPulse(data, width, height, frameCount),
+                'spiral_zoom': () => FilterImplementations.applySpiralZoom(data, width, height, frameCount),
+                'extreme_closeup': () => FilterImplementations.applyExtremeCloseup(data, width, height, frameCount),
+                'puzzle': () => FilterImplementations.applyPuzzle(data, width, height),
+                'quad_mirror': () => FilterImplementations.applyQuadMirror(data, width, height),
+                'tile': () => FilterImplementations.applyTile(data, width, height),
+                'radial_tile': () => FilterImplementations.applyRadialTile(data, width, height),
+                'zoom_blur': () => FilterImplementations.applyZoomBlur(data, width, height),
+                'melt': () => FilterImplementations.applyMelt(data, width, height),
+                'kaleidoscope': () => FilterImplementations.applyKaleidoscope(data, width, height),
+                'glitch': () => FilterImplementations.applyGlitch(data, width, height),
+                'double_vision': () => FilterImplementations.applyDoubleVision(data, width, height)
+            };
+            
+            const filterFunc = filterMap[filterType];
+            if (filterFunc) {
+                try {
+                    filterFunc();
+                } catch (error) {
+                    console.error(`Error applying filter "${filterType}":`, error);
+                }
+            } else {
+                console.warn(`Filter "${filterType}" not yet implemented in JS fallback`);
+            }
+        }
+        
+        // Start camera
+        async function startCamera() {
+            try {
+                const deviceId = cameraSelect.value;
+                const constraints = {
+                    video: {
+                        deviceId: deviceId ? { exact: deviceId } : undefined,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    }
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoInput.srcObject = localStream;
+                
+                if (deviceId) {
+                    localStorage.setItem('wesworld-fx-camera', deviceId);
+                }
+                localStorage.setItem('wesworld-fx-camera-active', 'true');
+                
+                videoInput.onloadedmetadata = () => {
+                    // Wait for video to be ready
+                    const checkReady = () => {
+                        if (videoInput.readyState >= 2 && videoInput.videoWidth > 0 && videoInput.videoHeight > 0) {
+                            canvasOutput.width = videoInput.videoWidth;
+                            canvasOutput.height = videoInput.videoHeight;
+                            
+                            // Start processing loop
+                            processVideoFrame();
+                            
+                            updateStatus('Camera active', 'connected');
+                            if (cameraStatusText) {
+                                cameraStatusText.textContent = 'Camera: Active';
+                                cameraStatusText.parentElement.className = 'camera-status connected';
+                            }
+                            startButton.style.display = 'none';
+                            stopButton.style.display = 'block';
+                            
+                            // Collapse settings when camera is active
+                            const settingsSection = document.querySelector('.settings-section');
+                            const settingsToggle = document.getElementById('settingsToggle');
+                            if (settingsSection && settingsToggle && settingsSection.classList.contains('expanded')) {
+                                settingsSection.classList.remove('expanded');
+                                settingsToggle.classList.remove('expanded');
+                            }
+                        } else {
+                            // Wait a bit more
+                            setTimeout(checkReady, 100);
+                        }
+                    };
+                    checkReady();
+                };
+                
+                // Also handle canplay event as backup
+                videoInput.addEventListener('canplay', () => {
+                    if (canvasOutput.width === 0 || canvasOutput.height === 0) {
+                        canvasOutput.width = videoInput.videoWidth;
+                        canvasOutput.height = videoInput.videoHeight;
+                        if (!animationFrameId) {
+                            processVideoFrame();
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                updateStatus('Camera error: ' + error.message, 'error');
+                localStorage.setItem('wesworld-fx-camera-active', 'false');
+            }
+        }
+        
+        // Stop camera
+        function stopCamera() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            videoInput.srcObject = null;
+            ctx.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
+            startButton.style.display = 'block';
+            stopButton.style.display = 'none';
+            updateStatus('Camera stopped', '');
+            if (cameraStatusText) {
+                cameraStatusText.textContent = 'Camera: Stopped';
+                cameraStatusText.parentElement.className = 'camera-status stopped';
+            }
+            localStorage.setItem('wesworld-fx-camera-active', 'false');
+            
+            // Expand settings and show start button when camera is stopped
+            const settingsSection = document.querySelector('.settings-section');
+            const settingsToggle = document.getElementById('settingsToggle');
+            if (settingsSection && settingsToggle) {
+                settingsSection.classList.add('expanded');
+                settingsToggle.classList.add('expanded');
+            }
+            startButton.style.display = 'block';
+            stopButton.style.display = 'none';
+        }
+        
+        // Toggle UI
+        function toggleUI() {
+            controlsVisible = !controlsVisible;
+            if (controlsVisible) {
+                controls.classList.add('visible');
+                controls.classList.remove('hidden');
+            } else {
+                controls.classList.add('hidden');
+                controls.classList.remove('visible');
+            }
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            console.log('Setting up event listeners', { fxSearchTrigger, fxSearchModal, fxSearchInput });
+            
+            // Settings toggle
+            const settingsToggle = document.getElementById('settingsToggle');
+            if (settingsToggle) {
+                settingsToggle.addEventListener('click', () => {
+                    const settingsSection = settingsToggle.closest('.settings-section');
+                    settingsSection.classList.toggle('expanded');
+                    settingsToggle.classList.toggle('expanded');
+                });
+            }
+            
+            if (startButton) {
+                startButton.addEventListener('click', startCamera);
+            }
+            if (stopButton) {
+                stopButton.addEventListener('click', stopCamera);
+            }
+            
+            // Test image handlers
+            if (loadTestImageButton) {
+                loadTestImageButton.addEventListener('click', () => {
+                    testImageInput.click();
+                });
+            }
+            
+            if (testImageInput) {
+                testImageInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        loadTestImage(file).catch(err => {
+                            console.error('Error loading test image:', err);
+                        });
+                    }
+                });
+            }
+            
+            if (loadRefImageButton) {
+                loadRefImageButton.addEventListener('click', () => {
+                    loadRefImage().catch(err => {
+                        console.error('Error loading reference image:', err);
+                    });
+                });
+            }
+            
+            if (clearTestImageButton) {
+                clearTestImageButton.addEventListener('click', () => {
+                    clearTestImage();
+                });
+            }
+            
+            // FX current pin handler
+            if (fxCurrentPin) {
+                fxCurrentPin.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (pinnedFilters.includes(currentFilter)) {
+                        unpinFilter(currentFilter);
+                    } else {
+                        pinCurrentFilter();
+                    }
+                });
+            }
+            
+            // Clear filter button
+            if (clearFilterButton) {
+                clearFilterButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearFilter();
+                });
+            }
+            
+            // Spotlight-style search trigger
+            if (fxSearchTrigger) {
+                console.log('Setting up fxSearchTrigger click handler');
+                fxSearchTrigger.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('fxSearchTrigger clicked');
+                    openFxSearchModal();
+                });
+            } else {
+                console.error('fxSearchTrigger element not found!');
+            }
+            
+            // Close modal button
+            if (fxSearchClose) {
+                fxSearchClose.addEventListener('click', () => {
+                    closeFxSearchModal();
+                });
+            }
+            
+            // Close modal when clicking outside
+            if (fxSearchModal) {
+                fxSearchModal.addEventListener('click', (e) => {
+                    if (e.target === fxSearchModal) {
+                        closeFxSearchModal();
+                    }
+                });
+            }
+            
+            // Search input in modal
+            if (fxSearchInput) {
+                fxSearchInput.addEventListener('input', (e) => {
+                    const searchValue = e.target.value;
+                    filterFxOptions(searchValue);
+                });
+                
+                fxSearchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        closeFxSearchModal();
+                    } else if (e.key === 'Enter') {
+                        const optionsContainer = document.getElementById('fxOptionsContainer');
+                        if (optionsContainer) {
+                            const firstVisible = optionsContainer.querySelector('.fx-option:not([style*="display: none"])');
+                            if (firstVisible && firstVisible.value !== undefined) {
+                                selectFilter(firstVisible.value);
+                                closeFxSearchModal();
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Keyboard shortcut to open search (Cmd/Ctrl + K) - handled in main keyboard shortcuts below
+            
+            // Theme change handler
+            if (themeSelect) {
+                themeSelect.addEventListener('change', (e) => {
+                    const themeKey = e.target.value;
+                    if (THEMES[themeKey]) {
+                        applyTheme(THEMES[themeKey]);
+                        localStorage.setItem('wesworld-fx-theme', themeKey);
+                        console.log('Theme changed to:', themeKey);
+                    }
+                });
+            }
+            
+            // Close dropdown when clicking outside (legacy support)
+            document.addEventListener('click', (e) => {
+                // Only handle if not clicking on modal or trigger
+                if (fxSearchModal && fxSearchModal.contains(e.target)) return;
+                if (fxSearchTrigger && fxSearchTrigger.contains(e.target)) return;
+                
+                // Legacy dropdown handling (if still exists)
+                if (fxDropdownMenu && fxDropdownButton && !fxDropdownButton.contains(e.target) && !fxDropdownMenu.contains(e.target)) {
+                    fxDropdownMenu.classList.remove('open');
+                }
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Don't handle shortcuts if user is typing in an input field
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) {
+                    return;
+                }
+                
+                switch(e.key) {
+                    case 'h':
+                    case 'H':
+                        toggleUI();
+                        break;
+                    case 'ArrowUp':
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        cyclePrevFilter();
+                        break;
+                    case 'ArrowDown':
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        cycleNextFilter();
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        startRandomCycle();
+                        break;
+                    case 'c':
+                    case 'C':
+                        e.preventDefault();
+                        clearFilter();
+                        break;
+                    case 'Escape':
+                        // Clear filter on Escape (if not in search modal)
+                        if (!fxSearchModal || !fxSearchModal.classList.contains('active')) {
+                            e.preventDefault();
+                            clearFilter();
+                        }
+                        break;
+                }
+                
+                // Keyboard shortcut to open search (Cmd/Ctrl + K)
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    console.log('Cmd/Ctrl+K pressed in main handler');
+                    openFxSearchModal();
+                }
+            });
+        }
+        
+        // Initialize everything
+        async function init() {
+            try {
+                updateStatus('Loading WASM module...', 'loading');
+                
+                // Initialize WASM
+                await initWasm();
+                
+                updateStatus('Loading face detection...', 'loading');
+                
+                // Initialize MediaPipe
+                const faceDetected = await initFaceDetection();
+                
+                if (!faceDetected) {
+                    updateStatus('Face detection failed - filters may not work', 'error');
+                }
+                
+                // Setup UI
+                loadThemes(); // Load themes first (sets default to wesworld)
+                await loadCameras();
+                loadPinnedFilters();
+                loadFilters();
+                setupEventListeners();
+                
+                // Preload face masks
+                await preloadFaceMasks();
+                
+                // Debug: Check if modal elements exist
+                console.log('Modal elements check:', {
+                    fxSearchTrigger: !!fxSearchTrigger,
+                    fxSearchModal: !!fxSearchModal,
+                    fxSearchInput: !!fxSearchInput,
+                    fxSearchClose: !!fxSearchClose
+                });
+                
+                // Test modal opening
+                if (fxSearchModal) {
+                    console.log('Modal element found, testing visibility');
+                    // Temporarily show modal to test
+                    setTimeout(() => {
+                        console.log('Modal classes:', fxSearchModal.className);
+                        console.log('Modal computed style:', window.getComputedStyle(fxSearchModal).display);
+                    }, 1000);
+                }
+                
+                loadingIndicator.classList.add('hidden');
+                
+                // Auto-start camera automatically
+                const savedCameraId = localStorage.getItem('wesworld-fx-camera');
+                
+                // Make sure camera select has the saved camera selected, or use first available
+                if (savedCameraId && cameraSelect.value !== savedCameraId) {
+                    const cameraExists = Array.from(cameraSelect.options).some(opt => opt.value === savedCameraId);
+                    if (cameraExists) {
+                        cameraSelect.value = savedCameraId;
+                    }
+                }
+                
+                // If no camera is selected, select the first available camera
+                if (!cameraSelect.value && cameraSelect.options.length > 0) {
+                    cameraSelect.value = cameraSelect.options[0].value;
+                }
+                
+                // Start camera automatically if we have a selection
+                if (cameraSelect.value) {
+                    updateStatus('Starting camera...', 'loading');
+                    // Wait a bit for UI to be ready, then start camera
+                    setTimeout(() => {
+                        startCamera().catch(error => {
+                            console.warn('Auto-start camera failed:', error);
+                            updateStatus('Camera auto-start failed - Click "Start Camera" to begin', 'error');
+                            // If auto-start fails, clear the flag so it doesn't keep trying
+                            localStorage.setItem('wesworld-fx-camera-active', 'false');
+                            // Expand settings and show start button if camera failed to start
+                            const settingsSection = document.querySelector('.settings-section');
+                            const settingsToggle = document.getElementById('settingsToggle');
+                            if (settingsSection && settingsToggle) {
+                                settingsSection.classList.add('expanded');
+                                settingsToggle.classList.add('expanded');
+                            }
+                            startButton.style.display = 'block';
+                            stopButton.style.display = 'none';
+                        });
+                    }, 300);
+                } else {
+                    updateStatus('No camera available - Check camera permissions', 'error');
+                    // Expand settings and show start button if no camera available
+                    const settingsSection = document.querySelector('.settings-section');
+                    const settingsToggle = document.getElementById('settingsToggle');
+                    if (settingsSection && settingsToggle) {
+                        settingsSection.classList.add('expanded');
+                        settingsToggle.classList.add('expanded');
+                    }
+                    startButton.style.display = 'block';
+                    stopButton.style.display = 'none';
+                }
+                
+                // Auto-hide UI after 3 seconds
+                setTimeout(() => {
+                    if (controlsVisible) {
+                        toggleUI();
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                loadingIndicator.classList.add('hidden');
+                updateStatus('Initialization failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
+
+
