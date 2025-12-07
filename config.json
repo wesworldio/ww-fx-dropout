@@ -1,0 +1,17 @@
+{
+  "camera_index": 1,
+  "advance_interval": 0.1,
+  "updates": {
+    "enabled": true,
+    "branch": "main",
+    "check_interval": 300,
+    "auto_pull": false,
+    "last_commit": "82c0814",
+    "last_check": 1765143814.690203
+  },
+  "favorites": [
+    "radial_blur",
+    "rotate_90"
+  ],
+  "theme": "default"
+}

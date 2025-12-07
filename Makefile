@@ -1,4 +1,4 @@
-.PHONY: help install install-test run-bulge run-stretch run-swirl run-fisheye run-pinch run-wave run-mirror preview-bulge preview-stretch preview-swirl preview-fisheye preview-pinch preview-wave preview-mirror interactive test clean comparison web test-e2e test-install
+.PHONY: help install install-test run-bulge run-stretch run-swirl run-fisheye run-pinch run-wave run-mirror preview-bulge preview-stretch preview-swirl preview-fisheye preview-pinch preview-wave preview-mirror interactive interactive-daemon interactive-daemon-stop interactive-daemon-status interactive-daemon-restart interactive-daemon-logs interactive-daemon-logs-json test clean comparison web test-e2e test-install
 
 FILTERS = bulge stretch swirl fisheye pinch wave mirror
 WIDTH = 1280
@@ -18,6 +18,11 @@ help:
 	@echo "  make preview-bulge    - Preview only (no virtual camera)"
 	@echo "  make preview-<filter> - Preview any filter (replace <filter> with filter name)"
 	@echo "  make interactive       - Interactive mode: switch filters with 1-7 keys"
+	@echo "  make interactive-daemon - Start interactive mode as daemon with auto-reload"
+	@echo "  make interactive-daemon-stop - Stop interactive daemon"
+	@echo "  make interactive-daemon-status - Check daemon status"
+	@echo "  make interactive-daemon-logs - View daemon logs (tail -f)"
+	@echo "  make interactive-daemon-logs-json - View JSON logs from logs/ directory"
 	@echo "  make web               - Start web server with hot reload (foreground)"
 	@echo "  make web-daemon        - Start web server as daemon with hot reload"
 	@echo "  make web-stop          - Stop web server daemon"
@@ -89,6 +94,44 @@ preview-mirror:
 
 interactive:
 	$(PYTHON) interactive_filters.py --width $(WIDTH) --height $(HEIGHT) --fps $(FPS)
+
+interactive-daemon:
+	@echo "Starting interactive filters daemon with auto-reload..."
+	@echo "To stop: make interactive-daemon-stop"
+	@echo "To check status: make interactive-daemon-status"
+	@echo "To view logs: make interactive-daemon-logs"
+	@$(PYTHON) daemon_interactive.py start --width $(WIDTH) --height $(HEIGHT) --fps $(FPS)
+
+interactive-daemon-stop:
+	@echo "Stopping interactive filters daemon..."
+	@$(PYTHON) daemon_interactive.py stop || echo "⚠️  Daemon not running"
+
+interactive-daemon-status:
+	@$(PYTHON) daemon_interactive.py status
+
+interactive-daemon-restart:
+	@echo "Restarting interactive filters daemon..."
+	@$(PYTHON) daemon_interactive.py restart --width $(WIDTH) --height $(HEIGHT) --fps $(FPS)
+
+interactive-daemon-logs:
+	@if [ -f /tmp/ww_fx_interactive.log ]; then \
+		tail -f /tmp/ww_fx_interactive.log; \
+	else \
+		echo "⚠️  No log file found. Start daemon with: make interactive-daemon"; \
+	fi
+
+interactive-daemon-logs-json:
+	@echo "JSON logs in logs/ directory:"
+	@ls -lh logs/*.jsonl 2>/dev/null || echo "No JSON logs found"
+	@echo ""
+	@echo "View latest logs:"
+	@for file in logs/*.jsonl; do \
+		if [ -f "$$file" ]; then \
+			echo "=== $$file ==="; \
+			tail -5 "$$file" | python3 -m json.tool 2>/dev/null || tail -5 "$$file"; \
+			echo ""; \
+		fi \
+	done
 
 web:
 	@echo "Checking for existing server on port 9000..."

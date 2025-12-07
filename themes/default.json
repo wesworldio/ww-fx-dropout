@@ -1,0 +1,20 @@
+{
+  "name": "Default",
+  "colors": {
+    "background": "#000000",
+    "surface": "#1a1a1a",
+    "surfaceHover": "#2a2a2a",
+    "text": "#ffffff",
+    "textSecondary": "#cccccc",
+    "accent": "#4a9eff",
+    "accentHover": "#5aaeff",
+    "border": "#333333",
+    "borderHover": "#4a9eff",
+    "button": "#4a9eff",
+    "buttonHover": "#5aaeff",
+    "statusConnected": "#4caf50",
+    "statusError": "#f44336",
+    "groupTitle": "#4a9eff",
+    "selectedText": "#ffffff"
+  }
+}
