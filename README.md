@@ -4,6 +4,15 @@
 
 Creative custom face filters with distortion effects that integrate with OBS via virtual camera.
 
+**Now with WebAssembly (WASM) support for cross-platform performance!** 🚀
+
+- ✅ **MIT Licensed** - Open source, free to use
+- ✅ **Cross-Platform** - Browser, mobile, Windows, macOS, Linux
+- ✅ **High Performance** - WASM-based processing
+- ✅ **Mobile Optimized** - Works on iOS and Android
+
+See [docs/WASM_README.md](./docs/WASM_README.md) for WASM documentation.
+
 ## Features
 
 ## Installation
@@ -439,21 +448,32 @@ A fully client-side version that runs entirely in the browser without any backen
 
 ### Using the Standalone Version
 
-1. Simply open `standalone.html` in your web browser
-2. Or host it on GitHub Pages:
-   - Push the repo to GitHub
-   - Enable GitHub Pages in repository settings
-   - Set source to `main` branch and root directory
-   - Access at `https://yourusername.github.io/repo-name/standalone.html`
+**Option 1: WASM Edition (Recommended - High Performance)**
+1. Open `standalone-wasm.html` in your web browser
+2. Uses WebAssembly for maximum performance
+3. Works on desktop, mobile, and all modern browsers
+
+**Option 2: JavaScript Edition (Compatible)**
+1. Open `standalone.html` in your web browser
+2. Uses JavaScript filters (compatible with older browsers)
+
+**Hosting on GitHub Pages:**
+- Push the repo to GitHub
+- Enable GitHub Pages in repository settings
+- Set source to `main` branch and root directory
+- Access at `https://yourusername.github.io/repo-name/standalone-wasm.html`
 
 ### Features
 
 - ✅ **No Backend Required** - Runs entirely in the browser
-- ✅ **Client-Side Face Detection** - Uses MediaPipe Face Detection (CDN)
+- ✅ **WASM Processing** - High-performance WebAssembly filters (standalone-wasm.html)
+- ✅ **Client-Side Face Detection** - Uses MediaPipe Face Detection (WASM) or face-api.js
 - ✅ **All UI Features** - Pinned FX, search, keyboard shortcuts
 - ✅ **Face Mask Support** - Loads masks from `assets/dropout/face_mask/`
 - ✅ **LocalStorage** - Saves preferences (pinned FX, camera selection)
 - ✅ **Works Offline** - Once assets are cached
+- ✅ **Mobile Optimized** - Touch-friendly UI, responsive design
+- ✅ **Cross-Platform** - Works on Windows, macOS, Linux, iOS, Android
 
 ### Keyboard Shortcuts
 
