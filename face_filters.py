@@ -569,11 +569,40 @@ class FaceFilter:
         # Resize asset to the calculated size
         asset_resized = cv2.resize(asset_img, (mask_w, mask_h))
         
-        # Rotate mask if face is tilted (optional, can be enabled if needed)
-        # if landmarks and abs(landmarks['face_angle']) > 0.1:
-        #     rotation_matrix = cv2.getRotationMatrix2D((mask_w/2, mask_h/2), np.degrees(face_angle), 1.0)
-        #     asset_resized = cv2.warpAffine(asset_resized, rotation_matrix, (mask_w, mask_h), 
-        #                                   flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_TRANSPARENT)
+        # Rotate mask if face is tilted
+        if landmarks and abs(landmarks['face_angle']) > 0.01:  # Only rotate if angle is significant
+            # Calculate rotation angle in degrees (face_angle is in radians)
+            rotation_angle_deg = np.degrees(landmarks['face_angle'])
+            
+            # Calculate rotated dimensions to ensure full coverage
+            angle_rad = abs(landmarks['face_angle'])
+            rotated_w = int(mask_w * abs(np.cos(angle_rad)) + mask_h * abs(np.sin(angle_rad)))
+            rotated_h = int(mask_w * abs(np.sin(angle_rad)) + mask_h * abs(np.cos(angle_rad)))
+            
+            # Create rotation matrix centered on mask
+            rotation_center = (mask_w / 2, mask_h / 2)
+            rotation_matrix = cv2.getRotationMatrix2D(rotation_center, rotation_angle_deg, 1.0)
+            
+            # Adjust translation to keep mask centered after rotation
+            rotation_matrix[0, 2] += (rotated_w - mask_w) / 2
+            rotation_matrix[1, 2] += (rotated_h - mask_h) / 2
+            
+            # Apply rotation with transparent border
+            asset_resized = cv2.warpAffine(
+                asset_resized, 
+                rotation_matrix, 
+                (rotated_w, rotated_h), 
+                flags=cv2.INTER_LINEAR, 
+                borderMode=cv2.BORDER_TRANSPARENT
+            )
+            
+            # Update mask dimensions to rotated size
+            mask_w = rotated_w
+            mask_h = rotated_h
+            
+            # Recalculate position to keep mask centered on eye center
+            new_x = int(eye_center[0] - mask_w / 2)
+            new_y = int(eye_center[1] - mask_h / 2)
         
         # Extract the region of interest from the frame
         roi = result[new_y:new_y+mask_h, new_x:new_x+mask_w]

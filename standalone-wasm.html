@@ -176,13 +176,7 @@
             display: block;
         }
         
-        .fx-dropdown-menu {
-            display: none;
-        }
-        
-        .all-fx-container:has(.fx-search-input:focus) .fx-dropdown-menu {
-            display: block;
-        }
+        /* Legacy dropdown removed - using modal search instead */
         
         .camera-status {
             padding: 8px 12px;
@@ -313,70 +307,22 @@
             }
         }
         
-        /* FX Dropdown */
-        .fx-dropdown {
-            position: relative;
-            width: 100%;
-        }
-        
-        .fx-dropdown-button {
-            width: 100%;
-            padding: 12px;
-            background: var(--surface-color, #1a1a1a);
-            color: var(--text-color, white);
-            border: 1px solid var(--border-color, #333);
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .fx-dropdown-button:hover {
-            border-color: var(--accent-color, #5250ef);
-        }
-        
-        .fx-dropdown-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--surface-color, #1a1a1a);
-            border: 1px solid var(--border-color, #333);
-            border-radius: 4px;
-            margin-top: 4px;
-            max-height: calc(100vh - 200px);
-            overflow-y: auto;
-            overflow-x: hidden;
-            z-index: 1000;
-            display: none;
-        }
-        
-        .fx-dropdown-menu.open {
-            display: block;
-        }
-        
         .all-fx-container {
             width: 100%;
         }
         
-        .all-fx-container .fx-dropdown-menu {
+        /* FX options container in modal */
+        .fx-dropdown-menu {
             position: relative;
-            top: auto;
-            left: auto;
-            right: auto;
-            margin-top: 8px;
+            width: 100%;
             max-height: 400px;
-            display: none; /* Hidden by default */
+            overflow-y: auto;
+            display: none; /* Hidden by default, shown when search input focused */
         }
         
-        /* Show FX list when search input is focused or has value, or when dropdown is hovered */
-        .all-fx-container:has(.fx-search-input:focus) .fx-dropdown-menu,
-        .all-fx-container:has(.fx-search-input:not(:placeholder-shown)) .fx-dropdown-menu,
-        .all-fx-container:has(.fx-dropdown-menu:hover) .fx-dropdown-menu,
-        .all-fx-container .fx-dropdown-menu:hover {
+        /* Show FX list when search input is focused */
+        .fx-search-modal.active .fx-search-input:focus ~ .fx-search-results .fx-dropdown-menu,
+        .fx-search-modal.active .fx-search-input:not(:placeholder-shown) ~ .fx-search-results .fx-dropdown-menu {
             display: block;
         }
         
@@ -763,6 +709,13 @@
         let isRandomCycling = false;
         let randomCycleInterval = null;
         let faceMaskImages = {}; // Cache for face mask images
+        let maskProcessingCanvas = null; // Cached canvas for mask processing (reused to reduce allocations)
+        let maskProcessingCtx = null; // Cached context
+        let offscreenCanvas = null; // OffscreenCanvas for better performance (if supported)
+        let offscreenCtx = null; // OffscreenCanvas context
+        let lastFrameTime = 0; // Frame rate limiting
+        const targetFPS = 60;
+        const frameInterval = 1000 / targetFPS;
         
         // Filter categories (matching original)
         const FILTER_CATEGORIES = {
@@ -796,8 +749,7 @@
         const canvasOutput = document.getElementById('canvasOutput');
         const ctx = canvasOutput.getContext('2d', { willReadFrequently: true });
         const cameraSelect = document.getElementById('cameraSelect');
-        const fxDropdownButton = document.getElementById('fxDropdownButton'); // May be null if removed
-        const fxDropdownMenu = document.getElementById('fxDropdownMenu'); // May be null if removed
+        // Legacy dropdown removed - using modal search instead
         const fxSelectedText = document.getElementById('fxSelectedText');
         const fxCurrentPin = document.getElementById('fxCurrentPin');
         const clearFilterButton = document.getElementById('clearFilterButton');
@@ -1343,6 +1295,10 @@
                 Math.pow(rightEyeY - leftEyeY, 2)
             );
             
+            // Calculate rotation angle from eye positions (in radians)
+            // atan2 gives angle from horizontal, converting to degrees for rotation
+            const rotationAngle = Math.atan2(rightEyeY - leftEyeY, rightEyeX - leftEyeX) * (180 / Math.PI);
+            
             // Get additional facial landmarks for dynamic sizing
             let noseX = 0, noseY = 0, chinX = 0, chinY = 0, foreheadX = 0, foreheadY = 0;
             let hasLandmarks = false;
@@ -1430,13 +1386,235 @@
             // Adjust upward by 40 pixels to better align eyes (matching Python implementation)
             const drawY = eyeCenterY - drawH * 0.35 - 40;
             
-            // Set composite operation
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            
-            // Draw mask
-            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            // Professional compositing: Advanced blending with edge feathering and color matching
+            // Optimized with canvas caching and OffscreenCanvas support
+            try {
+                // Use cached canvas or create new one (reduces allocations)
+                const maskW = Math.ceil(drawW);
+                const maskH = Math.ceil(drawH);
+                
+                // Calculate rotated mask dimensions to ensure full coverage
+                const absAngle = Math.abs(rotationAngle);
+                const angleRad = absAngle * Math.PI / 180;
+                const rotatedW = Math.ceil(maskW * Math.abs(Math.cos(angleRad)) + maskH * Math.abs(Math.sin(angleRad)));
+                const rotatedH = Math.ceil(maskW * Math.abs(Math.sin(angleRad)) + maskH * Math.abs(Math.cos(angleRad)));
+                
+                let maskCanvas, maskCtx;
+                // Use larger canvas to accommodate rotation
+                const canvasW = Math.max(maskW, rotatedW);
+                const canvasH = Math.max(maskH, rotatedH);
+                
+                if (maskProcessingCanvas && maskProcessingCanvas.width >= canvasW && maskProcessingCanvas.height >= canvasH) {
+                    // Reuse cached canvas (faster, no allocation)
+                    maskCanvas = maskProcessingCanvas;
+                    maskCtx = maskProcessingCtx;
+                } else {
+                    // Create or resize canvas
+                    if (!maskProcessingCanvas) {
+                        maskProcessingCanvas = document.createElement('canvas');
+                        maskProcessingCtx = maskProcessingCanvas.getContext('2d', { willReadFrequently: true });
+                    }
+                    maskProcessingCanvas.width = canvasW;
+                    maskProcessingCanvas.height = canvasH;
+                    maskCanvas = maskProcessingCanvas;
+                    maskCtx = maskProcessingCtx;
+                }
+                
+                // Clear canvas and apply rotation
+                maskCtx.clearRect(0, 0, canvasW, canvasH);
+                maskCtx.save();
+                
+                // Translate to center of mask, rotate, then translate back
+                const maskCenterX = canvasW / 2;
+                const maskCenterY = canvasH / 2;
+                maskCtx.translate(maskCenterX, maskCenterY);
+                maskCtx.rotate(rotationAngle * Math.PI / 180);
+                maskCtx.translate(-maskCenterX, -maskCenterY);
+                
+                // Draw mask centered on canvas
+                const maskDrawX = (canvasW - maskW) / 2;
+                const maskDrawY = (canvasH - maskH) / 2;
+                maskCtx.drawImage(img, maskDrawX, maskDrawY, maskW, maskH);
+                maskCtx.restore();
+                
+                // Extract alpha channel from rotated mask
+                const maskImageData = maskCtx.getImageData(0, 0, canvasW, canvasH);
+                
+                // Get the region of interest from the main canvas (the face area)
+                // Use rotated dimensions to ensure we capture the full rotated mask
+                const roiW = Math.min(Math.ceil(rotatedW), canvasOutput.width);
+                const roiH = Math.min(Math.ceil(rotatedH), canvasOutput.height);
+                // Center ROI on eye center
+                const roiX = Math.max(0, Math.min(Math.floor(eyeCenterX - roiW / 2), canvasOutput.width - roiW));
+                const roiY = Math.max(0, Math.min(Math.floor(eyeCenterY - roiH / 2), canvasOutput.height - roiH));
+                
+                let roiImageData;
+                try {
+                    roiImageData = ctx.getImageData(roiX, roiY, roiW, roiH);
+                } catch (e) {
+                    // Canvas might be tainted, fallback to simple draw with rotation
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    
+                    // Apply rotation transformation
+                    ctx.translate(eyeCenterX, eyeCenterY);
+                    ctx.rotate(rotationAngle * Math.PI / 180);
+                    ctx.translate(-eyeCenterX, -eyeCenterY);
+                    
+                    // Draw mask centered on eye center
+                    ctx.drawImage(img, eyeCenterX - drawW / 2, eyeCenterY - drawH / 2, drawW, drawH);
+                    ctx.restore();
+                    return;
+                }
+                
+                // Create output image data
+                const outputData = new ImageData(roiW, roiH);
+                
+                // Professional compositing parameters (pre-calculated for performance)
+                // Use actual canvas dimensions for center calculation
+                const maskCanvasCenterX = canvasW * 0.5;
+                const maskCanvasCenterY = canvasH * 0.5;
+                const invCenterX = 1.0 / maskCanvasCenterX;
+                const invCenterY = 1.0 / maskCanvasCenterY;
+                const colorBlend = 0.92;
+                const colorBlendInv = 1.0 - colorBlend;
+                const colorBlendOrig = colorBlendInv * 0.15;
+                const edgeThreshold = 0.9;
+                const edgeRange = 0.1;
+                const edgeFeatherThreshold = 0.15;
+                const edgeFeatherStrength = 0.4;
+                
+                // Pre-calculate edge detection weights (sampleRadius = 3)
+                const sampleRadius = 3;
+                const sampleSize = (sampleRadius * 2 + 1) * (sampleRadius * 2 + 1);
+                const edgeWeights = [];
+                for (let sy = -sampleRadius; sy <= sampleRadius; sy++) {
+                    for (let sx = -sampleRadius; sx <= sampleRadius; sx++) {
+                        const dist = Math.sqrt(sx * sx + sy * sy);
+                        edgeWeights.push(dist === 0 ? 1 : 1 / (1 + dist));
+                    }
+                }
+                
+                // Optimized pixel processing with cached calculations
+                const origData = roiImageData.data;
+                const maskData = maskImageData.data;
+                const outData = outputData.data;
+                const maskWidth = canvasW;
+                const maskHeight = canvasH;
+                
+                // Calculate mapping from ROI coordinates to mask canvas coordinates
+                // Both ROI and mask canvas are centered on eye center
+                // ROI pixel (x, y) maps to mask canvas pixel:
+                // maskX = centerX + (x - roiW/2)
+                // maskY = centerY + (y - roiH/2)
+                
+                // Process each pixel with optimized blending
+                for (let y = 0; y < roiH; y++) {
+                    const yOffset = y * roiW;
+                    // Map ROI coordinates to mask canvas coordinates
+                    const maskY = Math.max(0, Math.min(Math.floor(maskCanvasCenterY + (y - roiH / 2)), maskHeight - 1));
+                    const maskYOffset = maskY * maskWidth;
+                    const distY = (maskY - maskCanvasCenterY) * invCenterY;
+                    const distYSq = distY * distY;
+                    
+                    for (let x = 0; x < roiW; x++) {
+                        const outIdx = (yOffset + x) * 4;
+                        // Map ROI coordinates to mask canvas coordinates
+                        const maskX = Math.max(0, Math.min(Math.floor(maskCanvasCenterX + (x - roiW / 2)), maskWidth - 1));
+                        const maskIdx = (maskYOffset + maskX) * 4;
+                        
+                        // Get pixels (cached array access)
+                        const origR = origData[outIdx];
+                        const origG = origData[outIdx + 1];
+                        const origB = origData[outIdx + 2];
+                        
+                        const maskR = maskData[maskIdx];
+                        const maskG = maskData[maskIdx + 1];
+                        const maskB = maskData[maskIdx + 2];
+                        let maskAlpha = maskData[maskIdx + 3] * 0.003921568627451; // / 255.0
+                        
+                        // Fast edge feathering: distance from center (avoid sqrt when possible)
+                        const distX = (maskX - centerX) * invCenterX;
+                        const distFromCenter = Math.sqrt(distX * distX + distYSq);
+                        
+                        // Feather outer edges (beyond 90% of radius) - optimized
+                        if (distFromCenter > edgeThreshold) {
+                            const edgeFactor = Math.max(0, 1 - ((distFromCenter - edgeThreshold) / edgeRange));
+                            maskAlpha *= edgeFactor * Math.sqrt(edgeFactor); // pow(edgeFactor, 1.5) optimized
+                        }
+                        
+                        // Optimized edge detection: only process if alpha is in transition zone
+                        if (maskAlpha > 0.01 && maskAlpha < 0.99) {
+                            let edgeStrength = 0;
+                            let sampleCount = 0;
+                            let weightIdx = 0;
+                            
+                            // Fast weighted sampling with pre-calculated weights
+                            for (let sy = -sampleRadius; sy <= sampleRadius; sy++) {
+                                const syIdx = Math.max(0, Math.min(maskHeight - 1, maskY + sy));
+                                const syOffset = syIdx * maskWidth;
+                                
+                                    for (let sx = -sampleRadius; sx <= sampleRadius; sx++) {
+                                        const sxIdx = Math.max(0, Math.min(maskWidth - 1, maskX + sx));
+                                    const sIdx = (syOffset + sxIdx) * 4;
+                                    const sAlpha = maskData[sIdx + 3] * 0.003921568627451;
+                                    const weight = edgeWeights[weightIdx++];
+                                    
+                                    edgeStrength += Math.abs(maskAlpha - sAlpha) * weight;
+                                    sampleCount += weight;
+                                }
+                            }
+                            
+                            // Soften transition edges
+                            if (sampleCount > 0) {
+                                edgeStrength /= sampleCount;
+                                if (edgeStrength > edgeFeatherThreshold) {
+                                    const edgeFeather = Math.min(1, (edgeStrength - edgeFeatherThreshold) * 2);
+                                    maskAlpha *= (1 - edgeFeather * edgeFeatherStrength);
+                                }
+                            }
+                        }
+                        
+                        // Optimized color matching and compositing (pre-multiplied constants)
+                        const matchedR = maskR * colorBlend + origR * colorBlendOrig;
+                        const matchedG = maskG * colorBlend + origG * colorBlendOrig;
+                        const matchedB = maskB * colorBlend + origB * colorBlendOrig;
+                        
+                        // Fast premultiplied alpha compositing
+                        const invAlpha = 1 - maskAlpha;
+                        outData[outIdx] = Math.round(matchedR * maskAlpha + origR * invAlpha);
+                        outData[outIdx + 1] = Math.round(matchedG * maskAlpha + origG * invAlpha);
+                        outData[outIdx + 2] = Math.round(matchedB * maskAlpha + origB * invAlpha);
+                        outData[outIdx + 3] = 255;
+                    }
+                }
+                
+                // Draw the professionally composited result back to main canvas
+                // If using OffscreenCanvas, transfer the data
+                if (offscreenCanvas && offscreenCtx) {
+                    offscreenCtx.putImageData(outputData, 0, 0);
+                    const offscreenImageData = offscreenCtx.getImageData(0, 0, roiW, roiH);
+                    ctx.putImageData(offscreenImageData, roiX, roiY);
+                } else {
+                    ctx.putImageData(outputData, roiX, roiY);
+                }
+                
+            } catch (error) {
+                // Fallback to simple draw if advanced compositing fails
+                console.warn('Advanced compositing failed, using simple blend:', error);
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
+                // Apply rotation transformation
+                ctx.translate(eyeCenterX, eyeCenterY);
+                ctx.rotate(rotationAngle * Math.PI / 180);
+                ctx.translate(-eyeCenterX, -eyeCenterY);
+                
+                // Draw mask centered on eye center
+                ctx.drawImage(img, eyeCenterX - drawW / 2, eyeCenterY - drawH / 2, drawW, drawH);
+            }
             
             // Restore context state
             ctx.restore();
@@ -1712,8 +1890,18 @@
             }
         }
         
-        // Process video frame or test image
+        // Process video frame or test image (optimized with frame rate limiting)
         async function processVideoFrame() {
+            // Frame rate limiting for consistent 60fps performance
+            const now = performance.now();
+            if (now - lastFrameTime < frameInterval) {
+                if (localStream || testImage) {
+                    animationFrameId = requestAnimationFrame(processVideoFrame);
+                }
+                return;
+            }
+            lastFrameTime = now;
+            
             // Check if we have everything we need
             const hasVideo = localStream && videoInput && videoInput.readyState >= 2;
             const hasTestImage = testImage && testImage.complete;
