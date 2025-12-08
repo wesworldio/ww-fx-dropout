@@ -21,7 +21,7 @@ active_connections = {}
 def get_all_filters():
     return [
         # DROPOUT
-        'dropout_logo', 'dropout_face_mask_sam', 'dropout_face_mask_ariel',
+        'dropout_face_mask_sam', 'dropout_face_mask_ariel',
         # Distortion
         'bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
         'twirl', 'ripple', 'sphere', 'tunnel', 'water_ripple',
@@ -46,7 +46,7 @@ def get_all_filters():
 # Get filters organized by category for UI grouping
 def get_filters_by_category():
     return {
-        'DROPOUT': ['dropout_logo', 'dropout_face_mask_sam', 'dropout_face_mask_ariel'],
+        'DROPOUT': ['dropout_face_mask_sam', 'dropout_face_mask_ariel'],
         'Distortion': ['bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
                       'twirl', 'ripple', 'sphere', 'tunnel', 'water_ripple',
                       'radial_blur', 'cylinder', 'barrel', 'pincushion', 'whirlpool', 'radial_zoom',
@@ -269,7 +269,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                 'pixelate', 'blur', 'sharpen', 'emboss'
                             }
                             
-                            face_tracking_filters = {'dropout_logo', 'dropout_face_mask_sam', 'dropout_face_mask_ariel'}
+                            face_tracking_filters = {'dropout_face_mask_sam', 'dropout_face_mask_ariel'}
                             
                             # Parse hierarchical filter names: <assets_folder>_<fx_type>_<fx_option>
                             # Example: dropout_face_mask_ariel -> folder: dropout, type: face_mask, option: ariel
@@ -303,11 +303,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             
                             try:
                                 if filter_name in face_tracking_filters:
-                                    if filter_name == 'dropout_logo':
-                                        face = filter_app.detect_face(frame)
-                                        if face:
-                                            frame = filter_app.apply_dropout_logo(frame.copy(), face)
-                                    elif filter_name in face_mask_assets:
+                                    if filter_name in face_mask_assets:
                                         # Use dynamic asset loading - same processing for all face masks
                                         asset_name, asset_dir = face_mask_assets[filter_name]
                                         print(f"[FILTER DEBUG] Applying face mask: filter='{filter_name}' -> asset='{asset_name}', dir='{asset_dir}'")

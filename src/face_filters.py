@@ -1756,7 +1756,6 @@ class FaceFilter:
             'kaleidoscope': self.apply_kaleidoscope,
             'glitch': self.apply_glitch,
             'double_vision': self.apply_double_vision,
-            'dropout_logo': self.apply_dropout_logo,
             'sam_reich': self.apply_sam_reich_tattoo,
             'black_white': self.apply_black_white,
             'sepia': self.apply_sepia,

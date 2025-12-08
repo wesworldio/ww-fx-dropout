@@ -574,15 +574,16 @@
         }
         
         .fx-search-header {
-            padding: 12px 16px;
+            padding: 16px;
             border-bottom: 1px solid #333;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             position: relative;
             flex-shrink: 0;
             background: #1e1e1e;
             /* Better spacing and touch targets */
-            gap: 12px;
+            gap: 8px;
         }
         
         @media (max-width: 768px) {
@@ -595,60 +596,95 @@
             }
         }
         
+        .fx-search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .fx-search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            pointer-events: none;
+            z-index: 1;
+            transition: color 0.2s;
+        }
+        
+        .fx-search-header .fx-search-input:focus ~ .fx-search-icon,
+        .fx-search-header .fx-search-input:not(:placeholder-shown) ~ .fx-search-icon {
+            color: #ffd700;
+        }
+        
         .fx-search-header .fx-search-input {
             width: 100%;
-            padding: 10px 36px 10px 14px;
+            padding: 12px 40px 12px 42px;
             background: #2a2a2a;
             border: 1px solid #444;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 15px;
             color: #ffffff !important;
             min-width: 0;
             -webkit-appearance: none;
             appearance: none;
             /* Better focus visibility */
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
             font-weight: 400;
         }
         
         .fx-search-header .fx-search-input:focus {
             outline: none;
             border-color: #ffd700;
-            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
             background: #2f2f2f;
+        }
+        
+        .fx-search-header .fx-search-input:hover:not(:focus) {
+            border-color: #555;
+            background: #2d2d2d;
         }
         
         @media (max-width: 768px) {
             .fx-search-header .fx-search-input {
-                padding: 12px 40px 12px 16px;
+                padding: 14px 48px 14px 48px;
                 font-size: 16px;
                 min-height: 48px; /* Larger touch target for mobile */
                 border-width: 1px;
+                border-radius: 10px;
+            }
+            
+            .fx-search-icon {
+                left: 16px;
+                width: 20px;
+                height: 20px;
             }
         }
         
         .fx-search-clear {
             position: absolute;
-            right: 28px;
+            right: 8px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             color: #666666;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 20px;
             line-height: 1;
             padding: 8px;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+            transition: opacity 0.2s, color 0.2s, background-color 0.2s, transform 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 44px; /* Minimum touch target size (WCAG) */
-            min-height: 44px;
+            min-width: 36px; /* Minimum touch target size (WCAG) */
+            min-height: 36px;
             border-radius: 50%;
-            z-index: 1;
+            z-index: 2;
             -webkit-tap-highlight-color: transparent;
         }
         
@@ -660,21 +696,23 @@
         .fx-search-clear:hover,
         .fx-search-clear:focus {
             color: #ffffff;
-            background-color: rgba(255, 255, 255, 0.1);
-            outline: 2px solid var(--accent-color, #5250ef);
+            background-color: rgba(255, 255, 255, 0.15);
+            outline: 2px solid rgba(255, 215, 0, 0.3);
             outline-offset: 2px;
+            transform: translateY(-50%) scale(1.1);
         }
         
         .fx-search-clear:active {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-50%) scale(0.95);
         }
         
         @media (max-width: 768px) {
             .fx-search-clear {
-                right: 20px;
-                min-width: 48px;
-                min-height: 48px;
-                font-size: 20px;
+                right: 8px;
+                min-width: 44px;
+                min-height: 44px;
+                font-size: 22px;
             }
         }
         
@@ -753,6 +791,16 @@
         
         .fx-search-results .fx-option {
             padding: 10px 12px;
+            align-items: center;
+        }
+        
+        .fx-search-results .fx-option-text {
+            display: flex;
+            align-items: center;
+        }
+        
+        .fx-search-results .fx-option-pin {
+            align-self: center;
         }
         
         /* Ensure all text in modal is visible */
@@ -761,10 +809,18 @@
             color: #ffffff;
         }
         
-        .fx-search-modal-content .fx-option-text,
         .fx-search-modal-content .fx-group-title,
         .fx-search-modal-content button {
             color: inherit;
+        }
+        
+        /* Text color is handled by .fx-option-text rules above */
+        .fx-search-modal-content .fx-option-text {
+            color: #ffffff;
+        }
+        
+        .fx-search-modal-content .fx-option.selected .fx-option-text {
+            color: #000000 !important;
         }
         
         .fx-group {
@@ -800,12 +856,19 @@
             position: relative;
             user-select: none;
             font-weight: 400;
+            box-sizing: border-box;
         }
         
         .fx-option:hover,
         .fx-option:focus {
             background: #2a2a2a;
             outline: none;
+        }
+        
+        .fx-option:hover,
+        .fx-option:focus,
+        .fx-option.selected {
+            border-radius: 0;
         }
         
         .fx-option:active {
@@ -861,16 +924,28 @@
         .fx-option-text {
             flex: 1;
             min-width: 0; /* Allow text to shrink if needed */
-            overflow: hidden;
             text-overflow: ellipsis;
-            color: inherit !important;
             white-space: nowrap;
+            color: #ffffff; /* Default white text for non-selected items */
+            display: flex;
+            align-items: center;
+            line-height: 1.4;
+        }
+        
+        /* Black text when selected */
+        .fx-option.selected .fx-option-text {
+            color: #000000 !important;
+        }
+        
+        /* White text when not selected (explicit for clarity) */
+        .fx-option:not(.selected) .fx-option-text {
+            color: #ffffff !important;
         }
         
         .fx-option-pin {
             cursor: pointer;
             font-size: 14px;
-            padding: 6px;
+            padding: 0;
             opacity: 0.6;
             transition: opacity 0.2s, background-color 0.2s, transform 0.1s;
             background: transparent;
@@ -878,12 +953,17 @@
             border-radius: 4px;
             min-width: 32px;
             min-height: 32px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             -webkit-tap-highlight-color: transparent;
             flex-shrink: 0;
             margin-left: auto;
+            margin-right: 0;
+            box-sizing: border-box;
+            line-height: 1;
         }
         
         .fx-option:hover .fx-option-pin {
@@ -1137,24 +1217,30 @@
             <div class="fx-search-header">
                 <h2 id="fxSearchModalTitle" class="sr-only">Search Filters</h2>
                 <label for="fxSearchInput" class="sr-only">Search for filters</label>
-                <input 
-                    type="text" 
-                    id="fxSearchInput" 
-                    class="fx-search-input" 
-                    placeholder="Search FX..." 
-                    autocomplete="off"
-                    aria-label="Search filters"
-                    aria-describedby="fxSearchHint"
-                    aria-controls="fxSearchResults"
-                    aria-expanded="false"
-                >
-                <button 
-                    class="fx-search-clear" 
-                    id="fxSearchClear" 
-                    type="button" 
-                    aria-label="Clear search"
-                    tabindex="0"
-                >×</button>
+                <div class="fx-search-input-wrapper">
+                    <svg class="fx-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input 
+                        type="text" 
+                        id="fxSearchInput" 
+                        class="fx-search-input" 
+                        placeholder="Search filters and face masks..." 
+                        autocomplete="off"
+                        aria-label="Search filters"
+                        aria-describedby="fxSearchHint"
+                        aria-controls="fxSearchResults"
+                        aria-expanded="false"
+                    >
+                    <button 
+                        class="fx-search-clear" 
+                        id="fxSearchClear" 
+                        type="button" 
+                        aria-label="Clear search"
+                        tabindex="0"
+                    >×</button>
+                </div>
                 <span id="fxSearchHint" class="sr-only">Type to search filters. Press Escape to close, Enter to select first result.</span>
             </div>
             <div 
@@ -1400,7 +1486,7 @@
         // Filter categories (matching original)
         // Face masks will be added dynamically after discovery
         const FILTER_CATEGORIES = {
-            'DROPOUT': ['dropout_logo'],
+            'DROPOUT': [],
             'Distortion': ['bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
                           'twirl', 'ripple', 'sphere', 'tunnel', 'water_ripple',
                           'radial_blur', 'cylinder', 'barrel', 'pincushion', 'whirlpool', 'radial_zoom',
@@ -1785,12 +1871,56 @@
             };
             
             option.onclick = handleOptionClick;
+            
+            // Longpress detection for mobile to open search modal
+            let touchStartTime = 0;
+            let longPressTimer = null;
+            let longPressDetected = false;
+            const LONG_PRESS_DURATION = 500; // 500ms for longpress
+            
+            option.addEventListener('touchstart', (e) => {
+                touchStartTime = Date.now();
+                longPressDetected = false;
+                longPressTimer = setTimeout(() => {
+                    // Longpress detected - open search modal instead
+                    longPressDetected = true;
+                    openFxSearchModal();
+                    // Focus the search input
+                    setTimeout(() => {
+                        if (fxSearchInput) {
+                            fxSearchInput.focus();
+                        }
+                    }, 100);
+                }, LONG_PRESS_DURATION);
+            }, { passive: true });
+            
             // Also handle touch events explicitly for mobile
             option.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleOptionClick(e);
+                // Clear the longpress timer
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+                
+                // Only handle as normal click if it wasn't a longpress
+                if (!longPressDetected) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleOptionClick(e);
+                } else {
+                    // Reset the flag for next interaction
+                    longPressDetected = false;
+                }
             }, { passive: false });
+            
+            option.addEventListener('touchcancel', () => {
+                // Clear timer if touch is cancelled
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+                longPressDetected = false;
+            }, { passive: true });
             
             // Keyboard support
             option.onkeydown = (e) => {
@@ -2707,10 +2837,20 @@
                 const text = displayText.toLowerCase();
                 const filterValueLower = filterValue.toLowerCase();
                 
+                // Extract face mask name for better matching (e.g., "sam" from "dropout_face_mask_sam")
+                let faceMaskName = '';
+                if (filterValue.includes('face_mask')) {
+                    const parts = filterValue.split('_');
+                    // Get the last part which is the mask name
+                    faceMaskName = parts[parts.length - 1].toLowerCase();
+                }
+                
                 // Check if search query appears anywhere in any of these strings
                 return text.includes(searchLower) || 
                        filterName.includes(searchLower) || 
-                       filterValueLower.includes(searchLower);
+                       filterValueLower.includes(searchLower) ||
+                       (faceMaskName && faceMaskName.includes(searchLower)) ||
+                       (faceMaskName && `mask_${faceMaskName}`.includes(searchLower));
             }
             
             if (pinnedContainer) {
@@ -5131,6 +5271,11 @@
                             e.preventDefault();
                             adjustFaceMaskSize(0.1);
                         }
+                        break;
+                    case 'f':
+                    case 'F':
+                        e.preventDefault();
+                        openFxSearchModal();
                         break;
                 }
                 
