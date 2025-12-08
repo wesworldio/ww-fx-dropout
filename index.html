@@ -1471,6 +1471,7 @@
             <label>
                 Pinned FX:
                 <div class="all-fx-container">
+                    <button id="startRouletteButton" type="button" style="width: 100%; margin-bottom: 8px;">🎰 Start Roulette</button>
                     <div id="pinnedFxContainer" class="pinned-fx-container"></div>
                 </div>
             </label>
@@ -3612,10 +3613,10 @@
                 
                 // Only process if we have a filter
                 if (currentFilter) {
-                    // Detect faces using MediaPipe (for face masks and logo) - do this first
+                    // Detect faces using MediaPipe (for face masks) - do this first
                     let faceRect = null;
                     let faceLandmarks = null;
-                    if (faceLandmarker && (currentFilter.includes('face_mask') || currentFilter.includes('logo'))) {
+                    if (faceLandmarker && (currentFilter.includes('face_mask'))) {
                         try {
                             // Use test image if available, otherwise use video
                             const source = testImage || videoInput;
@@ -5907,6 +5908,28 @@
                 stopButton.addEventListener('click', stopCamera);
             }
             
+            // Auto-stop and start camera when selection changes
+            if (cameraSelect) {
+                cameraSelect.addEventListener('change', async (e) => {
+                    const newDeviceId = e.target.value;
+                    // Only restart if camera was already active
+                    if (localStream) {
+                        console.log('Camera selection changed, restarting with new camera...');
+                        // Stop current camera
+                        stopCamera();
+                        // Wait a moment for cleanup, then start new camera
+                        setTimeout(() => {
+                            if (newDeviceId) {
+                                startCamera().catch(error => {
+                                    console.error('Error starting new camera:', error);
+                                    updateStatus('Camera error: ' + error.message, 'error');
+                                });
+                            }
+                        }, 100);
+                    }
+                });
+            }
+            
             // Face mask zoom reset button
             const resetFaceMaskZoomButton = document.getElementById('resetFaceMaskZoomButton');
             if (resetFaceMaskZoomButton) {
@@ -5951,6 +5974,16 @@
                     e.preventDefault();
                     e.stopPropagation();
                     clearFilter();
+                });
+            }
+            
+            // Start roulette button
+            const startRouletteButton = document.getElementById('startRouletteButton');
+            if (startRouletteButton) {
+                startRouletteButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startRandomCycle();
                 });
             }
             

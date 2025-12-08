@@ -786,7 +786,7 @@
             
             // Apply filter if selected
                 if (currentFilter) {
-                    if (currentFilter.includes('face_mask') || currentFilter.includes('logo')) {
+                    if (currentFilter.includes('face_mask')) {
                         // Face-specific filters - detect faces using face-api.js
                         if (faceApiModelsLoaded) {
                             // Get current time for both detection interval and persistence checks
