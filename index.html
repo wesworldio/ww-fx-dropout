@@ -1216,13 +1216,17 @@
                 const response = await fetch('build-info.json?' + Date.now());
                 if (response.ok) {
                     BUILD_INFO = await response.json();
+                    console.log('Loaded build info:', BUILD_INFO);
                     return BUILD_INFO;
+                } else {
+                    console.warn('build-info.json not found or not accessible:', response.status, response.statusText);
                 }
             } catch (e) {
-                console.warn('Could not load build-info.json, using fallback');
+                console.warn('Could not load build-info.json:', e.message);
             }
             
             // Fallback: use file modification time or current time
+            console.warn('Using fallback build info');
             BUILD_INFO = {
                 buildNumber: 0,
                 buildTimestamp: Date.now(),
