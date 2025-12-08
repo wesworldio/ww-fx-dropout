@@ -239,11 +239,13 @@
         }
         
         .settings-section-content,
+        .fx-section-content,
         .help-section-content {
             display: none;
         }
         
         .settings-section.expanded .settings-section-content,
+        .fx-section.expanded .fx-section-content,
         .help-section.expanded .help-section-content {
             display: block;
         }
@@ -1456,30 +1458,31 @@
         
         <!-- FX Section -->
         <div class="fx-section">
-            <div class="section-title">FX</div>
-            <label>
-                Current FX:
-                <div class="current-fx-display">
-                    <span id="fxSelectedText">None (Original)</span>
-                    <div class="current-fx-actions">
-                        <span id="fxCurrentPin" class="fx-current-pin" style="display: none;" title="Pin current FX"></span>
-                        <button id="clearFilterButton" class="clear-filter-button" type="button" title="Clear filter (C)" style="display: none;">✕</button>
+            <div class="section-title" id="fxToggle">FX</div>
+            <div class="fx-section-content">
+                <label>
+                    Current FX:
+                    <div class="current-fx-display">
+                        <span id="fxSelectedText">None (Original)</span>
+                        <div class="current-fx-actions">
+                            <span id="fxCurrentPin" class="fx-current-pin" style="display: none;" title="Pin current FX"></span>
+                            <button id="clearFilterButton" class="clear-filter-button" type="button" title="Clear filter (C)" style="display: none;">✕</button>
+                        </div>
                     </div>
-                </div>
-            </label>
-            <label>
-                Pinned FX:
-                <div class="all-fx-container">
-                    <button id="startRouletteButton" type="button" style="width: 100%; margin-bottom: 8px;">🎰 Start Roulette</button>
-                    <div id="pinnedFxContainer" class="pinned-fx-container"></div>
-                </div>
-            </label>
-            
+                </label>
+                <label>
+                    Pinned FX:
+                    <div class="all-fx-container">
+                        <button id="startRouletteButton" type="button" style="width: 100%; margin-bottom: 8px;">🎰 Start Roulette</button>
+                        <div id="pinnedFxContainer" class="pinned-fx-container"></div>
+                    </div>
+                </label>
+            </div>
         </div>
         
         <!-- Help Section -->
-        <div class="help-section">
-            <div class="section-title" id="helpToggle">Help</div>
+        <div class="help-section expanded">
+            <div class="section-title expanded" id="helpToggle">Help</div>
             <div class="help-section-content">
                 <div class="help-category">
                     <div class="help-category-title">Navigation</div>
@@ -2217,8 +2220,17 @@
                 const item = document.createElement('div');
                 item.className = 'pinned-fx-item';
                 item.dataset.filterName = filterName;
-                // Make entire item clickable to load filter
-                item.onclick = () => selectFilter(filterName);
+                // Make entire item clickable to load filter directly (stop roulette if running)
+                item.onclick = () => {
+                    // Stop any ongoing roulette
+                    if (isRandomCycling && randomCycleInterval) {
+                        clearInterval(randomCycleInterval);
+                        randomCycleInterval = null;
+                        isRandomCycling = false;
+                    }
+                    // Directly select the filter
+                    selectFilter(filterName);
+                };
                 
                 const text = document.createElement('span');
                 text.className = 'pinned-fx-item-text';
@@ -5815,6 +5827,32 @@
                     helpSection.classList.toggle('expanded');
                     helpToggle.classList.toggle('expanded');
                 });
+                // Also handle touch for better mobile support
+                helpToggle.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const helpSection = helpToggle.closest('.help-section');
+                    helpSection.classList.toggle('expanded');
+                    helpToggle.classList.toggle('expanded');
+                }, { passive: false });
+            }
+            
+            // FX section toggle
+            const fxToggle = document.getElementById('fxToggle');
+            if (fxToggle) {
+                fxToggle.addEventListener('click', () => {
+                    const fxSection = fxToggle.closest('.fx-section');
+                    fxSection.classList.toggle('expanded');
+                    fxToggle.classList.toggle('expanded');
+                });
+                // Also handle touch for better mobile support
+                fxToggle.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const fxSection = fxToggle.closest('.fx-section');
+                    fxSection.classList.toggle('expanded');
+                    fxToggle.classList.toggle('expanded');
+                }, { passive: false });
             }
             
             // Corner tap areas for mobile - open menu when tapped
