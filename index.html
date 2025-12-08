@@ -9,6 +9,9 @@
     <meta http-equiv="Expires" content="0">
     <title>WesWorld FX</title>
     
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎭</text></svg>">
+    
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -665,9 +668,9 @@
         
         .fx-search-clear {
             position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
+            right: 0px;
+            top: 7px;
+            width: 40px;
             background: none;
             border: none;
             color: #666666;
@@ -681,7 +684,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 36px; /* Minimum touch target size (WCAG) */
             min-height: 36px;
             border-radius: 50%;
             z-index: 2;
@@ -699,18 +701,18 @@
             background-color: rgba(255, 255, 255, 0.15);
             outline: 2px solid rgba(255, 215, 0, 0.3);
             outline-offset: 2px;
-            transform: translateY(-50%) scale(1.1);
+            transform: scale(1.1);
         }
         
         .fx-search-clear:active {
             background-color: rgba(255, 255, 255, 0.25);
-            transform: translateY(-50%) scale(0.95);
+            transform: scale(0.95);
         }
         
         @media (max-width: 768px) {
             .fx-search-clear {
-                right: 8px;
-                min-width: 44px;
+                right: 0px;
+                width: 44px;
                 min-height: 44px;
                 font-size: 22px;
             }
@@ -2069,18 +2071,28 @@
         // This function attempts to discover available face mask PNG files
         // Expected naming convention: mask_<mask name>.png (e.g., mask_sam.png)
         // Since browser WASM cannot directly access the file system, we use JavaScript to discover files
+        let directoryListingAttempted = false;
         async function discoverFaceMasks() {
+            // If masks already discovered, don't rediscover
+            if (discoveredFaceMasks.length > 0) {
+                return discoveredFaceMasks;
+            }
+            
             console.log('Discovering face mask files (looking for mask_*.png pattern)...');
             discoveredFaceMasks = [];
             const basePath = 'assets/dropout/face_mask/';
             
             // First, try to discover from a directory listing if available (for server environments)
             // This is the most reliable method and doesn't require hardcoded names
-            if (window.location.protocol !== 'file:') {
+            // Only try once to avoid duplicate 404 errors
+            if (window.location.protocol !== 'file:' && !directoryListingAttempted) {
+                directoryListingAttempted = true;
                 try {
                     // Try to fetch directory listing (some servers support this)
-                    const response = await fetch(basePath);
-                    if (response.ok) {
+                    // Note: Most servers don't support directory listings, so 404 is expected
+                    const response = await fetch(basePath).catch(() => null);
+                    
+                    if (response && response.ok && response.status !== 404) {
                         const text = await response.text();
                         // Parse HTML directory listing for .png files matching mask_*.png pattern
                         const parser = new DOMParser();
@@ -2098,9 +2110,10 @@
                             }
                         });
                     }
+                    // Silently ignore 404s - they're expected when directory listing isn't supported
                 } catch (error) {
-                    // Directory listing not available, that's okay - will try fallback method
-                    console.log('Directory listing not available, trying fallback discovery method');
+                    // Directory listing not available (404 is expected on most servers)
+                    // Silently continue to fallback method - don't log errors
                 }
             }
             
@@ -2113,7 +2126,7 @@
                 // Common potential mask names to try (can be extended)
                 // These are just common names - the system will discover any mask_*.png file
                 const potentialNames = [
-                   
+                    'sam'
                 ];
                 
                 // Error suppression is handled globally - 404s during discovery are expected
@@ -2858,7 +2871,17 @@
                 const pinnedItems = pinnedContainer.querySelectorAll('.pinned-fx-item');
                 pinnedItems.forEach(item => {
                     const filterName = item.dataset.filterName || '';
-                    const text = item.textContent.toLowerCase();
+                    // Get text from .pinned-fx-item-text if it exists, otherwise use textContent
+                    // This ensures we get clean text without the remove button (×)
+                    const textElement = item.querySelector('.pinned-fx-item-text');
+                    let text = '';
+                    if (textElement) {
+                        text = textElement.textContent || '';
+                    } else {
+                        // Fallback: use textContent but remove the × remove button
+                        text = item.textContent || '';
+                        text = text.replace(/×/g, '').trim();
+                    }
                     item.style.display = matchesFilter(filterName, text) ? '' : 'none';
                 });
             }
@@ -2869,7 +2892,18 @@
                 
                 allOptions.forEach(option => {
                     const filterValue = option.value || '';
-                    const optionText = option.textContent || '';
+                    // Get text from .fx-option-text if it exists, otherwise use textContent
+                    // This ensures we get clean text without pin icons or other elements
+                    const textElement = option.querySelector('.fx-option-text');
+                    let optionText = '';
+                    if (textElement) {
+                        optionText = textElement.textContent || '';
+                    } else {
+                        // For options without .fx-option-text, get textContent but remove pin icon
+                        optionText = option.textContent || '';
+                        // Remove emoji pin icons (📍 and 📌) and × characters
+                        optionText = optionText.replace(/📍|📌|×/g, '').trim();
+                    }
                     option.style.display = matchesFilter(filterValue, optionText) ? '' : 'none';
                 });
                 
