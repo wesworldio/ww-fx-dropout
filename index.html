@@ -1358,6 +1358,13 @@
             </div>
         </div>
         
+        <!-- Search FX (moved above FX section) -->
+        <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color, #333);">
+            <button id="fxSearchTrigger" class="fx-search-trigger" type="button" style="width: 100%;">
+                <span>🔍</span> Search FX...
+            </button>
+        </div>
+        
         <!-- FX Section -->
         <div class="fx-section">
             <div class="section-title">FX</div>
@@ -1372,12 +1379,9 @@
                 </div>
             </label>
             <label>
-                Add / Change FX:
+                Pinned FX:
                 <div class="all-fx-container">
                     <div id="pinnedFxContainer" class="pinned-fx-container"></div>
-                    <button id="fxSearchTrigger" class="fx-search-trigger" type="button">
-                        <span>🔍</span> Search FX...
-                    </button>
                 </div>
             </label>
             
@@ -5201,10 +5205,10 @@
                             startButton.style.display = 'none';
                             stopButton.style.display = 'block';
                             
-                            // Collapse settings when camera is active
+                            // Collapse settings when camera is active (default hide after camera starts)
                             const settingsSection = document.querySelector('.settings-section');
                             const settingsToggle = document.getElementById('settingsToggle');
-                            if (settingsSection && settingsToggle && settingsSection.classList.contains('expanded')) {
+                            if (settingsSection && settingsToggle) {
                                 settingsSection.classList.remove('expanded');
                                 settingsToggle.classList.remove('expanded');
                             }
@@ -5536,7 +5540,7 @@
                 }, { passive: false });
             }
             
-            // Toggle menu when clicking/tapping on video (mobile and webview)
+            // Toggle UI when clicking/tapping on video (same as pressing 'h')
             if (videoContainer && canvasOutput) {
                 const handleVideoToggle = (e) => {
                     // Don't toggle if clicking on controls or other UI elements
@@ -5555,12 +5559,8 @@
                                          clickedElement === videoInput;
                     
                     if (isClickOnVideo && !isClickOnUI) {
-                        // Toggle the FX search modal
-                        if (fxSearchModal && fxSearchModal.classList.contains('active')) {
-                            closeFxSearchModal();
-                        } else {
-                            openFxSearchModal();
-                        }
+                        // Toggle UI visibility (same as pressing 'h')
+                        toggleUI();
                     }
                 };
                 
