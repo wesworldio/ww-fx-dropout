@@ -1,4 +1,4 @@
-.PHONY: help install install-test run-bulge run-stretch run-swirl run-fisheye run-pinch run-wave run-mirror preview-bulge preview-stretch preview-swirl preview-fisheye preview-pinch preview-wave preview-mirror interactive interactive-daemon interactive-daemon-stop interactive-daemon-status interactive-daemon-restart interactive-daemon-logs interactive-daemon-logs-json test clean comparison web web-daemon web-stop web-logs web-status wasm-build wasm-clean wasm-watch wasm-daemon wasm-daemon-stop wasm-daemon-status wasm-daemon-logs dev dev-stop test-e2e test-install
+.PHONY: help install install-test run-bulge run-stretch run-swirl run-fisheye run-pinch run-wave run-mirror preview-bulge preview-stretch preview-swirl preview-fisheye preview-pinch preview-wave preview-mirror interactive interactive-daemon interactive-daemon-stop interactive-daemon-status interactive-daemon-restart interactive-daemon-logs interactive-daemon-logs-json test clean comparison web web-daemon web-stop web-logs web-status wasm-build wasm-clean wasm-watch wasm-daemon wasm-daemon-stop wasm-daemon-status wasm-daemon-logs dev dev-stop test-e2e test-install build-info
 
 FILTERS = bulge stretch swirl fisheye pinch wave mirror
 WIDTH = 1280
@@ -158,7 +158,11 @@ interactive-daemon-logs-json:
 		fi \
 	done
 
-web:
+build-info:
+	@echo "Generating build-info.json from git..."
+	@$(PYTHON) scripts/generate_build_info.py
+
+web: build-info
 	@echo "Checking for existing server on port 9000..."
 	@-lsof -ti:9000 | xargs kill -9 2>/dev/null || true
 	@sleep 1
@@ -168,7 +172,7 @@ web:
 	@echo "To stop: make web-stop"
 	@cd src && $(PYTHON) -m uvicorn web_server:app --host 0.0.0.0 --port 9000 --reload
 
-web-daemon:
+web-daemon: build-info
 	@echo "Checking for existing server on port 9000..."
 	@-lsof -ti:9000 | xargs kill -9 2>/dev/null || true
 	@sleep 1
@@ -335,7 +339,7 @@ wasm-daemon-logs:
 	fi
 
 # Development mode: web server + WASM watcher
-dev:
+dev: build-info
 	@if [ -f /tmp/ww_fx_wasm.pid ] || [ -f /tmp/web_server.pid ]; then \
 		echo "⚠️  Some services may already be running"; \
 		echo "   Run 'make dev-stop' first to clean up"; \

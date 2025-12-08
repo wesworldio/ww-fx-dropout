@@ -49,3 +49,6 @@ Thumbs.db
 
 # Config (optional - uncomment if you don't want to track config)
 # config.json
+
+# Build info (generated from git)
+build-info.json
