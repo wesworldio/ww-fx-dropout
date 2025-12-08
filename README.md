@@ -6,10 +6,15 @@ Creative custom face filters with distortion effects that integrate with OBS via
 
 **Now with WebAssembly (WASM) support for cross-platform performance!** 🚀
 
-- ✅ **MIT Licensed** - Open source, free to use
+- ✅ **Open Heart Source** - Do what you want, but don't be a jerk
 - ✅ **Cross-Platform** - Browser, mobile, Windows, macOS, Linux
 - ✅ **High Performance** - WASM-based processing
 - ✅ **Mobile Optimized** - Works on iOS and Android
+
+## Quick Start (Browser)
+- Download/clone the repo.
+- Open `index.html` in any modern browser (no server required).
+- Grant camera access when prompted and start testing filters instantly.
 
 See [docs/WASM_README.md](./docs/WASM_README.md) for WASM documentation.
 
@@ -383,7 +388,7 @@ python src/interactive_filters.py
 ```
 
 This opens a Python window where you can:
-- Press **Arrow Left/Right** to cycle through all 50+ filters
+- Press **Arrow Left/Right** to cycle through all 95+ filters
 - Press **1-7** for quick access to basic filters
 - Press **0** to see the original (no filter)
 - Press **Q** to quit
@@ -536,7 +541,7 @@ The web interface is designed to be minimal - perfect for OBS Browser Source:
 - **Camera Selection**: Choose from all available cameras on your device
 - **Real-time Processing**: All filters applied in real-time via WebSocket
 - **Minimal UI**: Controls can be hidden for clean OBS capture
-- **All Filters Available**: Access to all 90+ filters through the web interface
+- **All Filters Available**: Access to all 95+ filters through the web interface
 - **Cross-platform**: Works on any device with a modern web browser
 
 ## OBS Integration
@@ -570,21 +575,20 @@ If virtual camera is not available, the filter runs in preview-only mode:
 
 ## All Available Filters
 
-### Distortion Filters
-`bulge`, `stretch`, `swirl`, `fisheye`, `pinch`, `wave`, `mirror`, `zoom_blur`, `melt`, `double_vision`
+### DROPOUT Face Masks
+Face masks are discovered dynamically from `assets/dropout/face_mask/`:
+- `sam_face_mask` - Sam face mask (from `mask_sam.png`)
 
-### Color Filters  
-`black_white`, `sepia`, `vintage`, `negative`, `rainbow`, `rainbow_shift`, `red_tint`, `blue_tint`, `green_tint`
+### Distortion Filters (50 filters)
+`bulge`, `stretch`, `swirl`, `fisheye`, `pinch`, `wave`, `mirror`, `twirl`, `ripple`, `sphere`, `tunnel`, `water_ripple`, `radial_blur`, `cylinder`, `barrel`, `pincushion`, `whirlpool`, `radial_zoom`, `concave`, `convex`, `spiral`, `radial_stretch`, `radial_compress`, `vertical_wave`, `horizontal_wave`, `skew_horizontal`, `skew_vertical`, `rotate_zoom`, `radial_wave`, `zoom_in`, `zoom_out`, `fast_zoom_in`, `fast_zoom_out`, `shake`, `pulse`, `spiral_zoom`, `extreme_closeup`, `puzzle`, `rotate`, `rotate_45`, `rotate_90`, `flip_horizontal`, `flip_vertical`, `flip_both`, `quad_mirror`, `tile`, `radial_tile`, `zoom_blur`, `melt`, `kaleidoscope`, `glitch`, `double_vision`
 
-### Color Map Filters
-`thermal`, `ice`, `ocean`, `plasma`, `jet`, `turbo`, `inferno`, `magma`, `viridis`, `cool`, `hot`, `spring`, `summer`, `autumn`, `winter`
+### Color & Style Filters (45 filters)
+`black_white`, `sepia`, `vintage`, `neon_glow`, `pixelate`, `blur`, `sharpen`, `emboss`, `red_tint`, `blue_tint`, `green_tint`, `rainbow`, `negative`, `posterize`, `sketch`, `cartoon`, `thermal`, `ice`, `ocean`, `plasma`, `jet`, `turbo`, `inferno`, `magma`, `viridis`, `cool`, `hot`, `spring`, `summer`, `autumn`, `winter`, `rainbow_shift`, `acid_trip`, `vhs`, `retro`, `cyberpunk`, `anime`, `glow`, `solarize`, `edge_detect`, `halftone`
 
-### Artistic Filters
-`sketch`, `cartoon`, `anime`, `posterize`, `halftone`, `edge_detect`, `solarize`
+### Special Filters
+- `sam_reich` - SAM REICH forehead tattoo (always tracks face)
 
-### Special Effects
-`sam_reich` - SAM REICH forehead tattoo (always tracks face)
-`neon_glow`, `glow`, `pixelate`, `blur`, `sharpen`, `emboss`, `kaleidoscope`, `glitch`, `vhs`, `retro`, `cyberpunk`, `acid_trip`
+**Total: 95+ filters** (including dynamically discovered face masks)
 
 
 To use any filter:
