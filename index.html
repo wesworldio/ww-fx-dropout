@@ -41,6 +41,8 @@
             justify-content: center;
             position: relative;
             background: #000;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
         
         #videoInput {
@@ -57,6 +59,8 @@
             height: 100%;
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: transparent;
         }
         
         /* Controls panel */
@@ -1777,6 +1781,7 @@
         const themeSelect = document.getElementById('themeSelect');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const testImageInput = document.getElementById('testImageInput');
+        const videoContainer = document.getElementById('videoContainer');
         // Legacy dropdown elements (may not exist if using modal search)
         const fxDropdownMenu = document.getElementById('fxDropdownMenu');
         const fxDropdownButton = document.getElementById('fxDropdownButton');
@@ -5528,6 +5533,50 @@
                         closeFxSearchModal();
                     }
                     fxSearchModal._touchTarget = null;
+                }, { passive: false });
+            }
+            
+            // Toggle menu when clicking/tapping on video (mobile and webview)
+            if (videoContainer && canvasOutput) {
+                const handleVideoToggle = (e) => {
+                    // Don't toggle if clicking on controls or other UI elements
+                    const clickedElement = e.target;
+                    const isClickOnUI = clickedElement.closest('#controls') || 
+                                       clickedElement.closest('.fx-search-modal') ||
+                                       clickedElement.closest('#tutorialModal') ||
+                                       clickedElement === fxSearchTrigger ||
+                                       clickedElement.closest('button') ||
+                                       clickedElement.closest('input') ||
+                                       clickedElement.closest('select');
+                    
+                    // Only toggle if clicking directly on video container or canvas
+                    const isClickOnVideo = clickedElement === videoContainer || 
+                                         clickedElement === canvasOutput ||
+                                         clickedElement === videoInput;
+                    
+                    if (isClickOnVideo && !isClickOnUI) {
+                        // Toggle the FX search modal
+                        if (fxSearchModal && fxSearchModal.classList.contains('active')) {
+                            closeFxSearchModal();
+                        } else {
+                            openFxSearchModal();
+                        }
+                    }
+                };
+                
+                // Handle both click and touch events on container
+                videoContainer.addEventListener('click', handleVideoToggle);
+                videoContainer.addEventListener('touchend', (e) => {
+                    // Prevent default to avoid double-firing with click
+                    e.preventDefault();
+                    handleVideoToggle(e);
+                }, { passive: false });
+                
+                // Also handle directly on canvas for better mobile support
+                canvasOutput.addEventListener('click', handleVideoToggle);
+                canvasOutput.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    handleVideoToggle(e);
                 }, { passive: false });
             }
             
