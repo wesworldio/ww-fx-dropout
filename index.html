@@ -104,6 +104,51 @@
             pointer-events: none;
         }
         
+        /* Hide menu button */
+        #hideMenuButton {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            background: var(--surface-hover-color, #2a2a2a);
+            color: var(--text-color, white);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        #hideMenuButton:hover {
+            background: var(--surface-hover-color, #333);
+            border-color: var(--border-color, #444);
+        }
+        
+        #hideMenuButton:active {
+            transform: scale(0.98);
+            background: var(--surface-hover-color, #2d2d2d);
+        }
+        
+        #hideMenuButton:focus {
+            outline: 2px solid rgba(82, 80, 239, 0.5);
+            outline-offset: 2px;
+        }
+        
+        @media (max-width: 768px) {
+            #hideMenuButton {
+                padding: 14px 16px;
+                font-size: 16px;
+                min-height: 48px; /* Larger touch target for mobile */
+                margin-bottom: 16px;
+            }
+        }
+        
         /* Status widget removed - camera status shown in settings section */
         #status {
             display: none !important;
@@ -1354,6 +1399,11 @@
     </div>
     
     <div id="controls" class="hidden">
+        <!-- Hide Menu Button -->
+        <button id="hideMenuButton" type="button" aria-label="Hide menu">
+            <span>✕</span> Hide Menu
+        </button>
+        
         <!-- Settings Section -->
         <div class="settings-section">
             <div class="section-title" id="settingsToggle">Settings</div>
@@ -1374,6 +1424,7 @@
                 </div>
                 <button id="startButton">Start Camera</button>
                 <button id="stopButton" style="display: none;">Stop Camera</button>
+                <button id="cameraToggleButton" style="display: none; margin-top: 10px; width: 100%;">📷 Switch Camera</button>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color, #333);">
                     <label style="display: block; margin-bottom: 8px;">
                         Face Mask Zoom:
@@ -1553,7 +1604,7 @@
     <div class="corner-tap-area bottom-right" id="cornerBottomRight" aria-label="Tap to open menu"></div>
     
     <div id="videoContainer">
-        <video id="videoInput" autoplay playsinline></video>
+        <video id="videoInput" autoplay playsinline muted></video>
         <canvas id="canvasOutput"></canvas>
     </div>
     
@@ -1671,7 +1722,8 @@
         
         // Check if corner tap areas should be enabled
         function shouldShowCornerTaps() {
-            return isMobileDevice() || isTabletWithoutKeyboard();
+            // Allow corner taps on all screen sizes for easy menu access
+            return true;
         }
         
         // State
@@ -1944,20 +1996,56 @@
             }
         }
         
+        // Track current camera facing mode for mobile toggle
+        let currentFacingMode = 'user'; // 'user' = front, 'environment' = back
+        let hasFrontCamera = false;
+        let hasBackCamera = false;
+        
         // Load cameras
         async function loadCameras() {
             try {
+                // Request permission first to get camera labels on mobile
+                try {
+                    await navigator.mediaDevices.getUserMedia({ video: true });
+                } catch (e) {
+                    // Permission denied or not available, continue anyway
+                }
+                
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(device => device.kind === 'videoinput');
                 
                 cameraSelect.innerHTML = '';
                 
+                // Detect front and back cameras on mobile
+                hasFrontCamera = false;
+                hasBackCamera = false;
+                
                 videoDevices.forEach(device => {
                     const option = document.createElement('option');
                     option.value = device.deviceId;
-                    option.textContent = device.label || `Camera ${cameraSelect.options.length + 1}`;
+                    const label = device.label || `Camera ${cameraSelect.options.length + 1}`;
+                    option.textContent = label;
                     cameraSelect.appendChild(option);
+                    
+                    // Check if this is a front or back camera based on label
+                    const labelLower = label.toLowerCase();
+                    if (labelLower.includes('front') || labelLower.includes('user') || labelLower.includes('face')) {
+                        hasFrontCamera = true;
+                    }
+                    if (labelLower.includes('back') || labelLower.includes('rear') || labelLower.includes('environment')) {
+                        hasBackCamera = true;
+                    }
                 });
+                
+                // Also check if we can detect by trying constraints (for mobile)
+                if (isMobileDevice() && videoDevices.length >= 2) {
+                    // If we have 2+ cameras on mobile, assume we have both front and back
+                    hasFrontCamera = true;
+                    hasBackCamera = true;
+                }
+                
+                // Show/hide camera toggle button based on availability
+                updateCameraToggleButton();
                 
                 // Load saved camera
                 const savedCamera = localStorage.getItem('wesworld-fx-camera');
@@ -1966,6 +2054,150 @@
                 }
             } catch (error) {
                 console.error('Error loading cameras:', error);
+            }
+        }
+        
+        // Update camera toggle button visibility
+        function updateCameraToggleButton() {
+            const toggleButton = document.getElementById('cameraToggleButton');
+            if (toggleButton) {
+                if (isMobileDevice() && (hasFrontCamera && hasBackCamera)) {
+                    toggleButton.style.display = 'block';
+                } else {
+                    toggleButton.style.display = 'none';
+                }
+            }
+        }
+        
+        // Toggle between front and back camera
+        async function toggleCamera() {
+            if (!localStream) {
+                return; // Can't toggle if camera isn't running
+            }
+            
+            // Switch facing mode
+            currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+            
+            // Stop current stream and cancel animation frame
+            localStream.getTracks().forEach(track => track.stop());
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            
+            // Start new stream with new facing mode
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: currentFacingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Ensure video element has required attributes
+                videoInput.setAttribute('autoplay', '');
+                videoInput.setAttribute('playsinline', '');
+                videoInput.setAttribute('muted', '');
+                
+                videoInput.srcObject = localStream;
+                
+                // Force play on mobile with retries
+                let playAttempts = 0;
+                const maxPlayAttempts = 5;
+                const tryPlay = async () => {
+                    try {
+                        await videoInput.play();
+                        console.log('Video play successful after toggle');
+                    } catch (playError) {
+                        playAttempts++;
+                        if (playAttempts < maxPlayAttempts) {
+                            console.warn(`Video play() attempt ${playAttempts} failed after toggle, retrying:`, playError);
+                            setTimeout(tryPlay, 100 * playAttempts);
+                        } else {
+                            console.warn('Video play() failed after toggle after max attempts:', playError);
+                        }
+                    }
+                };
+                await tryPlay();
+                
+                // Wait for video to be ready and restart processing
+                let isInitialized = false;
+                const initializeAfterToggle = () => {
+                    if (isInitialized) return;
+                    
+                    if (videoInput.readyState >= 2 && videoInput.videoWidth > 0 && videoInput.videoHeight > 0) {
+                        isInitialized = true;
+                        
+                        canvasOutput.width = videoInput.videoWidth;
+                        canvasOutput.height = videoInput.videoHeight;
+                        
+                        // Ensure video is playing
+                        if (videoInput.paused) {
+                            videoInput.play().catch(err => console.warn('Play failed in initializeAfterToggle:', err));
+                        }
+                        
+                        // Start processing loop
+                        if (!animationFrameId) {
+                            processVideoFrame();
+                        }
+                    }
+                };
+                
+                // Handle video ready events
+                videoInput.onloadedmetadata = () => {
+                    console.log('Video metadata loaded after toggle');
+                    initializeAfterToggle();
+                };
+                
+                videoInput.addEventListener('loadeddata', () => {
+                    console.log('Video data loaded after toggle');
+                    initializeAfterToggle();
+                }, { once: true });
+                
+                videoInput.addEventListener('canplay', () => {
+                    console.log('Video can play after toggle');
+                    initializeAfterToggle();
+                }, { once: true });
+                
+                // Fallback: check periodically
+                let checkCount = 0;
+                const maxChecks = 30;
+                const checkInterval = setInterval(() => {
+                    checkCount++;
+                    if (isInitialized) {
+                        clearInterval(checkInterval);
+                    } else if (checkCount >= maxChecks) {
+                        clearInterval(checkInterval);
+                        if (!isInitialized && videoInput.readyState >= 1) {
+                            console.warn('Forcing video initialization after toggle timeout');
+                            canvasOutput.width = videoInput.videoWidth || 640;
+                            canvasOutput.height = videoInput.videoHeight || 480;
+                            isInitialized = true;
+                            if (!animationFrameId) {
+                                processVideoFrame();
+                            }
+                        }
+                    } else {
+                        initializeAfterToggle();
+                    }
+                }, 100);
+                
+                // Update button text
+                const toggleButton = document.getElementById('cameraToggleButton');
+                if (toggleButton) {
+                    toggleButton.textContent = currentFacingMode === 'user' ? '📷 Switch to Back' : '📷 Switch to Front';
+                }
+                
+                // Save preference
+                localStorage.setItem('wesworld-fx-camera-facing', currentFacingMode);
+            } catch (error) {
+                console.error('Error toggling camera:', error);
+                updateStatus('Camera toggle error: ' + error.message, 'error');
+                // Revert facing mode on error
+                currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
             }
         }
         
@@ -5254,32 +5486,59 @@
         async function startCamera() {
             try {
                 const deviceId = cameraSelect.value;
+                
+                // Load saved facing mode preference
+                const savedFacingMode = localStorage.getItem('wesworld-fx-camera-facing');
+                if (savedFacingMode && (savedFacingMode === 'user' || savedFacingMode === 'environment')) {
+                    currentFacingMode = savedFacingMode;
+                }
+                
                 const constraints = {
                     video: {
                         deviceId: deviceId ? { exact: deviceId } : undefined,
                         width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        facingMode: 'user'
+                        height: { ideal: 720 }
                     }
                 };
                 
+                // Use facingMode on mobile if no specific device is selected
+                if (isMobileDevice() && !deviceId) {
+                    constraints.video.facingMode = currentFacingMode;
+                }
+                
                 localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Ensure video element has required attributes for mobile Safari
+                videoInput.setAttribute('autoplay', '');
+                videoInput.setAttribute('playsinline', '');
+                videoInput.setAttribute('muted', '');
+                
+                // Stop any existing stream tracks before setting new one
+                if (videoInput.srcObject) {
+                    const oldStream = videoInput.srcObject;
+                    oldStream.getTracks().forEach(track => track.stop());
+                }
+                
                 videoInput.srcObject = localStream;
                 
-                // Explicitly play video on mobile browsers after permission is granted
-                try {
-                    await videoInput.play();
-                } catch (playError) {
-                    console.warn('Video play() failed, will retry:', playError);
-                    // Retry play after a short delay for mobile browsers
-                    setTimeout(async () => {
-                        try {
-                            await videoInput.play();
-                        } catch (retryError) {
-                            console.warn('Video play() retry failed:', retryError);
+                // Force play immediately on mobile Safari
+                let playAttempts = 0;
+                const maxPlayAttempts = 5;
+                const tryPlay = async () => {
+                    try {
+                        await videoInput.play();
+                        console.log('Video play successful');
+                    } catch (playError) {
+                        playAttempts++;
+                        if (playAttempts < maxPlayAttempts) {
+                            console.warn(`Video play() attempt ${playAttempts} failed, retrying:`, playError);
+                            setTimeout(tryPlay, 100 * playAttempts);
+                        } else {
+                            console.warn('Video play() failed after max attempts:', playError);
                         }
-                    }, 100);
-                }
+                    }
+                };
+                await tryPlay();
                 
                 if (deviceId) {
                     localStorage.setItem('wesworld-fx-camera', deviceId);
@@ -5288,21 +5547,94 @@
                 // Remember that user has started camera - enable auto-start on future page loads
                 localStorage.setItem('wesworld-fx-camera-auto-start', 'true');
                 
-                videoInput.onloadedmetadata = () => {
-                    // Wait for video to be ready
-                    const checkReady = () => {
-                        if (videoInput.readyState >= 2 && videoInput.videoWidth > 0 && videoInput.videoHeight > 0) {
-                            canvasOutput.width = videoInput.videoWidth;
-                            canvasOutput.height = videoInput.videoHeight;
-                            
-                            // Ensure video is playing (mobile browsers sometimes need this)
-                            if (videoInput.paused) {
-                                videoInput.play().catch(err => console.warn('Play failed in checkReady:', err));
-                            }
-                            
-                            // Start processing loop
+                // Multiple event handlers for better Safari mobile compatibility
+                let isInitialized = false;
+                const initializeVideo = () => {
+                    if (isInitialized) return;
+                    
+                    if (videoInput.readyState >= 2 && videoInput.videoWidth > 0 && videoInput.videoHeight > 0) {
+                        isInitialized = true;
+                        
+                        canvasOutput.width = videoInput.videoWidth;
+                        canvasOutput.height = videoInput.videoHeight;
+                        
+                        // Ensure video is playing
+                        if (videoInput.paused) {
+                            videoInput.play().catch(err => console.warn('Play failed in initializeVideo:', err));
+                        }
+                        
+                        // Start processing loop
+                        if (!animationFrameId) {
                             processVideoFrame();
-                            
+                        }
+                        
+                        updateStatus('Camera active', 'connected');
+                        if (cameraStatusText) {
+                            cameraStatusText.textContent = 'Camera: Active';
+                            cameraStatusText.parentElement.className = 'camera-status connected';
+                        }
+                        startButton.style.display = 'none';
+                        stopButton.style.display = 'block';
+                        
+                        // Update camera toggle button
+                        updateCameraToggleButton();
+                        const toggleButton = document.getElementById('cameraToggleButton');
+                        if (toggleButton && isMobileDevice() && hasFrontCamera && hasBackCamera) {
+                            toggleButton.textContent = currentFacingMode === 'user' ? '📷 Switch to Back' : '📷 Switch to Front';
+                        }
+                        
+                        // Collapse settings when camera is active
+                        const settingsSection = document.querySelector('.settings-section');
+                        const settingsToggle = document.getElementById('settingsToggle');
+                        if (settingsSection && settingsToggle) {
+                            settingsSection.classList.remove('expanded');
+                            settingsToggle.classList.remove('expanded');
+                        }
+                    }
+                };
+                
+                // Handle loadedmetadata
+                videoInput.onloadedmetadata = () => {
+                    console.log('Video metadata loaded');
+                    initializeVideo();
+                };
+                
+                // Handle loadeddata (fires earlier than loadedmetadata on some browsers)
+                videoInput.addEventListener('loadeddata', () => {
+                    console.log('Video data loaded');
+                    initializeVideo();
+                }, { once: true });
+                
+                // Handle canplay
+                videoInput.addEventListener('canplay', () => {
+                    console.log('Video can play');
+                    initializeVideo();
+                }, { once: true });
+                
+                // Handle playing event
+                videoInput.addEventListener('playing', () => {
+                    console.log('Video is playing');
+                    initializeVideo();
+                }, { once: true });
+                
+                // Fallback: check periodically if not initialized (for Safari mobile)
+                let checkCount = 0;
+                const maxChecks = 50; // 5 seconds max
+                const checkInterval = setInterval(() => {
+                    checkCount++;
+                    if (isInitialized) {
+                        clearInterval(checkInterval);
+                    } else if (checkCount >= maxChecks) {
+                        clearInterval(checkInterval);
+                        // Force initialization even if dimensions aren't ready
+                        if (!isInitialized && videoInput.readyState >= 1) {
+                            console.warn('Forcing video initialization after timeout');
+                            canvasOutput.width = videoInput.videoWidth || 640;
+                            canvasOutput.height = videoInput.videoHeight || 480;
+                            isInitialized = true;
+                            if (!animationFrameId) {
+                                processVideoFrame();
+                            }
                             updateStatus('Camera active', 'connected');
                             if (cameraStatusText) {
                                 cameraStatusText.textContent = 'Camera: Active';
@@ -5310,36 +5642,12 @@
                             }
                             startButton.style.display = 'none';
                             stopButton.style.display = 'block';
-                            
-                            // Collapse settings when camera is active (default hide after camera starts)
-                            const settingsSection = document.querySelector('.settings-section');
-                            const settingsToggle = document.getElementById('settingsToggle');
-                            if (settingsSection && settingsToggle) {
-                                settingsSection.classList.remove('expanded');
-                                settingsToggle.classList.remove('expanded');
-                            }
-                        } else {
-                            // Wait a bit more
-                            setTimeout(checkReady, 100);
                         }
-                    };
-                    checkReady();
-                };
+                    } else {
+                        initializeVideo();
+                    }
+                }, 100);
                 
-                // Also handle canplay event as backup
-                videoInput.addEventListener('canplay', () => {
-                    if (canvasOutput.width === 0 || canvasOutput.height === 0) {
-                        canvasOutput.width = videoInput.videoWidth;
-                        canvasOutput.height = videoInput.videoHeight;
-                        if (!animationFrameId) {
-                            processVideoFrame();
-                        }
-                    }
-                    // Ensure video is playing on mobile
-                    if (videoInput.paused) {
-                        videoInput.play().catch(err => console.warn('Play failed in canplay:', err));
-                    }
-                });
             } catch (error) {
                 console.error('Error starting camera:', error);
                 updateStatus('Camera error: ' + error.message, 'error');
@@ -5489,6 +5797,22 @@
                         hideTutorial();
                     }
                 });
+            }
+            
+            // Hide menu button
+            const hideMenuButton = document.getElementById('hideMenuButton');
+            if (hideMenuButton) {
+                hideMenuButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleUI();
+                });
+                // Also handle touch for better mobile support
+                hideMenuButton.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleUI();
+                }, { passive: false });
             }
             
             // Settings toggle
@@ -5935,10 +6259,14 @@
                             video: {
                                 deviceId: deviceId ? { exact: deviceId } : undefined,
                                 width: { ideal: 1280 },
-                                height: { ideal: 720 },
-                                facingMode: 'user'
+                                height: { ideal: 720 }
                             }
                         };
+                        
+                        // Use facingMode on mobile if no specific device is selected
+                        if (isMobileDevice() && !deviceId) {
+                            constraints.video.facingMode = currentFacingMode;
+                        }
                         
                         // Stop old stream
                         if (localStream) {
@@ -5954,6 +6282,10 @@
                             })
                             .then(() => {
                                 console.log('Camera reloaded successfully after visibility change');
+                                // Force a refresh of the video processing
+                                if (!animationFrameId && videoInput.readyState >= 2) {
+                                    processVideoFrame();
+                                }
                             })
                             .catch(error => {
                                 console.error('Error reloading camera after visibility change:', error);
