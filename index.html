@@ -1306,6 +1306,45 @@
                 width: 100%;
             }
         }
+        
+        /* Corner tap areas for mobile - invisible but clickable */
+        .corner-tap-area {
+            position: fixed;
+            z-index: 9999;
+            background: transparent;
+            pointer-events: auto;
+            display: none; /* Hidden by default, shown only on mobile/small screens */
+        }
+        
+        .corner-tap-area.top-left {
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+        }
+        
+        .corner-tap-area.top-right {
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 80px;
+        }
+        
+        .corner-tap-area.bottom-left {
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+        }
+        
+        .corner-tap-area.bottom-right {
+            bottom: 0;
+            right: 0;
+            width: 80px;
+            height: 80px;
+        }
+        
+        /* Visibility is controlled by JavaScript based on device type */
     </style>
 </head>
 <body>
@@ -1507,6 +1546,12 @@
     
     <div id="status" class="hidden">Initializing...</div>
     
+    <!-- Corner tap areas for mobile - invisible but clickable -->
+    <div class="corner-tap-area top-left" id="cornerTopLeft" aria-label="Tap to open menu"></div>
+    <div class="corner-tap-area top-right" id="cornerTopRight" aria-label="Tap to open menu"></div>
+    <div class="corner-tap-area bottom-left" id="cornerBottomLeft" aria-label="Tap to open menu"></div>
+    <div class="corner-tap-area bottom-right" id="cornerBottomRight" aria-label="Tap to open menu"></div>
+    
     <div id="videoContainer">
         <video id="videoInput" autoplay playsinline></video>
         <canvas id="canvasOutput"></canvas>
@@ -1607,6 +1652,26 @@
             const isSmallScreen = window.innerWidth <= 768;
             
             return mobileRegex.test(userAgent) || isSmallScreen;
+        }
+        
+        // Check if device is iPad without keyboard (touch device with large screen)
+        function isTabletWithoutKeyboard() {
+            // Check if it's a touch device
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            // Check if it's iPad (has touch points but might not have keyboard)
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isIPad = /ipad/i.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            
+            // Check screen size (tablets typically have larger screens)
+            const isLargeScreen = window.innerWidth >= 768 && window.innerWidth <= 1024;
+            
+            return (isTouchDevice && (isIPad || isLargeScreen));
+        }
+        
+        // Check if corner tap areas should be enabled
+        function shouldShowCornerTaps() {
+            return isMobileDevice() || isTabletWithoutKeyboard();
         }
         
         // State
@@ -5220,6 +5285,8 @@
                     localStorage.setItem('wesworld-fx-camera', deviceId);
                 }
                 localStorage.setItem('wesworld-fx-camera-active', 'true');
+                // Remember that user has started camera - enable auto-start on future page loads
+                localStorage.setItem('wesworld-fx-camera-auto-start', 'true');
                 
                 videoInput.onloadedmetadata = () => {
                     // Wait for video to be ready
@@ -5428,6 +5495,16 @@
             const settingsToggle = document.getElementById('settingsToggle');
             if (settingsToggle) {
                 settingsToggle.addEventListener('click', () => {
+                    // Prevent hiding menu until camera is started and active
+                    const cameraStatusText = document.getElementById('cameraStatusText');
+                    const isCameraActive = cameraStatusText && cameraStatusText.textContent === 'Camera: Active';
+                    
+                    if (!isCameraActive) {
+                        // Camera not active - keep menu expanded, don't allow hiding
+                        return;
+                    }
+                    
+                    // Camera is active - allow toggle
                     const settingsSection = settingsToggle.closest('.settings-section');
                     settingsSection.classList.toggle('expanded');
                     settingsToggle.classList.toggle('expanded');
@@ -5443,6 +5520,61 @@
                     helpToggle.classList.toggle('expanded');
                 });
             }
+            
+            // Corner tap areas for mobile - open menu when tapped
+            function setupCornerTapAreas() {
+                const cornerTopLeft = document.getElementById('cornerTopLeft');
+                const cornerTopRight = document.getElementById('cornerTopRight');
+                const cornerBottomLeft = document.getElementById('cornerBottomLeft');
+                const cornerBottomRight = document.getElementById('cornerBottomRight');
+                
+                const handleCornerTap = () => {
+                    // Open/expand the settings menu
+                    const settingsSection = document.querySelector('.settings-section');
+                    const settingsToggle = document.getElementById('settingsToggle');
+                    if (settingsSection && settingsToggle) {
+                        settingsSection.classList.add('expanded');
+                        settingsToggle.classList.add('expanded');
+                    }
+                    // Also show controls if hidden
+                    const controlsEl = document.getElementById('controls');
+                    if (controlsEl && controlsEl.classList.contains('hidden')) {
+                        controlsEl.classList.remove('hidden');
+                        controlsEl.classList.add('visible');
+                        controlsVisible = true;
+                    }
+                };
+                
+                // Add event listeners for both click and touch
+                [cornerTopLeft, cornerTopRight, cornerBottomLeft, cornerBottomRight].forEach(corner => {
+                    if (corner) {
+                        corner.addEventListener('click', handleCornerTap);
+                        corner.addEventListener('touchend', (e) => {
+                            e.preventDefault();
+                            handleCornerTap();
+                        });
+                    }
+                });
+                
+                // Show/hide corner tap areas based on device type
+                const updateCornerTapVisibility = () => {
+                    const shouldShow = shouldShowCornerTaps();
+                    [cornerTopLeft, cornerTopRight, cornerBottomLeft, cornerBottomRight].forEach(corner => {
+                        if (corner) {
+                            corner.style.display = shouldShow ? 'block' : 'none';
+                        }
+                    });
+                };
+                
+                // Initial check
+                updateCornerTapVisibility();
+                
+                // Update on window resize
+                window.addEventListener('resize', updateCornerTapVisibility);
+            }
+            
+            // Setup corner tap areas
+            setupCornerTapAreas();
             
             if (startButton) {
                 startButton.addEventListener('click', startCamera);
@@ -5580,6 +5712,7 @@
             }
             
             // Toggle UI when clicking/tapping on video (same as pressing 'h')
+            // Also hide menu when tapping outside if camera is active
             if (videoContainer && canvasOutput) {
                 const handleVideoToggle = (e) => {
                     // Don't toggle if clicking on controls or other UI elements
@@ -5590,7 +5723,8 @@
                                        clickedElement === fxSearchTrigger ||
                                        clickedElement.closest('button') ||
                                        clickedElement.closest('input') ||
-                                       clickedElement.closest('select');
+                                       clickedElement.closest('select') ||
+                                       clickedElement.closest('.corner-tap-area');
                     
                     // Only toggle if clicking directly on video container or canvas
                     const isClickOnVideo = clickedElement === videoContainer || 
@@ -5598,8 +5732,22 @@
                                          clickedElement === videoInput;
                     
                     if (isClickOnVideo && !isClickOnUI) {
-                        // Toggle UI visibility (same as pressing 'h')
-                        toggleUI();
+                        // Check if camera is active
+                        const cameraStatusText = document.getElementById('cameraStatusText');
+                        const isCameraActive = cameraStatusText && cameraStatusText.textContent === 'Camera: Active';
+                        
+                        if (isCameraActive) {
+                            // Hide/collapse the settings menu when camera is active
+                            const settingsSection = document.querySelector('.settings-section');
+                            const settingsToggle = document.getElementById('settingsToggle');
+                            if (settingsSection && settingsToggle) {
+                                settingsSection.classList.remove('expanded');
+                                settingsToggle.classList.remove('expanded');
+                            }
+                        } else {
+                            // If camera is not active, toggle UI visibility (same as pressing 'h')
+                            toggleUI();
+                        }
                     }
                 };
                 
@@ -5946,15 +6094,18 @@
                     cameraSelect.value = cameraSelect.options[0].value;
                 }
                 
-                // Start camera automatically if we have a selection
-                if (cameraSelect.value) {
+                // Check if user has previously started camera (remembered preference)
+                const shouldAutoStart = localStorage.getItem('wesworld-fx-camera-auto-start') === 'true';
+                
+                // Start camera automatically if user has previously started it and we have a selection
+                if (shouldAutoStart && cameraSelect.value) {
                     updateStatus('Starting camera...', 'loading');
                     // Wait a bit for UI to be ready, then start camera
                     setTimeout(() => {
                         startCamera().catch(error => {
                             console.warn('Auto-start camera failed:', error);
                             updateStatus('Camera auto-start failed - Click "Start Camera" to begin', 'error');
-                            // If auto-start fails, clear the flag so it doesn't keep trying
+                            // If auto-start fails, clear the active flag but keep auto-start preference
                             localStorage.setItem('wesworld-fx-camera-active', 'false');
                             // Expand settings and show start button if camera failed to start
                             const settingsSection = document.querySelector('.settings-section');
