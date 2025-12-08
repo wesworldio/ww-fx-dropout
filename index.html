@@ -4,14 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="description" content="WesWorld FX - High-performance face filters using WebAssembly. Works on desktop, mobile, and all modern browsers.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WesWorld FX">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>WesWorld FX</title>
     
     <!-- Mobile swipe gestures enabled -->
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎭</text></svg>">
+    <!-- Favicon and App Icons -->
+    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/icons/android-chrome-512x512.png">
+    <link rel="mask-icon" href="assets/icons/safari-pinned-tab.svg" color="#000000">
+    <meta name="msapplication-TileImage" content="assets/icons/mstile-150x150.png">
+    <meta name="theme-color" content="#000000">
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -294,6 +305,8 @@
         .help-command.disabled {
             cursor: not-allowed;
             opacity: 0.5;
+            /* Don't block pointer events - allow clicks to still work for debugging */
+            pointer-events: auto;
         }
         
         .help-command.disabled:hover {
@@ -5875,12 +5888,22 @@
                     
                     // Handle click
                     cmd.addEventListener('click', (e) => {
+                        // Don't prevent clicks on disabled items, but log for debugging
+                        if (cmd.classList.contains('disabled') && (action === 'increase-mask' || action === 'decrease-mask')) {
+                            console.log('Face mask control clicked but appears disabled. Current filter:', currentFilter);
+                            // Still try to execute in case the disabled state is incorrect
+                        }
                         e.stopPropagation();
                         handleHelpCommandAction(action);
                     });
                     
                     // Handle touch for mobile
                     cmd.addEventListener('touchend', (e) => {
+                        // Don't prevent touches on disabled items, but log for debugging
+                        if (cmd.classList.contains('disabled') && (action === 'increase-mask' || action === 'decrease-mask')) {
+                            console.log('Face mask control tapped but appears disabled. Current filter:', currentFilter);
+                            // Still try to execute in case the disabled state is incorrect
+                        }
                         e.preventDefault();
                         e.stopPropagation();
                         handleHelpCommandAction(action);
@@ -5909,13 +5932,23 @@
                         clearFilter();
                         break;
                     case 'increase-mask':
-                        if (currentFilter && currentFilter.includes('face_mask')) {
+                        // Check if face mask filter is active (supports both 'face_mask' and 'mask_' patterns)
+                        console.log('Increase mask clicked. Current filter:', currentFilter, 'Type:', typeof currentFilter);
+                        if (currentFilter && (currentFilter.includes('face_mask') || currentFilter.includes('mask_'))) {
+                            console.log('Adjusting face mask size +0.1');
                             adjustFaceMaskSize(0.1);
+                        } else {
+                            console.warn('Face mask controls: No face mask filter active. Current filter:', currentFilter);
                         }
                         break;
                     case 'decrease-mask':
-                        if (currentFilter && currentFilter.includes('face_mask')) {
+                        // Check if face mask filter is active (supports both 'face_mask' and 'mask_' patterns)
+                        console.log('Decrease mask clicked. Current filter:', currentFilter, 'Type:', typeof currentFilter);
+                        if (currentFilter && (currentFilter.includes('face_mask') || currentFilter.includes('mask_'))) {
+                            console.log('Adjusting face mask size -0.1');
                             adjustFaceMaskSize(-0.1);
+                        } else {
+                            console.warn('Face mask controls: No face mask filter active. Current filter:', currentFilter);
                         }
                         break;
                 }
@@ -5925,7 +5958,10 @@
             function updateFaceMaskControlsState() {
                 const increaseMask = document.getElementById('helpIncreaseMask');
                 const decreaseMask = document.getElementById('helpDecreaseMask');
-                const isFaceMaskActive = currentFilter && currentFilter.includes('face_mask');
+                // Check for both 'face_mask' and 'mask_' patterns to support all face mask filters
+                const isFaceMaskActive = currentFilter && (currentFilter.includes('face_mask') || currentFilter.includes('mask_'));
+                
+                console.log('Updating face mask controls state. Current filter:', currentFilter, 'Is active:', isFaceMaskActive);
                 
                 if (increaseMask) {
                     if (isFaceMaskActive) {
