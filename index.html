@@ -1424,7 +1424,6 @@
                 </div>
                 <button id="startButton">Start Camera</button>
                 <button id="stopButton" style="display: none;">Stop Camera</button>
-                <button id="cameraToggleButton" style="display: none; margin-top: 10px; width: 100%;">📷 Switch Camera</button>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color, #333);">
                     <label style="display: block; margin-bottom: 8px;">
                         Face Mask Zoom:
@@ -2045,9 +2044,6 @@
                     hasBackCamera = true;
                 }
                 
-                // Show/hide camera toggle button based on availability
-                updateCameraToggleButton();
-                
                 // Load saved camera
                 const savedCamera = localStorage.getItem('wesworld-fx-camera');
                 if (savedCamera) {
@@ -2055,18 +2051,6 @@
                 }
             } catch (error) {
                 console.error('Error loading cameras:', error);
-            }
-        }
-        
-        // Update camera toggle button visibility
-        function updateCameraToggleButton() {
-            const toggleButton = document.getElementById('cameraToggleButton');
-            if (toggleButton) {
-                if (isMobileDevice() && (hasFrontCamera && hasBackCamera)) {
-                    toggleButton.style.display = 'block';
-                } else {
-                    toggleButton.style.display = 'none';
-                }
             }
         }
         
@@ -2185,12 +2169,6 @@
                         initializeAfterToggle();
                     }
                 }, 100);
-                
-                // Update button text
-                const toggleButton = document.getElementById('cameraToggleButton');
-                if (toggleButton) {
-                    toggleButton.textContent = currentFacingMode === 'user' ? '📷 Switch to Back' : '📷 Switch to Front';
-                }
                 
                 // Save preference
                 localStorage.setItem('wesworld-fx-camera-facing', currentFacingMode);
@@ -5576,13 +5554,6 @@
                         }
                         startButton.style.display = 'none';
                         stopButton.style.display = 'block';
-                        
-                        // Update camera toggle button
-                        updateCameraToggleButton();
-                        const toggleButton = document.getElementById('cameraToggleButton');
-                        if (toggleButton && isMobileDevice() && hasFrontCamera && hasBackCamera) {
-                            toggleButton.textContent = currentFacingMode === 'user' ? '📷 Switch to Back' : '📷 Switch to Front';
-                        }
                         
                         // Collapse settings when camera is active
                         const settingsSection = document.querySelector('.settings-section');
