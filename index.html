@@ -1140,6 +1140,265 @@
             opacity: 1;
         }
         
+        /* FX Grid Modal */
+        .fx-grid-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10001;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease-out;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+        
+        .fx-grid-modal.active,
+        .fx-grid-modal[aria-hidden="false"] {
+            display: flex;
+        }
+        
+        .fx-grid-modal[aria-hidden="true"] {
+            display: none;
+        }
+        
+        .fx-grid-modal-content {
+            width: 100%;
+            max-width: 1400px;
+            background: var(--surface-color, #1e1e1e);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            animation: slideDown 0.2s ease-out;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            position: relative;
+            pointer-events: auto;
+            color: var(--text-color, #ffffff);
+            border: 1px solid var(--border-color, #333);
+        }
+        
+        .fx-grid-modal-content * {
+            pointer-events: auto;
+        }
+        
+        .fx-grid-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color, #333);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface-hover-color, #252525);
+        }
+        
+        .fx-grid-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-color, #ffffff);
+        }
+        
+        .fx-grid-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary-color, #cccccc);
+            cursor: pointer;
+            font-size: 28px;
+            line-height: 1;
+            padding: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .fx-grid-close:hover,
+        .fx-grid-close:focus {
+            background: var(--surface-color, #2a2a2a);
+            color: var(--text-color, #ffffff);
+            outline: 2px solid var(--accent-color, rgba(255, 215, 0, 0.3));
+            outline-offset: 2px;
+        }
+        
+        .fx-grid-container {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            align-items: start;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-color, #ffd700) transparent;
+            box-sizing: border-box;
+        }
+        
+        @media (min-width: 1400px) {
+            .fx-grid-container {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+        
+        .fx-grid-container > * {
+            min-width: 0;
+            min-height: 0;
+        }
+        
+        .fx-grid-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .fx-grid-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .fx-grid-container::-webkit-scrollbar-thumb {
+            background: var(--border-color, #555);
+            border-radius: 4px;
+        }
+        
+        .fx-grid-container::-webkit-scrollbar-thumb:hover {
+            background: var(--border-hover-color, #666);
+        }
+        
+        .fx-grid-item {
+            position: relative;
+            background: var(--surface-hover-color, #2a2a2a);
+            border: 2px solid var(--border-color, #333);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            aspect-ratio: 4/3;
+            -webkit-tap-highlight-color: transparent;
+            z-index: 1;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            contain: layout style paint;
+        }
+        
+        .fx-grid-item.selected {
+            z-index: 2;
+        }
+        
+        .fx-grid-item:hover {
+            border-color: var(--accent-color, #5250ef);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+        
+        .fx-grid-item:focus,
+        .fx-grid-item:focus-visible {
+            outline: 2px solid var(--accent-color, #5250ef);
+            outline-offset: -2px;
+            border-color: var(--accent-color, #5250ef);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 3;
+        }
+        
+        .fx-grid-item.selected {
+            border-color: var(--accent-color, #5250ef);
+            background: var(--accent-color, #5250ef);
+            z-index: 2;
+        }
+        
+        .fx-grid-item-preview {
+            flex: 1;
+            width: 100%;
+            min-width: 0;
+            min-height: 0;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .fx-grid-item-preview canvas {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .fx-grid-item-label {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-color, #ffffff);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            flex-shrink: 0;
+        }
+        
+        .fx-grid-item.selected .fx-grid-item-label {
+            color: var(--selected-text-color, #000000);
+            background: var(--accent-color, #5250ef);
+        }
+        
+        .fx-grid-item-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-secondary-color, #999);
+            font-size: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .fx-grid-modal {
+                padding: 10px;
+            }
+            
+            .fx-grid-modal-content {
+                max-height: 95vh;
+                border-radius: 8px;
+            }
+            
+            .fx-grid-header {
+                padding: 16px;
+            }
+            
+            .fx-grid-header h2 {
+                font-size: 20px;
+            }
+            
+            .fx-grid-container {
+                padding: 12px;
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 12px;
+            }
+            
+            .fx-grid-item-label {
+                font-size: 11px;
+                padding: 6px 8px;
+            }
+        }
+        
         .fx-search-input {
             width: 100%;
             padding: 8px;
@@ -1676,6 +1935,38 @@
         </div>
     </div>
     
+    <!-- FX Grid Modal -->
+    <div 
+        id="fxGridModal" 
+        class="fx-grid-modal" 
+        role="dialog" 
+        aria-modal="true" 
+        aria-labelledby="fxGridModalTitle" 
+        aria-hidden="true"
+        tabindex="-1"
+    >
+        <div class="fx-grid-modal-content">
+            <div class="fx-grid-header">
+                <h2 id="fxGridModalTitle">FX Grid</h2>
+                <button 
+                    class="fx-grid-close" 
+                    id="fxGridClose" 
+                    type="button" 
+                    aria-label="Close grid"
+                    tabindex="0"
+                >×</button>
+            </div>
+            <div 
+                class="fx-grid-container" 
+                id="fxGridContainer" 
+                role="grid"
+                aria-label="Filter grid"
+            >
+                <!-- Grid items will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+    
     <div id="status" class="hidden">Initializing...</div>
     
     <!-- Corner tap areas - invisible but clickable for easy menu access -->
@@ -1979,7 +2270,7 @@
         // Default filter categories (for organizing when using flat array)
         const DEFAULT_FILTER_CATEGORIES = {
             'DROPOUT': [],
-            'Distortion': ['bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
+            'Distortion': ['ultimate_distortion', 'bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
                           'twirl', 'ripple', 'sphere', 'tunnel', 'water_ripple',
                           'radial_blur', 'cylinder', 'barrel', 'pincushion', 'whirlpool', 'radial_zoom',
                           'concave', 'convex', 'spiral', 'radial_stretch', 'radial_compress',
@@ -2067,6 +2358,9 @@
         const fxSearchTrigger = document.getElementById('fxSearchTrigger');
         const fxSearchModal = document.getElementById('fxSearchModal');
         const fxSearchClear = document.getElementById('fxSearchClear');
+        const fxGridModal = document.getElementById('fxGridModal');
+        const fxGridContainer = document.getElementById('fxGridContainer');
+        const fxGridClose = document.getElementById('fxGridClose');
         const pinnedFxContainer = document.getElementById('pinnedFxContainer');
         const currentFxOverlay = document.getElementById('currentFxOverlay');
         const currentFxOverlayName = document.getElementById('currentFxOverlayName');
@@ -2703,6 +2997,420 @@
                     }
                 }
                 previousActiveElement = null;
+            }
+        }
+        
+        // FX Grid Modal functions
+        let gridPreviewCanvases = new Map(); // Map of filter name to canvas element
+        let gridAnimationFrameId = null;
+        let gridUpdateInterval = null;
+        let gridVisibleItems = new Set();
+        
+        // Open FX grid modal
+        function openFxGridModal() {
+            if (fxGridModal) {
+                // Store current focus for restoration
+                previousActiveElement = document.activeElement;
+                
+                // Update ARIA attributes
+                fxGridModal.setAttribute('aria-hidden', 'false');
+                fxGridModal.classList.add('active');
+                fxGridModal.style.display = 'flex';
+                
+                // Prevent body scroll when modal is open
+                document.body.style.overflow = 'hidden';
+                
+                // Always reload grid to ensure it has the latest filters for current scene
+                if (fxGridContainer) {
+                    loadFxGrid();
+                    
+                    // Initialize all previews immediately
+                    setTimeout(() => {
+                        if (videoInput && videoInput.readyState >= 2 && videoInput.videoWidth > 0) {
+                            gridPreviewCanvases.forEach((canvas, filterKey) => {
+                                const filter = filterKey === 'none' ? '' : filterKey;
+                                updateGridPreview(canvas, filter);
+                            });
+                        }
+                    }, 100);
+                }
+                
+                // Start preview updates
+                startGridPreviewUpdates();
+                
+                // Focus first grid item for keyboard navigation
+                setTimeout(() => {
+                    const firstItem = fxGridContainer?.querySelector('.fx-grid-item');
+                    if (firstItem) {
+                        firstItem.focus();
+                    }
+                }, 100);
+            }
+        }
+        
+        // Close FX grid modal
+        function closeFxGridModal() {
+            if (fxGridModal) {
+                fxGridModal.setAttribute('aria-hidden', 'true');
+                fxGridModal.classList.remove('active');
+                fxGridModal.style.display = 'none';
+                
+                // Restore body scroll
+                document.body.style.overflow = '';
+                
+                // Stop preview updates
+                stopGridPreviewUpdates();
+                
+                // Restore focus to previous element (accessibility)
+                if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
+                    try {
+                        previousActiveElement.focus();
+                    } catch (e) {
+                        console.warn('Could not restore focus to previous element');
+                    }
+                }
+                previousActiveElement = null;
+            }
+        }
+        
+        // Load FX grid with all filters
+        function loadFxGrid() {
+            if (!fxGridContainer) return;
+            
+            fxGridContainer.innerHTML = '';
+            gridPreviewCanvases.clear();
+            
+            // Add "None" option first
+            const noneItem = createGridItem('');
+            fxGridContainer.appendChild(noneItem);
+            
+            // Add all filters from all categories
+            Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
+                categoryFilters.forEach(filter => {
+                    const gridItem = createGridItem(filter);
+                    fxGridContainer.appendChild(gridItem);
+                });
+            });
+            
+            // Update visible items for performance
+            updateVisibleGridItems();
+        }
+        
+        // Create a grid item with preview canvas
+        function createGridItem(filter) {
+            const item = document.createElement('div');
+            item.className = 'fx-grid-item' + (currentFilter === filter ? ' selected' : '');
+            item.setAttribute('role', 'gridcell');
+            item.setAttribute('tabindex', '0');
+            item.setAttribute('aria-label', `Apply filter: ${formatFilterName(filter)}`);
+            item.dataset.filter = filter || 'none';
+            
+            const preview = document.createElement('div');
+            preview.className = 'fx-grid-item-preview';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 150;
+            canvas.dataset.filter = filter || 'none';
+            preview.appendChild(canvas);
+            
+            const label = document.createElement('div');
+            label.className = 'fx-grid-item-label';
+            label.textContent = formatFilterName(filter);
+            
+            item.appendChild(preview);
+            item.appendChild(label);
+            
+            // Store canvas reference (use 'none' for empty filter)
+            const filterKey = filter || 'none';
+            gridPreviewCanvases.set(filterKey, canvas);
+            
+            // Handle click
+            const handleClick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                selectFilter(filter);
+                closeFxGridModal();
+            };
+            
+            item.onclick = handleClick;
+            item.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleClick(e);
+            }, { passive: false });
+            
+            // Keyboard support
+            item.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleClick(e);
+                }
+            };
+            
+            return item;
+        }
+        
+        // Update visible grid items for performance optimization
+        function updateVisibleGridItems() {
+            if (!fxGridContainer) return;
+            
+            const containerRect = fxGridContainer.getBoundingClientRect();
+            const items = fxGridContainer.querySelectorAll('.fx-grid-item');
+            
+            gridVisibleItems.clear();
+            items.forEach(item => {
+                const rect = item.getBoundingClientRect();
+                // Check if item is visible (with some margin)
+                if (rect.bottom >= containerRect.top - 100 && rect.top <= containerRect.bottom + 100) {
+                    const filterKey = item.dataset.filter;
+                    if (filterKey) {
+                        gridVisibleItems.add(filterKey);
+                    }
+                }
+            });
+        }
+        
+        // Start grid preview updates
+        function startGridPreviewUpdates() {
+            // Update visible items on scroll
+            if (fxGridContainer) {
+                fxGridContainer.addEventListener('scroll', updateVisibleGridItems, { passive: true });
+            }
+            
+            // Throttle preview updates to avoid performance issues
+            // Update at 10fps instead of full frame rate
+            let lastUpdateTime = 0;
+            const updateInterval = 100; // 10fps
+            
+            const updatePreviews = () => {
+                if (!fxGridModal || !fxGridModal.classList.contains('active')) {
+                    stopGridPreviewUpdates();
+                    return;
+                }
+                
+                const now = performance.now();
+                if (now - lastUpdateTime >= updateInterval) {
+                    lastUpdateTime = now;
+                    
+                    // Update visible items for scroll tracking
+                    updateVisibleGridItems();
+                    
+                    // Process previews for all items (not just visible ones)
+                    // This ensures all previews are rendered when the grid opens
+                    if (videoInput && videoInput.readyState >= 2 && videoInput.videoWidth > 0) {
+                        gridPreviewCanvases.forEach((canvas, filterKey) => {
+                            const filter = filterKey === 'none' ? '' : filterKey;
+                            updateGridPreview(canvas, filter);
+                        });
+                    }
+                }
+                
+                gridAnimationFrameId = requestAnimationFrame(updatePreviews);
+            };
+            
+            updatePreviews();
+        }
+        
+        // Stop grid preview updates
+        function stopGridPreviewUpdates() {
+            if (gridAnimationFrameId) {
+                cancelAnimationFrame(gridAnimationFrameId);
+                gridAnimationFrameId = null;
+            }
+            
+            if (fxGridContainer) {
+                fxGridContainer.removeEventListener('scroll', updateVisibleGridItems);
+            }
+        }
+        
+        // Update a single grid preview
+        function updateGridPreview(canvas, filter) {
+            if (!videoInput || videoInput.readyState < 2 || videoInput.videoWidth === 0) {
+                return;
+            }
+            
+            try {
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                
+                // Get the actual size of the preview container
+                const previewContainer = canvas.parentElement;
+                if (!previewContainer) return;
+                
+                const containerRect = previewContainer.getBoundingClientRect();
+                const containerWidth = Math.max(containerRect.width || 180, 100);
+                const containerHeight = Math.max(containerRect.height || 135, 75);
+                
+                // Set canvas size to match container (maintain aspect ratio)
+                const aspectRatio = videoInput.videoWidth / videoInput.videoHeight;
+                const targetHeight = containerWidth / aspectRatio;
+                canvas.width = containerWidth;
+                canvas.height = Math.min(targetHeight, containerHeight);
+                
+                // Draw video frame
+                ctx.drawImage(videoInput, 0, 0, canvas.width, canvas.height);
+                
+                // Apply filter if specified
+                if (filter) {
+                    try {
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        
+                        if (wasmModule) {
+                            // Use WASM filter processing
+                            wasmModule.processFrame(canvas, canvas, filter, null, frameCount);
+                        } else {
+                            // Fallback to JavaScript filters
+                            applyJSFilter(imageData, filter, null);
+                            ctx.putImageData(imageData, 0, 0);
+                        }
+                    } catch (error) {
+                        // Canvas might be tainted (CORS), just show video without filter
+                        console.warn('Cannot apply filter to preview:', error);
+                    }
+                }
+                
+                // Draw wireframe overlay if enabled and filter is active
+                if (showWireframe && filter && ctx) {
+                    drawWireframeOverlay(ctx, canvas.width, canvas.height, filter);
+                }
+                
+                // Store filter name in dataset for visibility tracking
+                canvas.dataset.filter = filter || 'none';
+            } catch (error) {
+                // Silently handle errors (preview might fail due to CORS, etc.)
+            }
+        }
+        
+        // Navigate grid with arrow keys
+        function navigateGrid(direction) {
+            if (!fxGridContainer) return;
+            
+            const gridItems = Array.from(fxGridContainer.querySelectorAll('.fx-grid-item'));
+            if (gridItems.length === 0) return;
+            
+            // Get currently focused item or first item
+            let currentItem = document.activeElement;
+            if (!currentItem || !currentItem.classList.contains('fx-grid-item')) {
+                // No item focused, focus the first one
+                if (gridItems.length > 0) {
+                    gridItems[0].focus();
+                    gridItems[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                return;
+            }
+            
+            // Get current item position
+            const currentRect = currentItem.getBoundingClientRect();
+            const currentCenterX = currentRect.left + currentRect.width / 2;
+            const currentCenterY = currentRect.top + currentRect.height / 2;
+            
+            let bestItem = null;
+            let bestDistance = Infinity;
+            const threshold = 50; // Maximum distance to consider for adjacent items
+            
+            gridItems.forEach(item => {
+                if (item === currentItem) return;
+                
+                const itemRect = item.getBoundingClientRect();
+                const itemCenterX = itemRect.left + itemRect.width / 2;
+                const itemCenterY = itemRect.top + itemRect.height / 2;
+                
+                let isCandidate = false;
+                let distance = Infinity;
+                
+                switch (direction) {
+                    case 'up':
+                        // Item should be above current item
+                        if (itemCenterY < currentCenterY - threshold) {
+                            // Prefer items that are vertically aligned (similar X position)
+                            const horizontalDiff = Math.abs(itemCenterX - currentCenterX);
+                            if (horizontalDiff < itemRect.width) {
+                                distance = currentCenterY - itemCenterY + horizontalDiff * 0.1;
+                                isCandidate = true;
+                            }
+                        }
+                        break;
+                    case 'down':
+                        // Item should be below current item
+                        if (itemCenterY > currentCenterY + threshold) {
+                            const horizontalDiff = Math.abs(itemCenterX - currentCenterX);
+                            if (horizontalDiff < itemRect.width) {
+                                distance = itemCenterY - currentCenterY + horizontalDiff * 0.1;
+                                isCandidate = true;
+                            }
+                        }
+                        break;
+                    case 'left':
+                        // Item should be to the left of current item
+                        if (itemCenterX < currentCenterX - threshold) {
+                            // Prefer items that are horizontally aligned (similar Y position)
+                            const verticalDiff = Math.abs(itemCenterY - currentCenterY);
+                            if (verticalDiff < itemRect.height) {
+                                distance = currentCenterX - itemCenterX + verticalDiff * 0.1;
+                                isCandidate = true;
+                            }
+                        }
+                        break;
+                    case 'right':
+                        // Item should be to the right of current item
+                        if (itemCenterX > currentCenterX + threshold) {
+                            const verticalDiff = Math.abs(itemCenterY - currentCenterY);
+                            if (verticalDiff < itemRect.height) {
+                                distance = itemCenterX - currentCenterX + verticalDiff * 0.1;
+                                isCandidate = true;
+                            }
+                        }
+                        break;
+                }
+                
+                if (isCandidate && distance < bestDistance) {
+                    bestDistance = distance;
+                    bestItem = item;
+                }
+            });
+            
+            // If no candidate found, wrap around to the opposite side
+            if (!bestItem) {
+                switch (direction) {
+                    case 'up':
+                        // Find bottom-most item
+                        bestItem = gridItems.reduce((bottom, item) => {
+                            const itemRect = item.getBoundingClientRect();
+                            const bottomRect = bottom.getBoundingClientRect();
+                            return itemRect.bottom > bottomRect.bottom ? item : bottom;
+                        });
+                        break;
+                    case 'down':
+                        // Find top-most item
+                        bestItem = gridItems.reduce((top, item) => {
+                            const itemRect = item.getBoundingClientRect();
+                            const topRect = top.getBoundingClientRect();
+                            return itemRect.top < topRect.top ? item : top;
+                        });
+                        break;
+                    case 'left':
+                        // Find right-most item
+                        bestItem = gridItems.reduce((right, item) => {
+                            const itemRect = item.getBoundingClientRect();
+                            const rightRect = right.getBoundingClientRect();
+                            return itemRect.right > rightRect.right ? item : right;
+                        });
+                        break;
+                    case 'right':
+                        // Find left-most item
+                        bestItem = gridItems.reduce((left, item) => {
+                            const itemRect = item.getBoundingClientRect();
+                            const leftRect = left.getBoundingClientRect();
+                            return itemRect.left < leftRect.left ? item : left;
+                        });
+                        break;
+                }
+            }
+            
+            if (bestItem) {
+                bestItem.focus();
+                bestItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
         
@@ -3473,6 +4181,19 @@
                 });
             }
             
+            // Update grid modal selected state if open
+            if (fxGridContainer) {
+                const allGridItems = fxGridContainer.querySelectorAll('.fx-grid-item');
+                allGridItems.forEach(item => {
+                    item.classList.remove('selected');
+                    const itemFilter = item.dataset.filter;
+                    const filterKey = currentFilter || 'none';
+                    if (itemFilter === filterKey) {
+                        item.classList.add('selected');
+                    }
+                });
+            }
+            
             // Update URL unless we're in the middle of a roulette
             if (!skipURLUpdate) {
                 updateURLWithFX(currentFilter);
@@ -3865,7 +4586,7 @@
                     "groupTitle": "#feea3b",
                     "selectedText": "#000000"
                 },
-                "fx": ["water_ripple", "pincushion", "multi_ripple", "radial_squeeze", "elastic_stretch",
+                "fx": ["ultimate_distortion", "water_ripple", "pincushion", "multi_ripple", "radial_squeeze", "elastic_stretch",
                     "lens_distortion", "wave_distortion", "squeeze_horizontal", "squeeze_vertical",
                     "radial_wobble", "complex_ripple", "squish_face", "stretch_face", "funhouse_mirror",
                     "pinch_cheeks", "bulge_eyes", "warp_face", "funny_squash", "funny_stretch",
@@ -3891,6 +4612,7 @@
                     "selectedText": "#ffffff"
                 },
                 "fx": [
+                    "ultimate_distortion",
                     "bulge", "stretch", "swirl", "fisheye", "pinch", "wave", "mirror",
                     "twirl", "ripple", "sphere", "tunnel", "water_ripple",
                     "radial_blur", "cylinder", "barrel", "pincushion", "whirlpool", "radial_zoom",
@@ -4128,6 +4850,11 @@
             // Reload filters if they've been loaded already
             if (fxOptionsContainer) {
                 loadFilters();
+            }
+            
+            // Reload grid if it's currently open
+            if (fxGridModal && fxGridModal.classList.contains('active')) {
+                loadFxGrid();
             }
         }
         
@@ -6210,6 +6937,43 @@
                         }
                     }
                 }
+            },
+            applyUltimateDistortion(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const temp = new Uint8ClampedArray(data);
+
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        const dy = (y - centerY) / (height / 2);
+
+                        // Funhouse mirror horizontal stretching
+                        const horizontalStretch = 0.3 * Math.sin(dy * Math.PI * 2) * dx;
+
+                        // Multiple ripple effects at different frequencies
+                        const ripple1 = Math.sin(Math.sqrt(dx * dx + dy * dy) * 8) * 0.02;
+                        const ripple2 = Math.sin(Math.sqrt(dx * dx + dy * dy) * 15) * 0.01;
+
+                        // Wobbling distortion
+                        const wobble = 0.1 * Math.sin(dx * Math.PI * 3) * Math.cos(dy * Math.PI * 2);
+
+                        // Combine all distortions
+                        const distortX = horizontalStretch + ripple1 + ripple2 + wobble;
+                        const distortY = ripple1 * 1.5 + ripple2 * 0.8;
+
+                        const newX = Math.round(centerX + (x - centerX) * (1 + distortX));
+                        const newY = Math.round(centerY + (y - centerY) * (1 + distortY));
+
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
             }
         };
         
@@ -6288,18 +7052,18 @@
                     newY = y;
                     break;
                 case 'stretch_face':
-                    const stretchStrength = 0.4;
-                    const stretchDx = dx / (width / 2);
-                    const stretchFactor = 1.0 + stretchStrength * stretchDx * stretchDx;
+                    const stretchFaceStrength = 0.4;
+                    const stretchFaceDx = dx / (width / 2);
+                    const stretchFaceFactor = 1.0 + stretchFaceStrength * stretchFaceDx * stretchFaceDx;
                     newX = x;
-                    newY = centerY + dy / stretchFactor;
+                    newY = centerY + dy / stretchFaceFactor;
                     break;
                 case 'pinch_cheeks':
-                    const pinchStrength = 0.35;
-                    const pinchFactor = 1.0 - pinchStrength * Math.abs(Math.cos(angle)) * normalizedDist;
-                    const pinchNewDist = dist * pinchFactor;
-                    newX = centerX + pinchNewDist * Math.cos(angle);
-                    newY = centerY + pinchNewDist * Math.sin(angle);
+                    const pinchCheeksStrength = 0.35;
+                    const pinchCheeksFactor = 1.0 - pinchCheeksStrength * Math.abs(Math.cos(angle)) * normalizedDist;
+                    const pinchCheeksNewDist = dist * pinchCheeksFactor;
+                    newX = centerX + pinchCheeksNewDist * Math.cos(angle);
+                    newY = centerY + pinchCheeksNewDist * Math.sin(angle);
                     break;
                 case 'wobble_face':
                 case 'radial_wobble':
@@ -6355,6 +7119,276 @@
                     const gentleRipple = Math.sin(dist * gentleFrequency) * gentleAmplitude;
                     newX = x + gentleRipple * Math.cos(angle);
                     newY = y + gentleRipple * Math.sin(angle);
+                    break;
+                case 'ultimate_distortion':
+                    // Normalize coordinates to -1 to 1 range
+                    const normDx = dx / (width / 2);
+                    const normDy = dy / (height / 2);
+                    
+                    // Funhouse mirror horizontal stretching
+                    const horizontalStretch = 0.3 * Math.sin(normDy * Math.PI * 2) * normDx;
+                    
+                    // Multiple ripple effects at different frequencies
+                    const normDist = Math.sqrt(normDx * normDx + normDy * normDy);
+                    const ultRipple1 = Math.sin(normDist * 8) * 0.02;
+                    const ultRipple2 = Math.sin(normDist * 15) * 0.01;
+                    
+                    // Wobbling distortion
+                    const ultWobble = 0.1 * Math.sin(normDx * Math.PI * 3) * Math.cos(normDy * Math.PI * 2);
+                    
+                    // Combine all distortions
+                    const distortX = horizontalStretch + ultRipple1 + ultRipple2 + ultWobble;
+                    const distortY = ultRipple1 * 1.5 + ultRipple2 * 0.8;
+                    
+                    // Apply distortion to pixel coordinates
+                    newX = centerX + dx * (1 + distortX);
+                    newY = centerY + dy * (1 + distortY);
+                    break;
+                case 'stretch':
+                    const stretchHDx = dx / (width / 2);
+                    const stretchHFactor = 1.0 + 0.5 * stretchHDx * stretchHDx;
+                    newX = centerX + dx * stretchHFactor;
+                    newY = centerY + dy / stretchHFactor;
+                    break;
+                case 'pinch':
+                    const pinchBaseStrength = 0.4;
+                    const pinchBaseFactor = 1.0 - pinchBaseStrength * normalizedDist;
+                    newX = centerX + dx * pinchBaseFactor;
+                    newY = centerY + dy * pinchBaseFactor;
+                    break;
+                case 'wave':
+                    const waveStrength = 20;
+                    const waveOffset = Math.sin(y * 0.1) * waveStrength;
+                    newX = x + waveOffset;
+                    newY = y;
+                    break;
+                case 'mirror':
+                    // Mirror left half to right
+                    if (x < centerX) {
+                        newX = x;
+                    } else {
+                        newX = width - x;
+                    }
+                    newY = y;
+                    break;
+                case 'twirl':
+                    const twirlStrength = 1.5;
+                    if (dist < radius) {
+                        const twirlAngle = angle + twirlStrength * (1.0 - normalizedDist);
+                        newX = centerX + dist * Math.cos(twirlAngle);
+                        newY = centerY + dist * Math.sin(twirlAngle);
+                    }
+                    break;
+                case 'sphere':
+                    const sphereStrength = 0.3;
+                    const sphereFactor = 1.0 - sphereStrength * normalizedDist * normalizedDist;
+                    newX = centerX + dx * sphereFactor;
+                    newY = centerY + dy * sphereFactor;
+                    break;
+                case 'tunnel':
+                    const tunnelStrength = 0.4;
+                    const tunnelFactor = 1.0 + tunnelStrength * normalizedDist;
+                    newX = centerX + dx / tunnelFactor;
+                    newY = centerY + dy / tunnelFactor;
+                    break;
+                case 'cylinder':
+                    const cylinderStrength = 0.3;
+                    const cylinderFactor = 1.0 - cylinderStrength * Math.abs(Math.cos(angle)) * normalizedDist;
+                    newX = centerX + dx * cylinderFactor;
+                    newY = y;
+                    break;
+                case 'whirlpool':
+                    const whirlpoolStrength = 2.5;
+                    if (dist < radius) {
+                        const whirlpoolAngle = angle + whirlpoolStrength * normalizedDist;
+                        newX = centerX + dist * Math.cos(whirlpoolAngle);
+                        newY = centerY + dist * Math.sin(whirlpoolAngle);
+                    }
+                    break;
+                case 'radial_zoom':
+                    const zoomStrength = 0.3;
+                    const zoomFactor = 1.0 - zoomStrength * normalizedDist;
+                    newX = centerX + dx * zoomFactor;
+                    newY = centerY + dy * zoomFactor;
+                    break;
+                case 'concave':
+                    const concaveStrength = 0.4;
+                    const concaveFactor = 1.0 + concaveStrength * normalizedDist * normalizedDist;
+                    newX = centerX + dx * concaveFactor;
+                    newY = centerY + dy * concaveFactor;
+                    break;
+                case 'convex':
+                    const convexStrength = 0.4;
+                    const convexFactor = 1.0 - convexStrength * normalizedDist * normalizedDist;
+                    newX = centerX + dx * convexFactor;
+                    newY = centerY + dy * convexFactor;
+                    break;
+                case 'spiral':
+                    const spiralStrength = 2.0;
+                    if (dist < radius) {
+                        const spiralAngle = angle + spiralStrength * normalizedDist;
+                        newX = centerX + dist * Math.cos(spiralAngle);
+                        newY = centerY + dist * Math.sin(spiralAngle);
+                    }
+                    break;
+                case 'radial_stretch':
+                    const radialStretchStrength = 0.5;
+                    const radialStretchFactor = 1.0 + radialStretchStrength * normalizedDist;
+                    newX = centerX + dx * radialStretchFactor;
+                    newY = centerY + dy * radialStretchFactor;
+                    break;
+                case 'radial_compress':
+                    const radialCompressStrength = 0.5;
+                    const radialCompressFactor = 1.0 - radialCompressStrength * normalizedDist;
+                    newX = centerX + dx * radialCompressFactor;
+                    newY = centerY + dy * radialCompressFactor;
+                    break;
+                case 'vertical_wave':
+                    const vWaveStrength = 20;
+                    const vWaveOffset = Math.sin(x * 0.1) * vWaveStrength;
+                    newX = x;
+                    newY = y + vWaveOffset;
+                    break;
+                case 'horizontal_wave':
+                    const hWaveStrength = 20;
+                    const hWaveOffset = Math.sin(y * 0.1) * hWaveStrength;
+                    newX = x + hWaveOffset;
+                    newY = y;
+                    break;
+                case 'skew_horizontal':
+                    const skewHStrength = 0.3;
+                    const skewHOffset = (y - centerY) * skewHStrength;
+                    newX = x + skewHOffset;
+                    newY = y;
+                    break;
+                case 'skew_vertical':
+                    const skewVStrength = 0.3;
+                    const skewVOffset = (x - centerX) * skewVStrength;
+                    newX = x;
+                    newY = y + skewVOffset;
+                    break;
+                case 'rotate_zoom':
+                    const rotateZoomStrength = 0.2;
+                    const rotateZoomAngle = angle + rotateZoomStrength * normalizedDist;
+                    const rotateZoomFactor = 1.0 - 0.2 * normalizedDist;
+                    newX = centerX + dist * rotateZoomFactor * Math.cos(rotateZoomAngle);
+                    newY = centerY + dist * rotateZoomFactor * Math.sin(rotateZoomAngle);
+                    break;
+                case 'radial_wave':
+                    const radialWaveStrength = 15;
+                    const radialWave = Math.sin(dist * 0.08) * radialWaveStrength;
+                    newX = x + radialWave * Math.cos(angle);
+                    newY = y + radialWave * Math.sin(angle);
+                    break;
+                case 'zoom_in':
+                    const zoomInStrength = 0.4;
+                    const zoomInFactor = 1.0 - zoomInStrength * normalizedDist;
+                    newX = centerX + dx * zoomInFactor;
+                    newY = centerY + dy * zoomInFactor;
+                    break;
+                case 'zoom_out':
+                    const zoomOutStrength = 0.4;
+                    const zoomOutFactor = 1.0 + zoomOutStrength * normalizedDist;
+                    newX = centerX + dx * zoomOutFactor;
+                    newY = centerY + dy * zoomOutFactor;
+                    break;
+                case 'fast_zoom_in':
+                    const fastZoomInStrength = 0.6;
+                    const fastZoomInFactor = 1.0 - fastZoomInStrength * normalizedDist;
+                    newX = centerX + dx * fastZoomInFactor;
+                    newY = centerY + dy * fastZoomInFactor;
+                    break;
+                case 'fast_zoom_out':
+                    const fastZoomOutStrength = 0.6;
+                    const fastZoomOutFactor = 1.0 + fastZoomOutStrength * normalizedDist;
+                    newX = centerX + dx * fastZoomOutFactor;
+                    newY = centerY + dy * fastZoomOutFactor;
+                    break;
+                case 'shake':
+                    const shakeStrength = 10;
+                    const shakeX = (Math.random() - 0.5) * shakeStrength;
+                    const shakeY = (Math.random() - 0.5) * shakeStrength;
+                    newX = x + shakeX;
+                    newY = y + shakeY;
+                    break;
+                case 'pulse':
+                    const pulseStrength = 0.2;
+                    const pulseFactor = 1.0 + pulseStrength * Math.sin(normalizedDist * Math.PI * 4);
+                    newX = centerX + dx * pulseFactor;
+                    newY = centerY + dy * pulseFactor;
+                    break;
+                case 'spiral_zoom':
+                    const spiralZoomStrength = 2.0;
+                    const spiralZoomFactor = 1.0 - 0.3 * normalizedDist;
+                    if (dist < radius) {
+                        const spiralZoomAngle = angle + spiralZoomStrength * normalizedDist;
+                        newX = centerX + dist * spiralZoomFactor * Math.cos(spiralZoomAngle);
+                        newY = centerY + dist * spiralZoomFactor * Math.sin(spiralZoomAngle);
+                    }
+                    break;
+                case 'extreme_closeup':
+                    const extremeCloseupStrength = 0.7;
+                    const extremeCloseupFactor = 1.0 - extremeCloseupStrength * normalizedDist;
+                    newX = centerX + dx * extremeCloseupFactor;
+                    newY = centerY + dy * extremeCloseupFactor;
+                    break;
+                case 'lens_distortion':
+                    const lensStrength = 0.35;
+                    const lensFactor = 1.0 - lensStrength * normalizedDist * normalizedDist;
+                    newX = centerX + dx * lensFactor;
+                    newY = centerY + dy * lensFactor;
+                    break;
+                case 'funhouse_mirror':
+                    const funhouseStrength = 0.4;
+                    const funhouseDx = dx / (width / 2);
+                    const funhouseStretch = 1.0 + funhouseStrength * Math.sin(funhouseDx * Math.PI);
+                    newX = centerX + dx * funhouseStretch;
+                    newY = y;
+                    break;
+                case 'bulge_eyes':
+                    const bulgeEyesStrength = 0.6;
+                    const bulgeEyesRadius = radius * 0.6;
+                    const bulgeEyesDist = Math.sqrt(dx * dx + dy * dy);
+                    if (bulgeEyesDist < bulgeEyesRadius) {
+                        const bulgeEyesFactor = 1.0 - (bulgeEyesDist / bulgeEyesRadius) * bulgeEyesStrength;
+                        newX = centerX + dx * bulgeEyesFactor;
+                        newY = centerY + dy * bulgeEyesFactor;
+                    }
+                    break;
+                case 'warp_face':
+                    const warpStrength = 0.3;
+                    const warpDx = dx / (width / 2);
+                    const warpDy = dy / (height / 2);
+                    const warpX = warpDx * (1.0 + warpStrength * Math.sin(warpDy * Math.PI * 2));
+                    const warpY = warpDy * (1.0 + warpStrength * Math.cos(warpDx * Math.PI * 2));
+                    newX = centerX + warpX * (width / 2);
+                    newY = centerY + warpY * (height / 2);
+                    break;
+                case 'funny_squash':
+                    const funnySquashStrength = 0.4;
+                    const funnySquashDy = dy / (height / 2);
+                    const funnySquashFactor = 1.0 - funnySquashStrength * funnySquashDy * funnySquashDy;
+                    newX = centerX + dx / funnySquashFactor;
+                    newY = y;
+                    break;
+                case 'funny_stretch':
+                    const funnyStretchStrength = 0.4;
+                    const funnyStretchDx = dx / (width / 2);
+                    const funnyStretchFactor = 1.0 + funnyStretchStrength * funnyStretchDx * funnyStretchDx;
+                    newX = x;
+                    newY = centerY + dy / funnyStretchFactor;
+                    break;
+                case 'elastic_face':
+                    const elasticFaceStrength = 0.5;
+                    const elasticFaceFactor = 1.0 + elasticFaceStrength * Math.sin(normalizedDist * Math.PI * 3) * 0.3;
+                    newX = centerX + dx * elasticFaceFactor;
+                    newY = centerY + dy * elasticFaceFactor;
+                    break;
+                case 'smush_face':
+                    const smushStrength = 0.5;
+                    const smushFactor = 1.0 - smushStrength * normalizedDist;
+                    newX = centerX + dx * smushFactor;
+                    newY = centerY + dy * smushFactor;
                     break;
                 default:
                     // No distortion for unknown filters
@@ -6582,7 +7616,8 @@
                 'wobble_face': () => FilterImplementations.applyWobbleFace(data, width, height),
                 'elastic_face': () => FilterImplementations.applyElasticFace(data, width, height),
                 'gentle_ripple': () => FilterImplementations.applyGentleRipple(data, width, height),
-                'smush_face': () => FilterImplementations.applySmushFace(data, width, height)
+                'smush_face': () => FilterImplementations.applySmushFace(data, width, height),
+                'ultimate_distortion': () => FilterImplementations.applyUltimateDistortion(data, width, height)
             };
             
             const filterFunc = filterMap[filterType];
@@ -7352,6 +8387,57 @@
                 }, { passive: false });
             }
             
+            // FX Grid Modal event listeners
+            if (fxGridClose) {
+                fxGridClose.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeFxGridModal();
+                });
+                fxGridClose.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeFxGridModal();
+                }, { passive: false });
+            }
+            
+            // Close grid modal when clicking/tapping outside
+            if (fxGridModal) {
+                const handleGridModalClose = (e) => {
+                    const clickedContent = e.target.closest('.fx-grid-modal-content');
+                    if (e.target === fxGridModal || !clickedContent) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        closeFxGridModal();
+                    }
+                };
+                
+                fxGridModal.addEventListener('mousedown', (e) => {
+                    if (e.target === fxGridModal) {
+                        handleGridModalClose(e);
+                    }
+                });
+                
+                fxGridModal.addEventListener('click', handleGridModalClose);
+                
+                // Touch events for mobile
+                fxGridModal.addEventListener('touchstart', (e) => {
+                    if (e.target === fxGridModal) {
+                        fxGridModal._touchTarget = e.target;
+                    }
+                }, { passive: true });
+                
+                fxGridModal.addEventListener('touchend', (e) => {
+                    if (fxGridModal._touchTarget === fxGridModal && 
+                        (e.target === fxGridModal || !e.target.closest('.fx-grid-modal-content'))) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        closeFxGridModal();
+                    }
+                    fxGridModal._touchTarget = null;
+                }, { passive: false });
+            }
+            
             // Toggle UI when clicking/tapping on video (same as pressing 'h')
             // Also hide menu when tapping outside if camera is active
             if (videoContainer && canvasOutput) {
@@ -7521,12 +8607,22 @@
                     case 'ArrowUp':
                     case 'ArrowLeft':
                         e.preventDefault();
-                        cyclePrevFilter();
+                        // If grid modal is open, navigate grid instead
+                        if (fxGridModal && fxGridModal.classList.contains('active')) {
+                            navigateGrid(e.key === 'ArrowUp' ? 'up' : 'left');
+                        } else {
+                            cyclePrevFilter();
+                        }
                         break;
                     case 'ArrowDown':
                     case 'ArrowRight':
                         e.preventDefault();
-                        cycleNextFilter();
+                        // If grid modal is open, navigate grid instead
+                        if (fxGridModal && fxGridModal.classList.contains('active')) {
+                            navigateGrid(e.key === 'ArrowDown' ? 'down' : 'right');
+                        } else {
+                            cycleNextFilter();
+                        }
                         break;
                     case ' ':
                         e.preventDefault();
@@ -7538,8 +8634,14 @@
                         clearFilter();
                         break;
                     case 'Escape':
-                        // Clear filter on Escape (if not in search modal)
-                        if (!fxSearchModal || !fxSearchModal.classList.contains('active')) {
+                        // Close modals first, then clear filter
+                        if (fxGridModal && fxGridModal.classList.contains('active')) {
+                            e.preventDefault();
+                            closeFxGridModal();
+                        } else if (fxSearchModal && fxSearchModal.classList.contains('active')) {
+                            e.preventDefault();
+                            closeFxSearchModal();
+                        } else {
                             e.preventDefault();
                             clearFilter();
                         }
@@ -7569,6 +8671,15 @@
                     case 'T':
                         e.preventDefault();
                         showTutorial();
+                        break;
+                    case 'g':
+                    case 'G':
+                        e.preventDefault();
+                        if (fxGridModal && fxGridModal.classList.contains('active')) {
+                            closeFxGridModal();
+                        } else {
+                            openFxGridModal();
+                        }
                         break;
                 }
                 

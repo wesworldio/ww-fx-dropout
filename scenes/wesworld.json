@@ -17,7 +17,8 @@
     "groupTitle": "#5250ef",
     "selectedText": "#ffffff"
   },
-  "fx": [
+    "fx": [
+    "ultimate_distortion",
     "bulge", "stretch", "swirl", "fisheye", "pinch", "wave", "mirror",
     "twirl", "ripple", "sphere", "tunnel", "water_ripple",
     "radial_blur", "cylinder", "barrel", "pincushion", "whirlpool", "radial_zoom",
