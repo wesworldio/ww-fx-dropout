@@ -14,6 +14,15 @@ try:
     WATCHDOG_AVAILABLE = True
 except ImportError:
     WATCHDOG_AVAILABLE = False
+    # Create dummy classes for when watchdog is not available
+    class Observer:
+        def __init__(self): pass
+        def schedule(self, *args, **kwargs): pass
+        def start(self): pass
+        def stop(self): pass
+        def join(self): pass
+    class FileSystemEventHandler:
+        pass
     print("⚠️  watchdog not available. Install with: pip install watchdog")
     print("Falling back to polling mode...")
 

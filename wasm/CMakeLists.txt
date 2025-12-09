@@ -42,6 +42,7 @@ target_include_directories(wwfx_wasm PUBLIC include)
 # For Emscripten, create a module
 if(EMSCRIPTEN)
     add_executable(wwfx_module ${SOURCES})
+    target_include_directories(wwfx_module PRIVATE include)
     target_link_options(wwfx_module PRIVATE
         "SHELL:-s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','stringToUTF8']"
         "SHELL:-s EXPORTED_FUNCTIONS=['_malloc','_free']"

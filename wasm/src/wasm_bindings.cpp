@@ -105,8 +105,8 @@ EMSCRIPTEN_BINDINGS(wwfx_wasm) {
         .property("height", &WasmFaceRect::getHeight)
         .property("confidence", &WasmFaceRect::getConfidence);
     
-    function("applyFilter", &wasm_apply_filter);
-    function("applyFaceMask", &wasm_apply_face_mask);
+    function("applyFilter", &wasm_apply_filter, allow_raw_pointers());
+    function("applyFaceMask", &wasm_apply_face_mask, allow_raw_pointers());
     function("getFilterCount", &wasm_get_filter_count);
     
     // Filter type enum

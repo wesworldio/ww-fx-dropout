@@ -1,0 +1,45 @@
+{
+  "name": "WesWorld",
+  "colors": {
+    "background": "#000000",
+    "surface": "#1a1a1a",
+    "surfaceHover": "#2a2a2a",
+    "text": "#ffffff",
+    "textSecondary": "#cccccc",
+    "accent": "#5250ef",
+    "accentHover": "#6260ff",
+    "border": "#333333",
+    "borderHover": "#5250ef",
+    "button": "#5250ef",
+    "buttonHover": "#6260ff",
+    "statusConnected": "#4caf50",
+    "statusError": "#f44336",
+    "groupTitle": "#5250ef",
+    "selectedText": "#ffffff"
+  },
+  "fx": [
+    "bulge", "stretch", "swirl", "fisheye", "pinch", "wave", "mirror",
+    "twirl", "ripple", "sphere", "tunnel", "water_ripple",
+    "radial_blur", "cylinder", "barrel", "pincushion", "whirlpool", "radial_zoom",
+    "multi_ripple", "radial_squeeze", "elastic_stretch", "lens_distortion",
+    "wave_distortion", "squeeze_horizontal", "squeeze_vertical", "radial_wobble", "complex_ripple",
+    "squish_face", "stretch_face", "funhouse_mirror", "pinch_cheeks", "bulge_eyes",
+    "warp_face", "funny_squash", "funny_stretch", "wobble_face", "elastic_face",
+    "gentle_ripple", "smush_face",
+    "concave", "convex", "spiral", "radial_stretch", "radial_compress",
+    "vertical_wave", "horizontal_wave", "skew_horizontal", "skew_vertical",
+    "rotate_zoom", "radial_wave", "zoom_in", "zoom_out", "fast_zoom_in",
+    "fast_zoom_out", "shake", "pulse", "spiral_zoom", "extreme_closeup",
+    "puzzle", "rotate", "rotate_45", "rotate_90", "flip_horizontal",
+    "flip_vertical", "flip_both", "quad_mirror", "tile", "radial_tile",
+    "zoom_blur", "melt", "kaleidoscope", "glitch", "double_vision",
+    "black_white", "sepia", "vintage", "neon_glow",
+    "pixelate", "blur", "sharpen", "emboss", "red_tint", "blue_tint",
+    "green_tint", "rainbow", "negative", "posterize", "sketch", "cartoon",
+    "thermal", "ice", "ocean", "plasma", "jet", "turbo", "inferno",
+    "magma", "viridis", "cool", "hot", "spring", "summer", "autumn",
+    "winter", "rainbow_shift", "acid_trip", "vhs", "retro", "cyberpunk",
+    "anime", "glow", "solarize", "edge_detect", "halftone"
+  ]
+}
+

@@ -57,6 +57,45 @@
             -webkit-tap-highlight-color: transparent;
         }
         
+        #currentFxOverlay {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 999;
+            background: var(--surface-color, rgba(26, 26, 26, 0.9));
+            color: var(--text-color, white);
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color, #333);
+            font-size: 13px;
+            font-weight: 500;
+            pointer-events: none;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            display: none;
+            max-width: calc(100vw - 20px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        #currentFxOverlay.active {
+            display: block;
+        }
+        
+        #currentFxOverlay .fx-label {
+            color: var(--text-secondary-color, #cccccc);
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-right: 6px;
+        }
+        
+        #currentFxOverlay .fx-name {
+            color: var(--accent-color, #5250ef);
+            font-weight: 600;
+        }
+        
         #videoInput {
             display: none;
         }
@@ -369,7 +408,7 @@
         .current-fx-display {
             padding: 12px;
             background: var(--surface-color, #1a1a1a);
-            border: 1px solid var(--border-color, #333);
+            border: none;
             border-radius: 4px;
             display: flex;
             justify-content: space-between;
@@ -583,7 +622,7 @@
         .fx-search-modal-content {
             width: 100%;
             max-width: 600px;
-            background: #1e1e1e;
+            background: var(--surface-color, #1e1e1e);
             border-radius: 0;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
             overflow: hidden;
@@ -595,8 +634,8 @@
             position: relative;
             pointer-events: auto;
             /* Better contrast and readability */
-            color: #ffffff;
-            border: 1px solid #333;
+            color: var(--text-color, #ffffff);
+            border: 1px solid var(--border-color, #333);
         }
         
         /* Prevent clicks inside content from closing modal */
@@ -666,13 +705,13 @@
         
         .fx-search-header {
             padding: 16px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-color, #333);
             display: flex;
             flex-direction: column;
             align-items: stretch;
             position: relative;
             flex-shrink: 0;
-            background: #1e1e1e;
+            background: var(--surface-color, #1e1e1e);
             /* Better spacing and touch targets */
             gap: 8px;
         }
@@ -699,7 +738,7 @@
             left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: #888;
+            color: var(--text-secondary-color, #888);
             pointer-events: none;
             z-index: 1;
             transition: color 0.2s;
@@ -707,17 +746,17 @@
         
         .fx-search-header .fx-search-input:focus ~ .fx-search-icon,
         .fx-search-header .fx-search-input:not(:placeholder-shown) ~ .fx-search-icon {
-            color: #ffd700;
+            color: var(--accent-color, #ffd700);
         }
         
         .fx-search-header .fx-search-input {
             width: 100%;
             padding: 12px 40px 12px 42px;
-            background: #2a2a2a;
-            border: 1px solid #444;
+            background: var(--surface-hover-color, #2a2a2a);
+            border: 1px solid var(--border-color, #444);
             border-radius: 8px;
             font-size: 15px;
-            color: #ffffff !important;
+            color: var(--text-color, #ffffff) !important;
             min-width: 0;
             -webkit-appearance: none;
             appearance: none;
@@ -728,14 +767,15 @@
         
         .fx-search-header .fx-search-input:focus {
             outline: none;
-            border-color: #ffd700;
-            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
-            background: #2f2f2f;
+            border-color: var(--accent-color, #ffd700);
+            /* Subtle glow using accent color - border is main indicator */
+            box-shadow: 0 0 0 2px var(--accent-color, rgba(255, 215, 0, 0.2));
+            background: var(--surface-hover-color, #2f2f2f);
         }
         
         .fx-search-header .fx-search-input:hover:not(:focus) {
-            border-color: #555;
-            background: #2d2d2d;
+            border-color: var(--border-hover-color, #555);
+            background: var(--surface-hover-color, #2d2d2d);
         }
         
         @media (max-width: 768px) {
@@ -761,7 +801,7 @@
             width: 40px;
             background: none;
             border: none;
-            color: #666666;
+            color: var(--text-secondary-color, #666666);
             cursor: pointer;
             font-size: 20px;
             line-height: 1;
@@ -785,9 +825,9 @@
         
         .fx-search-clear:hover,
         .fx-search-clear:focus {
-            color: #ffffff;
+            color: var(--text-color, #ffffff);
             background-color: rgba(255, 255, 255, 0.15);
-            outline: 2px solid rgba(255, 215, 0, 0.3);
+            outline: 2px solid var(--accent-color, rgba(255, 215, 0, 0.3));
             outline-offset: 2px;
             transform: scale(1.1);
         }
@@ -807,18 +847,18 @@
         }
         
         .fx-search-header .fx-search-input::placeholder {
-            color: #999 !important;
+            color: var(--text-secondary-color, #999) !important;
             opacity: 1;
         }
         
         .fx-search-header .fx-search-input:focus::placeholder {
-            color: #777 !important;
+            color: var(--text-secondary-color, #777) !important;
         }
         
         .fx-search-header .fx-search-input:-webkit-autofill,
         .fx-search-header .fx-search-input:-webkit-autofill:hover,
         .fx-search-header .fx-search-input:-webkit-autofill:focus {
-            -webkit-text-fill-color: #ffffff !important;
+            -webkit-text-fill-color: var(--text-color, #ffffff) !important;
             -webkit-box-shadow: 0 0 0px 1000px var(--surface-hover-color, #2a2a2a) inset !important;
         }
         
@@ -828,10 +868,10 @@
             padding: 4px;
             -webkit-overflow-scrolling: touch;
             flex: 1;
-            background: #1e1e1e;
+            background: var(--surface-color, #1e1e1e);
             /* Better scrollbar styling */
             scrollbar-width: thin;
-            scrollbar-color: #ffd700 transparent;
+            scrollbar-color: var(--accent-color, #ffd700) transparent;
         }
         
         .fx-search-results::-webkit-scrollbar {
@@ -843,12 +883,12 @@
         }
         
         .fx-search-results::-webkit-scrollbar-thumb {
-            background: #555;
+            background: var(--border-color, #555);
             border-radius: 3px;
         }
         
         .fx-search-results::-webkit-scrollbar-thumb:hover {
-            background: #666;
+            background: var(--border-hover-color, #666);
         }
         
         @media (max-width: 768px) {
@@ -896,7 +936,7 @@
         /* Ensure all text in modal is visible */
         .fx-search-modal-content,
         .fx-search-modal-content * {
-            color: #ffffff;
+            color: var(--text-color, #ffffff);
         }
         
         .fx-search-modal-content .fx-group-title,
@@ -906,11 +946,11 @@
         
         /* Text color is handled by .fx-option-text rules above */
         .fx-search-modal-content .fx-option-text {
-            color: #ffffff;
+            color: var(--text-color, #ffffff);
         }
         
         .fx-search-modal-content .fx-option.selected .fx-option-text {
-            color: #000000 !important;
+            color: var(--selected-text-color, #000000) !important;
         }
         
         .fx-group {
@@ -921,16 +961,16 @@
             padding: 6px 12px;
             font-size: 10px;
             font-weight: 700;
-            color: #ffd700;
+            color: var(--group-title-color, var(--accent-color, #ffd700));
             text-transform: uppercase;
-            background: #252525;
-            border-bottom: 1px solid #333;
+            background: var(--surface-hover-color, #252525);
+            border-bottom: 1px solid var(--border-color, #333);
             letter-spacing: 0.5px;
         }
         
         .fx-option {
             padding: 10px 12px;
-            color: #ffffff !important;
+            color: var(--text-color, #ffffff) !important;
             cursor: pointer;
             border: none;
             background: transparent;
@@ -951,7 +991,7 @@
         
         .fx-option:hover,
         .fx-option:focus {
-            background: #2a2a2a;
+            background: var(--surface-hover-color, #2a2a2a);
             outline: none;
         }
         
@@ -962,21 +1002,21 @@
         }
         
         .fx-option:active {
-            background: #333;
+            background: var(--surface-hover-color, #333);
             transform: scale(0.99);
         }
         
         /* Better touch feedback on mobile */
         @media (hover: none) and (pointer: coarse) {
             .fx-option:active {
-                background: #333;
+                background: var(--surface-hover-color, #333);
                 transform: scale(0.98);
             }
         }
         
         .fx-option.selected {
-            background: #ffd700 !important;
-            color: #000000 !important;
+            background: var(--button-color, var(--accent-color, #ffd700)) !important;
+            color: var(--selected-text-color, #000000) !important;
             font-weight: 600;
             border: none;
         }
@@ -1033,6 +1073,7 @@
         }
         
         .fx-option-pin {
+            display: none !important; /* Pinning disabled */
             cursor: pointer;
             font-size: 14px;
             padding: 0;
@@ -1045,7 +1086,6 @@
             min-height: 32px;
             width: 32px;
             height: 32px;
-            display: flex;
             align-items: center;
             justify-content: center;
             -webkit-tap-highlight-color: transparent;
@@ -1088,6 +1128,7 @@
         }
         
         .fx-current-pin {
+            display: none !important; /* Pinning disabled */
             cursor: pointer;
             font-size: 16px;
             padding: 4px;
@@ -1448,10 +1489,9 @@
             <div class="section-title" id="settingsToggle">Settings</div>
             <div class="settings-section-content">
                 <label>
-                    Theme:
-                    <select id="themeSelect">
-                        <option value="wesworld">WesWorld</option>
-                        <option value="dropout">Dropout</option>
+                    Scene:
+                    <select id="sceneSelect">
+                        <!-- Options will be populated dynamically from scenes/scenes.json -->
                     </select>
                 </label>
                 <label>
@@ -1486,7 +1526,12 @@
             </div>
         </div>
         
-        <!-- Search FX (moved above FX section) -->
+        <!-- Start Roulette Button -->
+        <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color, #333);">
+            <button id="startRouletteButton" type="button" style="width: 100%;">🎰 Start Roulette</button>
+        </div>
+        
+        <!-- Search FX -->
         <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color, #333);">
             <button id="fxSearchTrigger" class="fx-search-trigger" type="button" style="width: 100%;">
                 <span>🔍</span> Search FX...
@@ -1494,24 +1539,17 @@
         </div>
         
         <!-- FX Section -->
-        <div class="fx-section">
-            <div class="section-title" id="fxToggle">FX</div>
+        <div class="fx-section expanded">
+            <div class="section-title expanded" id="fxToggle">FX</div>
             <div class="fx-section-content">
                 <label>
                     Current FX:
                     <div class="current-fx-display">
                         <span id="fxSelectedText">None (Original)</span>
                         <div class="current-fx-actions">
-                            <span id="fxCurrentPin" class="fx-current-pin" style="display: none;" title="Pin current FX"></span>
+                            <span id="fxCurrentPin" class="fx-current-pin" style="display: none !important;" title="Pin current FX"></span>
                             <button id="clearFilterButton" class="clear-filter-button" type="button" title="Clear filter (C)" style="display: none;">✕</button>
                         </div>
-                    </div>
-                </label>
-                <label>
-                    Pinned FX:
-                    <div class="all-fx-container">
-                        <button id="startRouletteButton" type="button" style="width: 100%; margin-bottom: 8px;">🎰 Start Roulette</button>
-                        <div id="pinnedFxContainer" class="pinned-fx-container"></div>
                     </div>
                 </label>
             </div>
@@ -1530,6 +1568,10 @@
                     <div class="help-command" data-action="open-search">
                         <span class="help-command-desc">Open FX search</span>
                         <span class="help-command-key"><kbd>F</kbd></span>
+                    </div>
+                    <div class="help-command" data-action="toggle-wireframe">
+                        <span class="help-command-desc">Toggle wireframe overlay</span>
+                        <span class="help-command-key">W</span>
                     </div>
                 </div>
                 
@@ -1572,8 +1614,6 @@
                 <div class="help-category">
                     <div class="help-category-title">Tips</div>
                     <div style="color: var(--text-secondary-color, #cccccc); font-size: 11px; line-height: 1.5;">
-                        • Click the pin icon (📌) to save favorite filters<br>
-                        • Drag pinned filters to reorder them<br>
                         • Use search (F) to quickly find filters<br>
                         • Press H to hide/show the UI for clean video capture<br>
                         • Tap any corner of the screen to open the menu
@@ -1644,6 +1684,11 @@
     <div class="corner-tap-area bottom-left" id="cornerBottomLeft" aria-label="Tap to open menu"></div>
     <div class="corner-tap-area bottom-right" id="cornerBottomRight" aria-label="Tap to open menu"></div>
     
+    <div id="currentFxOverlay">
+        <span class="fx-label">FX:</span>
+        <span class="fx-name" id="currentFxOverlayName">None</span>
+    </div>
+    
     <div id="videoContainer">
         <video id="videoInput" autoplay playsinline muted></video>
         <canvas id="canvasOutput"></canvas>
@@ -1689,6 +1734,12 @@
                     message.includes('Sets FaceBlendshapesGraph acceleration')) {
                     return; // Suppress MediaPipe warnings
                 }
+                // Suppress CORS warnings when using file:// protocol (we handle with embedded data)
+                if (window.location.protocol === 'file:' && 
+                    (message.includes('CORS') || message.includes('Cross origin') || 
+                     message.includes('Could not load') && (message.includes('scenes') || message.includes('build-info')))) {
+                    return; // Suppress CORS warnings for file:// protocol
+                }
                 originalConsole.warn(...args);
             }
         };
@@ -1728,6 +1779,13 @@
                 (message.includes('404') || message.includes('Failed to load') || 
                  message.includes('GET') || message.includes('Not Found'))) {
                 return; // Suppress expected mask discovery errors
+            }
+            
+            // Suppress CORS errors when using file:// protocol (we handle with embedded data)
+            if (window.location.protocol === 'file:' && 
+                (message.includes('CORS') || message.includes('Cross origin') || 
+                 message.includes('file://') && message.includes('blocked'))) {
+                return; // Suppress CORS errors for file:// protocol
             }
             
             // Log real errors (always, not just in development)
@@ -1777,6 +1835,7 @@
         let frameCount = 0;
         let animationFrameId = null;
         let allFilters = [];
+        let showWireframe = false;
         let pinnedFilters = [];
         let controlsVisible = true;
         let isRandomCycling = false;
@@ -1798,6 +1857,13 @@
         
         // Load build info from build-info.json (generated by build script)
         async function loadBuildInfo() {
+            // If using file:// protocol, use embedded data immediately
+            if (isFileProtocol()) {
+                BUILD_INFO = EMBEDDED_BUILD_INFO;
+                console.log('Using embedded build info (file:// protocol)');
+                return BUILD_INFO;
+            }
+            
             try {
                 const response = await fetch('build-info.json?' + Date.now());
                 if (response.ok) {
@@ -1811,9 +1877,9 @@
                 console.warn('Could not load build-info.json:', e.message);
             }
             
-            // Fallback: use file modification time or current time
+            // Fallback: use embedded data or file modification time
             console.warn('Using fallback build info');
-            BUILD_INFO = {
+            BUILD_INFO = EMBEDDED_BUILD_INFO || {
                 buildNumber: 0,
                 buildTimestamp: Date.now(),
                 commitHash: 'unknown',
@@ -1904,9 +1970,14 @@
             }
         }
         
-        // Filter categories (matching original)
+        // Filter categories - will be built from current scene's fx configuration
         // Face masks will be added dynamically after discovery
-        const FILTER_CATEGORIES = {
+        let FILTER_CATEGORIES = {
+            'DROPOUT': []
+        };
+        
+        // Default filter categories (for organizing when using flat array)
+        const DEFAULT_FILTER_CATEGORIES = {
             'DROPOUT': [],
             'Distortion': ['bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
                           'twirl', 'ripple', 'sphere', 'tunnel', 'water_ripple',
@@ -1917,7 +1988,12 @@
                           'fast_zoom_out', 'shake', 'pulse', 'spiral_zoom', 'extreme_closeup',
                           'puzzle', 'rotate', 'rotate_45', 'rotate_90', 'flip_horizontal',
                           'flip_vertical', 'flip_both', 'quad_mirror', 'tile', 'radial_tile',
-                          'zoom_blur', 'melt', 'kaleidoscope', 'glitch', 'double_vision'],
+                          'zoom_blur', 'melt', 'kaleidoscope', 'glitch', 'double_vision',
+                          'multi_ripple', 'radial_squeeze', 'elastic_stretch', 'lens_distortion',
+                          'wave_distortion', 'squeeze_horizontal', 'squeeze_vertical', 'radial_wobble', 'complex_ripple',
+                          'squish_face', 'stretch_face', 'funhouse_mirror', 'pinch_cheeks', 'bulge_eyes',
+                          'warp_face', 'funny_squash', 'funny_stretch', 'wobble_face', 'elastic_face',
+                          'gentle_ripple', 'smush_face'],
             'Color & Style': ['black_white', 'sepia', 'vintage', 'neon_glow',
                              'pixelate', 'blur', 'sharpen', 'emboss', 'red_tint', 'blue_tint',
                              'green_tint', 'rainbow', 'negative', 'posterize', 'sketch', 'cartoon',
@@ -1927,10 +2003,55 @@
                              'anime', 'glow', 'solarize', 'edge_detect', 'halftone']
         };
         
-        // Build flat filter list
-        Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
-            allFilters.push(...categoryFilters);
-        });
+        // Build filter categories from current scene
+        function buildFilterCategories() {
+            const currentSceneKey = sceneSelect ? sceneSelect.value : 'dropout';
+            const currentScene = SCENES[currentSceneKey];
+            
+            // Preserve DROPOUT face masks (added dynamically)
+            const existingDropoutMasks = (FILTER_CATEGORIES['DROPOUT'] || []).filter(
+                f => f.includes('face_mask')
+            );
+            
+            // Start with DROPOUT (face masks preserved)
+            FILTER_CATEGORIES = {
+                'DROPOUT': existingDropoutMasks
+            };
+            
+            // Process scene's fx configuration
+            if (currentScene && currentScene.fx) {
+                if (Array.isArray(currentScene.fx)) {
+                    // Flat array: filter default categories to only include enabled filters
+                    const enabledFilters = new Set(currentScene.fx);
+                    
+                    Object.entries(DEFAULT_FILTER_CATEGORIES).forEach(([category, filters]) => {
+                        if (category !== 'DROPOUT') {
+                            FILTER_CATEGORIES[category] = filters.filter(f => enabledFilters.has(f));
+                        }
+                    });
+                } else if (typeof currentScene.fx === 'object') {
+                    // Groups: use the groups directly
+                    Object.entries(currentScene.fx).forEach(([groupName, filters]) => {
+                        if (groupName !== 'DROPOUT') {
+                            FILTER_CATEGORIES[groupName] = Array.isArray(filters) ? filters : [];
+                        }
+                    });
+                }
+            } else {
+                // No fx config: use all default categories
+                Object.entries(DEFAULT_FILTER_CATEGORIES).forEach(([category, filters]) => {
+                    if (category !== 'DROPOUT') {
+                        FILTER_CATEGORIES[category] = [...filters];
+                    }
+                });
+            }
+            
+            // Rebuild flat filter list
+            allFilters.length = 0;
+            Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
+                allFilters.push(...categoryFilters);
+            });
+        }
         
         // Elements
         const videoInput = document.getElementById('videoInput');
@@ -1947,12 +2068,14 @@
         const fxSearchModal = document.getElementById('fxSearchModal');
         const fxSearchClear = document.getElementById('fxSearchClear');
         const pinnedFxContainer = document.getElementById('pinnedFxContainer');
+        const currentFxOverlay = document.getElementById('currentFxOverlay');
+        const currentFxOverlayName = document.getElementById('currentFxOverlayName');
         const startButton = document.getElementById('startButton');
         const stopButton = document.getElementById('stopButton');
         const statusDiv = document.getElementById('status');
         const cameraStatusText = document.getElementById('cameraStatusText');
         const controls = document.getElementById('controls');
-        const themeSelect = document.getElementById('themeSelect');
+        const sceneSelect = document.getElementById('sceneSelect');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const testImageInput = document.getElementById('testImageInput');
         const videoContainer = document.getElementById('videoContainer');
@@ -2248,6 +2371,9 @@
         
         // Update pinned FX display
         function updatePinnedFxDisplay() {
+            if (!pinnedFxContainer) {
+                return; // Pinned FX container removed from UI
+            }
             pinnedFxContainer.innerHTML = '';
             
             if (pinnedFilters.length === 0) {
@@ -2310,17 +2436,12 @@
             loadFilters();
         }
         
-        // Update current pin icon
+        // Update current pin icon (disabled - pinning is hidden)
         function updateCurrentPinIcon() {
-            if (!currentFilter) {
+            // Pinning is disabled - always hide the pin icon
+            if (fxCurrentPin) {
                 fxCurrentPin.style.display = 'none';
-                return;
             }
-            
-            fxCurrentPin.style.display = 'flex';
-            const isPinned = pinnedFilters.includes(currentFilter);
-            fxCurrentPin.innerHTML = isPinned ? '📌' : '📍';
-            fxCurrentPin.title = isPinned ? 'Unpin current FX' : 'Pin current FX';
         }
         
         // Load filters
@@ -2410,47 +2531,12 @@
                 option.appendChild(optionText);
             }
             
-            if (filter) {
-                const pinIcon = document.createElement('button');
-                pinIcon.className = 'fx-option-pin';
-                pinIcon.type = 'button';
-                pinIcon.setAttribute('aria-label', pinnedFilters.includes(filter) ? 'Unpin filter' : 'Pin filter');
-                pinIcon.innerHTML = pinnedFilters.includes(filter) ? '📌' : '📍';
-                pinIcon.title = pinnedFilters.includes(filter) ? 'Unpin' : 'Pin';
-                pinIcon.setAttribute('tabindex', '0');
-                const handlePinClick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (pinnedFilters.includes(filter)) {
-                        unpinFilter(filter);
-                    } else {
-                        if (!pinnedFilters.includes(filter)) {
-                            pinnedFilters.unshift(filter);
-                            savePinnedFilters();
-                            updatePinnedFxDisplay();
-                            loadFilters();
-                        }
-                    }
-                };
-                
-                pinIcon.onclick = handlePinClick;
-                // Also handle touch events for mobile
-                pinIcon.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handlePinClick(e);
-                }, { passive: false });
-                
-                // Keyboard support for pin button
-                pinIcon.onkeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handlePinClick(e);
-                    }
-                };
-                option.appendChild(pinIcon);
-            }
+            // Pin icon creation disabled - pinning is hidden
+            // if (filter) {
+            //     const pinIcon = document.createElement('button');
+            //     ... pin icon code ...
+            //     option.appendChild(pinIcon);
+            // }
             
             // Handle both click and touch events for better mobile/desktop support
             const handleOptionClick = (e) => {
@@ -2712,7 +2798,7 @@
                 // Common potential mask names to try (can be extended)
                 // These are just common names - the system will discover any mask_*.png file
                 const potentialNames = [
-                    'sam'
+                    // No default masks - masks are discovered dynamically
                 ];
                 
                 // Error suppression is handled globally - 404s during discovery are expected
@@ -3355,6 +3441,10 @@
                 if (clearFilterButton) {
                     clearFilterButton.style.display = 'none';
                 }
+                // Update overlay
+                if (currentFxOverlay) {
+                    currentFxOverlay.classList.remove('active');
+                }
                 // Update title
                 document.title = 'WesWorld FX';
             } else {
@@ -3362,6 +3452,11 @@
                 updateCurrentPinIcon();
                 if (clearFilterButton) {
                     clearFilterButton.style.display = 'flex';
+                }
+                // Update overlay
+                if (currentFxOverlay && currentFxOverlayName) {
+                    currentFxOverlayName.textContent = formatFilterName(currentFilter);
+                    currentFxOverlay.classList.add('active');
                 }
                 // Update title with filter name
                 document.title = 'WesWorld FX - ' + formatFilterName(currentFilter);
@@ -3723,6 +3818,11 @@
                     }
                 }
                 
+                // Draw wireframe overlay if enabled and filter is active
+                if (showWireframe && currentFilter && ctx && canvasOutput) {
+                    drawWireframeOverlay(ctx, canvasOutput.width, canvasOutput.height, currentFilter);
+                }
+                
                 frameCount++;
             } catch (error) {
                 console.error('Error processing frame:', error);
@@ -3736,97 +3836,298 @@
             }
         }
         
-        // Theme definitions
-        const THEMES = {
-            wesworld: {
-                name: "WesWorld",
-                colors: {
-                    background: "#000000",
-                    surface: "#1a1a1a",
-                    surfaceHover: "#2a2a2a",
-                    text: "#ffffff",
-                    textSecondary: "#cccccc",
-                    accent: "#5250ef",
-                    accentHover: "#6260ff",
-                    border: "#333333",
-                    borderHover: "#5250ef",
-                    button: "#5250ef",
-                    buttonHover: "#6260ff",
-                    statusConnected: "#4caf50",
-                    statusError: "#f44336",
-                    groupTitle: "#5250ef",
-                    selectedText: "#ffffff"
-                }
+        // Scene definitions - loaded from JSON files
+        const SCENES = {};
+        
+        // Check if we're using file:// protocol (CORS will block fetch)
+        function isFileProtocol() {
+            return window.location.protocol === 'file:';
+        }
+        
+        // Embedded scenes data for file:// protocol fallback
+        const EMBEDDED_SCENES = {
+            "dropout": {
+                "name": "Dropout",
+                "colors": {
+                    "background": "#0a0a0a",
+                    "surface": "#1a1a1a",
+                    "surfaceHover": "#2a2a2a",
+                    "text": "#ffffff",
+                    "textSecondary": "#e0e0e0",
+                    "accent": "#feea3b",
+                    "accentHover": "#fff04a",
+                    "border": "#333333",
+                    "borderHover": "#feea3b",
+                    "button": "#feea3b",
+                    "buttonHover": "#fff04a",
+                    "statusConnected": "#4caf50",
+                    "statusError": "#ff4444",
+                    "groupTitle": "#feea3b",
+                    "selectedText": "#000000"
+                },
+                "fx": ["water_ripple", "pincushion", "multi_ripple", "radial_squeeze", "elastic_stretch",
+                    "lens_distortion", "wave_distortion", "squeeze_horizontal", "squeeze_vertical",
+                    "radial_wobble", "complex_ripple", "squish_face", "stretch_face", "funhouse_mirror",
+                    "pinch_cheeks", "bulge_eyes", "warp_face", "funny_squash", "funny_stretch",
+                    "wobble_face", "elastic_face", "gentle_ripple", "smush_face"]
             },
-            dropout: {
-                name: "Dropout",
-                colors: {
-                    background: "#0a0a0a",
-                    surface: "#1a1a1a",
-                    surfaceHover: "#2a2a2a",
-                    text: "#ffffff",
-                    textSecondary: "#e0e0e0",
-                    accent: "#feea3b",
-                    accentHover: "#fff04a",
-                    border: "#333333",
-                    borderHover: "#feea3b",
-                    button: "#feea3b",
-                    buttonHover: "#fff04a",
-                    statusConnected: "#4caf50",
-                    statusError: "#ff4444",
-                    groupTitle: "#feea3b",
-                    selectedText: "#000000"
-                }
+            "wesworld": {
+                "name": "WesWorld",
+                "colors": {
+                    "background": "#000000",
+                    "surface": "#1a1a1a",
+                    "surfaceHover": "#2a2a2a",
+                    "text": "#ffffff",
+                    "textSecondary": "#cccccc",
+                    "accent": "#5250ef",
+                    "accentHover": "#6260ff",
+                    "border": "#333333",
+                    "borderHover": "#5250ef",
+                    "button": "#5250ef",
+                    "buttonHover": "#6260ff",
+                    "statusConnected": "#4caf50",
+                    "statusError": "#f44336",
+                    "groupTitle": "#5250ef",
+                    "selectedText": "#ffffff"
+                },
+                "fx": [
+                    "bulge", "stretch", "swirl", "fisheye", "pinch", "wave", "mirror",
+                    "twirl", "ripple", "sphere", "tunnel", "water_ripple",
+                    "radial_blur", "cylinder", "barrel", "pincushion", "whirlpool", "radial_zoom",
+                    "multi_ripple", "radial_squeeze", "elastic_stretch", "lens_distortion",
+                    "wave_distortion", "squeeze_horizontal", "squeeze_vertical", "radial_wobble", "complex_ripple",
+                    "squish_face", "stretch_face", "funhouse_mirror", "pinch_cheeks", "bulge_eyes",
+                    "warp_face", "funny_squash", "funny_stretch", "wobble_face", "elastic_face",
+                    "gentle_ripple", "smush_face",
+                    "concave", "convex", "spiral", "radial_stretch", "radial_compress",
+                    "vertical_wave", "horizontal_wave", "skew_horizontal", "skew_vertical",
+                    "rotate_zoom", "radial_wave", "zoom_in", "zoom_out", "fast_zoom_in",
+                    "fast_zoom_out", "shake", "pulse", "spiral_zoom", "extreme_closeup",
+                    "puzzle", "rotate", "rotate_45", "rotate_90", "flip_horizontal",
+                    "flip_vertical", "flip_both", "quad_mirror", "tile", "radial_tile",
+                    "zoom_blur", "melt", "kaleidoscope", "glitch", "double_vision",
+                    "black_white", "sepia", "vintage", "neon_glow",
+                    "pixelate", "blur", "sharpen", "emboss", "red_tint", "blue_tint",
+                    "green_tint", "rainbow", "negative", "posterize", "sketch", "cartoon",
+                    "thermal", "ice", "ocean", "plasma", "jet", "turbo", "inferno",
+                    "magma", "viridis", "cool", "hot", "spring", "summer", "autumn",
+                    "winter", "rainbow_shift", "acid_trip", "vhs", "retro", "cyberpunk",
+                    "anime", "glow", "solarize", "edge_detect", "halftone"
+                ]
             }
         };
         
-        // Load and apply theme
-        function loadThemes() {
-            // Populate theme dropdown
-            themeSelect.innerHTML = '';
-            Object.keys(THEMES).forEach(themeKey => {
-                const option = document.createElement('option');
-                option.value = themeKey;
-                option.textContent = THEMES[themeKey].name;
-                themeSelect.appendChild(option);
-            });
+        // Embedded scenes manifest for file:// protocol fallback
+        const EMBEDDED_SCENES_MANIFEST = {
+            "scenes": ["dropout", "wesworld"]
+        };
+        
+        // Embedded build info for file:// protocol fallback
+        const EMBEDDED_BUILD_INFO = {
+            "buildNumber": 121,
+            "buildTimestamp": 1765179928000,
+            "commitHash": "8874b31",
+            "commitTime": 1765179928000
+        };
+        
+        // Fallback dropout scene (used if file loading fails)
+        const FALLBACK_DROPOUT_SCENE = EMBEDDED_SCENES.dropout;
+        
+        // Load scene from JSON file
+        async function loadSceneFromFile(sceneKey) {
+            // If using file:// protocol, use embedded data immediately
+            if (isFileProtocol()) {
+                if (EMBEDDED_SCENES[sceneKey]) {
+                    SCENES[sceneKey] = EMBEDDED_SCENES[sceneKey];
+                    return SCENES[sceneKey];
+                } else {
+                    console.warn(`Scene ${sceneKey} not found in embedded scenes`);
+                    return null;
+                }
+            }
             
-            // Load saved theme or use default (wesworld)
-            const savedTheme = localStorage.getItem('wesworld-fx-theme') || 'wesworld';
-            if (THEMES[savedTheme]) {
-                themeSelect.value = savedTheme;
-                applyTheme(THEMES[savedTheme]);
-            } else {
-                applyTheme(THEMES.wesworld);
+            try {
+                const response = await fetch(`scenes/${sceneKey}.json`);
+                if (!response.ok) {
+                    console.warn(`Failed to load scene ${sceneKey}:`, response.statusText);
+                    // Try embedded data as fallback
+                    if (EMBEDDED_SCENES[sceneKey]) {
+                        SCENES[sceneKey] = EMBEDDED_SCENES[sceneKey];
+                        return SCENES[sceneKey];
+                    }
+                    return null;
+                }
+                const scene = await response.json();
+                if (scene && scene.colors) {
+                    SCENES[sceneKey] = scene;
+                    return scene;
+                } else {
+                    console.error(`Scene ${sceneKey} loaded but missing colors property`);
+                    // Try embedded data as fallback
+                    if (EMBEDDED_SCENES[sceneKey]) {
+                        SCENES[sceneKey] = EMBEDDED_SCENES[sceneKey];
+                        return SCENES[sceneKey];
+                    }
+                    return null;
+                }
+            } catch (error) {
+                console.warn(`Error loading scene ${sceneKey}:`, error.message);
+                // Try embedded data as fallback
+                if (EMBEDDED_SCENES[sceneKey]) {
+                    SCENES[sceneKey] = EMBEDDED_SCENES[sceneKey];
+                    return SCENES[sceneKey];
+                }
+                return null;
             }
         }
         
-        // Apply theme to page
-        function applyTheme(theme) {
-            if (theme && theme.colors) {
-                const root = document.documentElement;
-                const colorMap = {
-                    background: 'background-color',
-                    surface: 'surface-color',
-                    surfaceHover: 'surface-hover-color',
-                    text: 'text-color',
-                    textSecondary: 'text-secondary-color',
-                    accent: 'accent-color',
-                    accentHover: 'accent-hover-color',
-                    border: 'border-color',
-                    borderHover: 'border-hover-color',
-                    button: 'button-color',
-                    buttonHover: 'button-hover-color',
-                    statusConnected: 'status-connected-color',
-                    statusError: 'status-error-color',
-                    groupTitle: 'group-title-color',
-                    selectedText: 'selected-text-color'
-                };
-                
-                Object.entries(theme.colors).forEach(([key, value]) => {
-                    const cssVar = colorMap[key] || key.replace(/([A-Z])/g, '-$1').toLowerCase();
-                    root.style.setProperty(`--${cssVar}`, value);
+        // Discover available scene files from manifest
+        async function discoverScenes() {
+            // If using file:// protocol, use embedded data immediately
+            if (isFileProtocol()) {
+                return EMBEDDED_SCENES_MANIFEST.scenes || [];
+            }
+            
+            try {
+                const response = await fetch('scenes/scenes.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.scenes || [];
+                }
+            } catch (error) {
+                console.warn('Could not load scenes manifest, trying embedded data...', error.message);
+            }
+            
+            // Fallback: use embedded manifest or try to discover
+            if (EMBEDDED_SCENES_MANIFEST && EMBEDDED_SCENES_MANIFEST.scenes) {
+                return EMBEDDED_SCENES_MANIFEST.scenes;
+            }
+            
+            // Last resort: try to load common scene names
+            const possibleScenes = ['dropout', 'wesworld'];
+            const loadedScenes = [];
+            
+            for (const sceneKey of possibleScenes) {
+                try {
+                    const response = await fetch(`scenes/${sceneKey}.json`);
+                    if (response.ok) {
+                        loadedScenes.push(sceneKey);
+                    }
+                } catch (error) {
+                    // Silently skip scenes that don't exist
+                }
+            }
+            
+            // If fetch failed but we have embedded data, use that
+            if (loadedScenes.length === 0 && EMBEDDED_SCENES_MANIFEST && EMBEDDED_SCENES_MANIFEST.scenes) {
+                return EMBEDDED_SCENES_MANIFEST.scenes;
+            }
+            
+            return loadedScenes;
+        }
+        
+        // Load and apply scene
+        async function loadScenes() {
+            // Discover available scenes
+            const availableScenes = await discoverScenes();
+            
+            if (availableScenes.length === 0) {
+                console.error('No scenes found!');
+                return;
+            }
+            
+            // Load all available scenes
+            await Promise.all(availableScenes.map(key => loadSceneFromFile(key)));
+            
+            // Populate scene dropdown only with successfully loaded scenes
+            sceneSelect.innerHTML = '';
+            const sceneKeys = Object.keys(SCENES);
+            if (sceneKeys.length === 0) {
+                // If no scenes loaded, add fallback
+                SCENES.dropout = FALLBACK_DROPOUT_SCENE;
+                sceneKeys.push('dropout');
+            }
+            sceneKeys.forEach(sceneKey => {
+                const option = document.createElement('option');
+                option.value = sceneKey;
+                option.textContent = SCENES[sceneKey].name;
+                sceneSelect.appendChild(option);
+            });
+            
+            // Load saved scene from localStorage, or default to dropout
+            const savedScene = localStorage.getItem('wesworld-fx-scene');
+            const defaultScene = availableScenes.includes('dropout') ? 'dropout' : (availableScenes[0] || 'dropout');
+            
+            // Use saved scene if it exists and is valid, otherwise use default
+            let sceneToLoad = defaultScene;
+            if (savedScene && SCENES[savedScene]) {
+                sceneToLoad = savedScene;
+            }
+            
+            if (SCENES[sceneToLoad]) {
+                sceneSelect.value = sceneToLoad;
+                applyScene(SCENES[sceneToLoad]);
+            } else if (Object.keys(SCENES).length > 0) {
+                // Fallback to first available scene
+                const firstScene = Object.keys(SCENES)[0];
+                sceneSelect.value = firstScene;
+                applyScene(SCENES[firstScene]);
+            } else {
+                // If no scenes loaded (e.g., CORS error), use fallback
+                console.warn('No scenes loaded, using fallback dropout scene');
+                SCENES.dropout = FALLBACK_DROPOUT_SCENE;
+                sceneSelect.value = 'dropout';
+                applyScene(FALLBACK_DROPOUT_SCENE);
+            }
+            
+            // Build filter categories from current scene
+            buildFilterCategories();
+        }
+        
+        // Apply scene to page
+        function applyScene(scene) {
+            if (!scene) {
+                console.warn('applyScene called with null/undefined scene');
+                return;
+            }
+            
+            const root = document.documentElement;
+            const colorMap = {
+                background: 'background-color',
+                surface: 'surface-color',
+                surfaceHover: 'surface-hover-color',
+                text: 'text-color',
+                textSecondary: 'text-secondary-color',
+                accent: 'accent-color',
+                accentHover: 'accent-hover-color',
+                border: 'border-color',
+                borderHover: 'border-hover-color',
+                button: 'button-color',
+                buttonHover: 'button-hover-color',
+                statusConnected: 'status-connected-color',
+                statusError: 'status-error-color',
+                groupTitle: 'group-title-color',
+                selectedText: 'selected-text-color'
+            };
+            
+            if (scene.colors) {
+                Object.entries(scene.colors).forEach(([key, value]) => {
+                    if (value) {
+                        const cssVar = colorMap[key] || key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                        root.style.setProperty(`--${cssVar}`, value);
+                    }
                 });
+                console.log('Scene colors applied:', scene.name || 'Unknown');
+            } else {
+                console.warn('Scene has no colors property:', scene);
+            }
+            
+            // Rebuild filter categories when scene changes
+            buildFilterCategories();
+            
+            // Reload filters if they've been loaded already
+            if (fxOptionsContainer) {
+                loadFilters();
             }
         }
         
@@ -5398,8 +5699,767 @@
                         }
                     }
                 }
+            },
+            applyMultiRipple(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        // Multiple overlapping ripples for complex distortion
+                        const ripple1 = Math.sin(dist * 0.05) * 15;
+                        const ripple2 = Math.sin(dist * 0.08) * 10;
+                        const ripple3 = Math.sin(dist * 0.12) * 8;
+                        const totalRipple = ripple1 + ripple2 + ripple3;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(x + totalRipple * Math.cos(angle));
+                        const newY = Math.round(y + totalRipple * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRadialSqueeze(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        // Opposite of pincushion - pushes outward
+                        const newDist = normalizedDist * (1 + strength * normalizedDist * normalizedDist) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyElasticStretch(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.6;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        // Elastic rubber-like stretching
+                        const elasticFactor = 1.0 + strength * Math.sin(normalizedDist * Math.PI);
+                        const newDist = normalizedDist * elasticFactor * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyLensDistortion(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const k1 = 0.3, k2 = 0.1; // Lens distortion coefficients
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / radius;
+                        const dy = (y - centerY) / radius;
+                        const r2 = dx * dx + dy * dy;
+                        const r4 = r2 * r2;
+                        // Barrel/pincushion distortion model
+                        const distortion = 1.0 + k1 * r2 + k2 * r4;
+                        const newX = Math.round(centerX + dx * radius * distortion);
+                        const newY = Math.round(centerY + dy * radius * distortion);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyWaveDistortion(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        // Complex wave pattern with multiple frequencies
+                        const waveX = Math.sin(dist * 0.08 + angle * 2) * 20;
+                        const waveY = Math.cos(dist * 0.06 - angle * 2) * 20;
+                        const newX = Math.round(x + waveX);
+                        const newY = Math.round(y + waveY);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySqueezeHorizontal(data, width, height) {
+                const centerX = width / 2;
+                const strength = 0.4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        // Horizontal compression - squeezes from center
+                        const squeezeFactor = 1.0 - strength * dx * dx;
+                        const newX = Math.round(centerX + (x - centerX) * squeezeFactor);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySqueezeVertical(data, width, height) {
+                const centerY = height / 2;
+                const strength = 0.4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dy = (y - centerY) / (height / 2);
+                        // Vertical compression - squeezes from center
+                        const squeezeFactor = 1.0 - strength * dy * dy;
+                        const newY = Math.round(centerY + (y - centerY) * squeezeFactor);
+                        if (newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + x) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRadialWobble(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        // Wobbling radial distortion
+                        const wobble = Math.sin(angle * 6) * 15 * normalizedDist;
+                        const newDist = dist + wobble;
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyComplexRipple(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        // Complex ripple with angular variation
+                        const radialRipple = Math.sin(dist * 0.06) * 18;
+                        const angularRipple = Math.sin(angle * 4) * 8;
+                        const totalRipple = radialRipple + angularRipple;
+                        const newX = Math.round(x + totalRipple * Math.cos(angle));
+                        const newY = Math.round(y + totalRipple * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySquishFace(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const strength = 0.3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dy = (y - centerY) / (height / 2);
+                        // Horizontal compression - makes face wider and funnier
+                        const squishFactor = 1.0 - strength * dy * dy;
+                        const newX = Math.round(centerX + (x - centerX) / squishFactor);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyStretchFace(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const strength = 0.4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        // Vertical stretch - makes face taller and funnier
+                        const stretchFactor = 1.0 + strength * dx * dx;
+                        const newY = Math.round(centerY + (y - centerY) / stretchFactor);
+                        if (newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + x) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyFunhouseMirror(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const strength = 0.25;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        const dy = (y - centerY) / (height / 2);
+                        // Asymmetric distortion - creates funny mirror effect
+                        const distortX = strength * Math.sin(dy * Math.PI) * dx;
+                        const distortY = strength * Math.cos(dx * Math.PI) * dy;
+                        const newX = Math.round(centerX + (x - centerX) * (1 + distortX));
+                        const newY = Math.round(centerY + (y - centerY) * (1 + distortY));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyPinchCheeks(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const strength = 0.35;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const angle = Math.atan2(dy, dx);
+                        // Pinch sides inward - creates funny cheek effect
+                        const pinchFactor = 1.0 - strength * Math.abs(Math.cos(angle)) * normalizedDist;
+                        const newDist = dist * pinchFactor;
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyBulgeEyes(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const strength = 0.4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const angle = Math.atan2(dy, dx);
+                        // Bulge center area outward - creates funny eye bulge
+                        const bulgeFactor = 1.0 + strength * (1.0 - normalizedDist) * Math.cos(angle * 2);
+                        const newDist = dist * bulgeFactor;
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyWarpFace(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const strength = 0.2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        const dy = (y - centerY) / (height / 2);
+                        // Subtle warping that creates funny expressions
+                        const warpX = strength * Math.sin(dy * Math.PI * 2) * 15;
+                        const warpY = strength * Math.cos(dx * Math.PI * 2) * 15;
+                        const newX = Math.round(x + warpX);
+                        const newY = Math.round(y + warpY);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyFunnySquash(data, width, height) {
+                const centerY = height / 2;
+                const strength = 0.35;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dy = (y - centerY) / (height / 2);
+                        // Vertical squash - compresses face vertically
+                        const squashFactor = 1.0 + strength * dy * dy;
+                        const newY = Math.round(centerY + (y - centerY) / squashFactor);
+                        if (newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + x) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyFunnyStretch(data, width, height) {
+                const centerX = width / 2;
+                const strength = 0.35;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        // Horizontal stretch - makes face wider
+                        const stretchFactor = 1.0 + strength * dx * dx;
+                        const newX = Math.round(centerX + (x - centerX) / stretchFactor);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyWobbleFace(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const strength = 12;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        // Gentle wobbling distortion
+                        const wobble = strength * Math.sin(angle * 6) * normalizedDist;
+                        const newDist = dist + wobble;
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyElasticFace(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const strength = 0.5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const angle = Math.atan2(dy, dx);
+                        // Bouncy elastic-like distortion
+                        const elasticFactor = 1.0 + strength * Math.sin(normalizedDist * Math.PI * 2) * 0.3;
+                        const newDist = normalizedDist * elasticFactor * radius;
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyGentleRipple(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const frequency = 0.04, amplitude = 12;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        // Gentler ripple for subtle funny effect
+                        const ripple = Math.sin(dist * frequency) * amplitude;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(x + ripple * Math.cos(angle));
+                        const newY = Math.round(y + ripple * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySmushFace(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const strength = 0.3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const angle = Math.atan2(dy, dx);
+                        // Smushes face from all sides
+                        const smushFactor = 1.0 - strength * normalizedDist * normalizedDist;
+                        const newDist = normalizedDist * smushFactor * radius;
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
             }
         };
+        
+        // Calculate distortion vector for a point (x, y) with given filter
+        function calculateDistortionVector(x, y, width, height, filterType) {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+            const radius = Math.min(width, height) / 2;
+            const normalizedDist = Math.min(dist / radius, 1);
+            
+            let newX = x, newY = y;
+            
+            // Calculate distortion based on filter type
+            switch(filterType) {
+                case 'water_ripple':
+                case 'ripple':
+                    const frequency = filterType === 'water_ripple' ? 0.05 : 0.1;
+                    const amplitude = filterType === 'water_ripple' ? 15 : 20;
+                    const ripple = Math.sin(dist * frequency) * amplitude;
+                    newX = x + ripple * Math.cos(angle);
+                    newY = y + ripple * Math.sin(angle);
+                    break;
+                case 'pincushion':
+                    const strength = 0.4;
+                    const newDist = normalizedDist * (1 - strength * normalizedDist) * radius;
+                    newX = centerX + newDist * Math.cos(angle);
+                    newY = centerY + newDist * Math.sin(angle);
+                    break;
+                case 'bulge':
+                    const bulgeStrength = 0.5;
+                    const bulgeRadius = radius;
+                    const distSq = dist * dist;
+                    const maxDistSq = bulgeRadius * bulgeRadius;
+                    if (distSq < maxDistSq) {
+                        const factor = 1.0 - (dist / bulgeRadius) * bulgeStrength;
+                        newX = centerX + dx * factor;
+                        newY = centerY + dy * factor;
+                    }
+                    break;
+                case 'swirl':
+                    const swirlStrength = 2.0;
+                    if (dist < radius) {
+                        const maxAngle = swirlStrength * (1.0 - normalizedDist);
+                        const newAngle = angle + maxAngle;
+                        newX = centerX + dist * Math.cos(newAngle);
+                        newY = centerY + dist * Math.sin(newAngle);
+                    }
+                    break;
+                case 'fisheye':
+                    const fisheyeStrength = 0.5;
+                    const fisheyeFactor = 1.0 - fisheyeStrength * normalizedDist;
+                    newX = centerX + dx * fisheyeFactor;
+                    newY = centerY + dy * fisheyeFactor;
+                    break;
+                case 'barrel':
+                    const barrelStrength = 0.3;
+                    const barrelNewDist = normalizedDist * (1 + barrelStrength * normalizedDist * normalizedDist) * radius;
+                    newX = centerX + barrelNewDist * Math.cos(angle);
+                    newY = centerY + barrelNewDist * Math.sin(angle);
+                    break;
+                case 'radial_squeeze':
+                    const squeezeStrength = 0.5;
+                    const squeezeNewDist = normalizedDist * (1 + squeezeStrength * normalizedDist * normalizedDist) * radius;
+                    newX = centerX + squeezeNewDist * Math.cos(angle);
+                    newY = centerY + squeezeNewDist * Math.sin(angle);
+                    break;
+                case 'squish_face':
+                    const squishStrength = 0.3;
+                    const squishDy = dy / (height / 2);
+                    const squishFactor = 1.0 - squishStrength * squishDy * squishDy;
+                    newX = centerX + dx / squishFactor;
+                    newY = y;
+                    break;
+                case 'stretch_face':
+                    const stretchStrength = 0.4;
+                    const stretchDx = dx / (width / 2);
+                    const stretchFactor = 1.0 + stretchStrength * stretchDx * stretchDx;
+                    newX = x;
+                    newY = centerY + dy / stretchFactor;
+                    break;
+                case 'pinch_cheeks':
+                    const pinchStrength = 0.35;
+                    const pinchFactor = 1.0 - pinchStrength * Math.abs(Math.cos(angle)) * normalizedDist;
+                    const pinchNewDist = dist * pinchFactor;
+                    newX = centerX + pinchNewDist * Math.cos(angle);
+                    newY = centerY + pinchNewDist * Math.sin(angle);
+                    break;
+                case 'wobble_face':
+                case 'radial_wobble':
+                    const wobbleStrength = 12;
+                    const wobble = wobbleStrength * Math.sin(angle * 6) * normalizedDist;
+                    const wobbleNewDist = dist + wobble;
+                    newX = centerX + wobbleNewDist * Math.cos(angle);
+                    newY = centerY + wobbleNewDist * Math.sin(angle);
+                    break;
+                case 'multi_ripple':
+                    const ripple1 = Math.sin(dist * 0.05) * 15;
+                    const ripple2 = Math.sin(dist * 0.08) * 10;
+                    const ripple3 = Math.sin(dist * 0.12) * 8;
+                    const totalRipple = ripple1 + ripple2 + ripple3;
+                    newX = x + totalRipple * Math.cos(angle);
+                    newY = y + totalRipple * Math.sin(angle);
+                    break;
+                case 'elastic_stretch':
+                    const elasticStrength = 0.5;
+                    const elasticFactor = 1.0 + elasticStrength * Math.sin(normalizedDist * Math.PI * 2) * 0.3;
+                    const elasticNewDist = normalizedDist * elasticFactor * radius;
+                    newX = centerX + elasticNewDist * Math.cos(angle);
+                    newY = centerY + elasticNewDist * Math.sin(angle);
+                    break;
+                case 'wave_distortion':
+                    const waveX = Math.sin(dist * 0.08 + angle * 2) * 20;
+                    const waveY = Math.cos(dist * 0.06 - angle * 2) * 20;
+                    newX = x + waveX;
+                    newY = y + waveY;
+                    break;
+                case 'squeeze_horizontal':
+                    const squeezeHDx = dx / (width / 2);
+                    const squeezeHFactor = 1.0 - 0.4 * squeezeHDx * squeezeHDx;
+                    newX = centerX + dx * squeezeHFactor;
+                    newY = y;
+                    break;
+                case 'squeeze_vertical':
+                    const squeezeVDy = dy / (height / 2);
+                    const squeezeVFactor = 1.0 - 0.4 * squeezeVDy * squeezeVDy;
+                    newX = x;
+                    newY = centerY + dy * squeezeVFactor;
+                    break;
+                case 'complex_ripple':
+                    const radialRipple = Math.sin(dist * 0.06) * 18;
+                    const angularRipple = Math.sin(angle * 4) * 8;
+                    const complexTotalRipple = radialRipple + angularRipple;
+                    newX = x + complexTotalRipple * Math.cos(angle);
+                    newY = y + complexTotalRipple * Math.sin(angle);
+                    break;
+                case 'gentle_ripple':
+                    const gentleFrequency = 0.04;
+                    const gentleAmplitude = 12;
+                    const gentleRipple = Math.sin(dist * gentleFrequency) * gentleAmplitude;
+                    newX = x + gentleRipple * Math.cos(angle);
+                    newY = y + gentleRipple * Math.sin(angle);
+                    break;
+                default:
+                    // No distortion for unknown filters
+                    return { x: x, y: y };
+            }
+            
+            return { x: newX, y: newY };
+        }
+        
+        // Draw wireframe overlay showing distortion
+        function drawWireframeOverlay(ctx, width, height, filterType) {
+            if (!filterType) return;
+            
+            // Only show wireframe for distortion filters (not color filters)
+            const colorFilters = ['black_white', 'sepia', 'negative', 'vintage', 'neon_glow',
+                'red_tint', 'blue_tint', 'green_tint', 'posterize', 'thermal', 'pixelate',
+                'blur', 'sharpen', 'emboss', 'sketch', 'cartoon', 'rainbow', 'rainbow_shift',
+                'ice', 'ocean', 'plasma', 'jet', 'turbo', 'inferno', 'magma', 'viridis',
+                'cool', 'hot', 'spring', 'summer', 'autumn', 'winter', 'vhs', 'retro',
+                'cyberpunk', 'anime', 'glow', 'solarize', 'edge_detect', 'halftone', 'acid_trip'];
+            
+            if (colorFilters.includes(filterType)) {
+                return; // Don't show wireframe for color-only filters
+            }
+            
+            // Get accent color from scene config
+            const root = document.documentElement;
+            const accentColor = getComputedStyle(root).getPropertyValue('--accent-color').trim() || '#5250ef';
+            
+            // Convert hex to rgba
+            let r = 82, g = 80, b = 239; // Default blue
+            if (accentColor.startsWith('#')) {
+                const hex = accentColor.slice(1);
+                r = parseInt(hex.slice(0, 2), 16);
+                g = parseInt(hex.slice(2, 4), 16);
+                b = parseInt(hex.slice(4, 6), 16);
+            }
+            
+            ctx.save();
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+            ctx.lineWidth = 1;
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Draw grid
+            const gridSize = 30;
+            const gridOffset = 5;
+            
+            // Horizontal lines
+            for (let y = gridOffset; y < height; y += gridSize) {
+                ctx.beginPath();
+                let pathStarted = false;
+                
+                for (let x = gridOffset; x < width; x += gridOffset) {
+                    const distorted = calculateDistortionVector(x, y, width, height, filterType);
+                    // Check if distortion was calculated (not default)
+                    if (distorted && (distorted.x !== x || distorted.y !== y || filterType !== 'default')) {
+                        if (distorted.x >= 0 && distorted.x < width && distorted.y >= 0 && distorted.y < height) {
+                            if (!pathStarted) {
+                                ctx.moveTo(distorted.x, distorted.y);
+                                pathStarted = true;
+                            } else {
+                                ctx.lineTo(distorted.x, distorted.y);
+                            }
+                        }
+                    }
+                }
+                
+                if (pathStarted) {
+                    ctx.stroke();
+                }
+            }
+            
+            // Vertical lines
+            for (let x = gridOffset; x < width; x += gridSize) {
+                ctx.beginPath();
+                let pathStarted = false;
+                
+                for (let y = gridOffset; y < height; y += gridOffset) {
+                    const distorted = calculateDistortionVector(x, y, width, height, filterType);
+                    // Check if distortion was calculated (not default)
+                    if (distorted && (distorted.x !== x || distorted.y !== y || filterType !== 'default')) {
+                        if (distorted.x >= 0 && distorted.x < width && distorted.y >= 0 && distorted.y < height) {
+                            if (!pathStarted) {
+                                ctx.moveTo(distorted.x, distorted.y);
+                                pathStarted = true;
+                            } else {
+                                ctx.lineTo(distorted.x, distorted.y);
+                            }
+                        }
+                    }
+                }
+                
+                if (pathStarted) {
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw center point (lighter shade of accent color)
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
         
         // JavaScript filter fallback
         function applyJSFilter(imageData, filterType, faceRect) {
@@ -5501,7 +6561,28 @@
                 'melt': () => FilterImplementations.applyMelt(data, width, height),
                 'kaleidoscope': () => FilterImplementations.applyKaleidoscope(data, width, height),
                 'glitch': () => FilterImplementations.applyGlitch(data, width, height),
-                'double_vision': () => FilterImplementations.applyDoubleVision(data, width, height)
+                'double_vision': () => FilterImplementations.applyDoubleVision(data, width, height),
+                'multi_ripple': () => FilterImplementations.applyMultiRipple(data, width, height),
+                'radial_squeeze': () => FilterImplementations.applyRadialSqueeze(data, width, height),
+                'elastic_stretch': () => FilterImplementations.applyElasticStretch(data, width, height),
+                'lens_distortion': () => FilterImplementations.applyLensDistortion(data, width, height),
+                'wave_distortion': () => FilterImplementations.applyWaveDistortion(data, width, height),
+                'squeeze_horizontal': () => FilterImplementations.applySqueezeHorizontal(data, width, height),
+                'squeeze_vertical': () => FilterImplementations.applySqueezeVertical(data, width, height),
+                'radial_wobble': () => FilterImplementations.applyRadialWobble(data, width, height),
+                'complex_ripple': () => FilterImplementations.applyComplexRipple(data, width, height),
+                'squish_face': () => FilterImplementations.applySquishFace(data, width, height),
+                'stretch_face': () => FilterImplementations.applyStretchFace(data, width, height),
+                'funhouse_mirror': () => FilterImplementations.applyFunhouseMirror(data, width, height),
+                'pinch_cheeks': () => FilterImplementations.applyPinchCheeks(data, width, height),
+                'bulge_eyes': () => FilterImplementations.applyBulgeEyes(data, width, height),
+                'warp_face': () => FilterImplementations.applyWarpFace(data, width, height),
+                'funny_squash': () => FilterImplementations.applyFunnySquash(data, width, height),
+                'funny_stretch': () => FilterImplementations.applyFunnyStretch(data, width, height),
+                'wobble_face': () => FilterImplementations.applyWobbleFace(data, width, height),
+                'elastic_face': () => FilterImplementations.applyElasticFace(data, width, height),
+                'gentle_ripple': () => FilterImplementations.applyGentleRipple(data, width, height),
+                'smush_face': () => FilterImplementations.applySmushFace(data, width, height)
             };
             
             const filterFunc = filterMap[filterType];
@@ -5726,6 +6807,16 @@
             }
         }
         
+        // Toggle wireframe overlay
+        function toggleWireframe() {
+            showWireframe = !showWireframe;
+            try {
+                localStorage.setItem('wesworld-fx-wireframe', showWireframe.toString());
+            } catch (e) {
+                console.warn('Could not save wireframe preference:', e);
+            }
+        }
+        
         // Tutorial functions
         function showTutorial() {
             const tutorialModal = document.getElementById('tutorialModal');
@@ -5919,6 +7010,9 @@
                         break;
                     case 'open-search':
                         openFxSearchModal();
+                        break;
+                    case 'toggle-wireframe':
+                        toggleWireframe();
                         break;
                     case 'prev-filter':
                         cyclePrevFilter();
@@ -6120,17 +7214,12 @@
                 });
             }
             
-            // FX current pin handler
-            if (fxCurrentPin) {
-                fxCurrentPin.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (pinnedFilters.includes(currentFilter)) {
-                        unpinFilter(currentFilter);
-                    } else {
-                        pinCurrentFilter();
-                    }
-                });
-            }
+            // FX current pin handler (disabled - pinning is hidden)
+            // if (fxCurrentPin) {
+            //     fxCurrentPin.addEventListener('click', (e) => {
+            //         ... pin handler code ...
+            //     });
+            // }
             
             // Clear filter button
             if (clearFilterButton) {
@@ -6139,6 +7228,16 @@
                     e.stopPropagation();
                     clearFilter();
                 });
+            }
+            
+            // Load wireframe preference
+            try {
+                const saved = localStorage.getItem('wesworld-fx-wireframe');
+                if (saved === 'true') {
+                    showWireframe = true;
+                }
+            } catch (e) {
+                console.warn('Could not load wireframe preference:', e);
             }
             
             // Start roulette button
@@ -6345,14 +7444,26 @@
             
             // Keyboard shortcut to open search (Cmd/Ctrl + K) - handled in main keyboard shortcuts below
             
-            // Theme change handler
-            if (themeSelect) {
-                themeSelect.addEventListener('change', (e) => {
-                    const themeKey = e.target.value;
-                    if (THEMES[themeKey]) {
-                        applyTheme(THEMES[themeKey]);
-                        localStorage.setItem('wesworld-fx-theme', themeKey);
-                        console.log('Theme changed to:', themeKey);
+            // Scene change handler
+            if (sceneSelect) {
+                sceneSelect.addEventListener('change', async (e) => {
+                    const sceneKey = e.target.value;
+                    // Make sure scene is loaded
+                    if (!SCENES[sceneKey]) {
+                        await loadSceneFromFile(sceneKey);
+                    }
+                    if (SCENES[sceneKey]) {
+                        applyScene(SCENES[sceneKey]);
+                        localStorage.setItem('wesworld-fx-scene', sceneKey);
+                        console.log('Scene changed to:', sceneKey);
+                    } else {
+                        console.error(`Failed to load scene: ${sceneKey}`);
+                        // Fallback to dropout if scene fails to load
+                        if (SCENES.dropout) {
+                            sceneSelect.value = 'dropout';
+                            applyScene(SCENES.dropout);
+                            localStorage.setItem('wesworld-fx-scene', 'dropout');
+                        }
                     }
                 });
             }
@@ -6380,6 +7491,11 @@
                     case 'h':
                     case 'H':
                         toggleUI();
+                        break;
+                    case 'w':
+                    case 'W':
+                        e.preventDefault();
+                        toggleWireframe();
                         break;
                     case 'ArrowUp':
                     case 'ArrowLeft':
@@ -6612,7 +7728,7 @@
                 }
                 
                 // Setup UI
-                loadThemes(); // Load themes first (sets default to wesworld)
+                await loadScenes(); // Load scenes first (sets default to dropout)
                 await loadCameras();
                 loadPinnedFilters();
                 
@@ -6755,28 +7871,49 @@
             }
         }
         
-        // Load theme immediately when DOM is ready (before showing controls)
-        function loadThemeEarly() {
-            if (themeSelect && THEMES) {
-                // Populate theme dropdown
-                themeSelect.innerHTML = '';
-                Object.keys(THEMES).forEach(themeKey => {
+        // Load scene immediately when DOM is ready (before showing controls)
+        function loadSceneEarly() {
+            if (sceneSelect) {
+                // Populate scene dropdown
+                sceneSelect.innerHTML = '';
+                let sceneKeys = Object.keys(SCENES);
+                if (sceneKeys.length === 0) {
+                    // If no scenes loaded, add fallback
+                    SCENES.dropout = FALLBACK_DROPOUT_SCENE;
+                    sceneKeys = ['dropout'];
+                }
+                sceneKeys.forEach(sceneKey => {
                     const option = document.createElement('option');
-                    option.value = themeKey;
-                    option.textContent = THEMES[themeKey].name;
-                    themeSelect.appendChild(option);
+                    option.value = sceneKey;
+                    option.textContent = SCENES[sceneKey].name;
+                    sceneSelect.appendChild(option);
                 });
                 
-                // Load saved theme or use default (wesworld)
-                const savedTheme = localStorage.getItem('wesworld-fx-theme') || 'wesworld';
-                if (THEMES[savedTheme]) {
-                    themeSelect.value = savedTheme;
-                    applyTheme(THEMES[savedTheme]);
-                } else {
-                    applyTheme(THEMES.wesworld);
+                // Load saved scene from localStorage, or default to dropout
+                const savedScene = localStorage.getItem('wesworld-fx-scene');
+                const availableSceneKeys = Object.keys(SCENES);
+                
+                let sceneToLoad = 'dropout';
+                if (savedScene && SCENES[savedScene] && availableSceneKeys.includes(savedScene)) {
+                    sceneToLoad = savedScene;
+                } else if (SCENES.dropout) {
+                    sceneToLoad = 'dropout';
+                } else if (availableSceneKeys.length > 0) {
+                    sceneToLoad = availableSceneKeys[0];
                 }
                 
-                // Show controls after theme is loaded
+                if (SCENES[sceneToLoad]) {
+                    sceneSelect.value = sceneToLoad;
+                    applyScene(SCENES[sceneToLoad]);
+                } else {
+                    // If no scenes loaded (e.g., CORS error), use fallback
+                    console.warn('No scenes loaded in loadSceneEarly, using fallback dropout scene');
+                    SCENES.dropout = FALLBACK_DROPOUT_SCENE;
+                    sceneSelect.value = 'dropout';
+                    applyScene(FALLBACK_DROPOUT_SCENE);
+                }
+                
+                // Show controls after scene is loaded
                 if (controls) {
                     controls.classList.remove('hidden');
                     controls.classList.add('visible');
@@ -6787,11 +7924,11 @@
         // Clean up old URL parameters on page load
         cleanOldURLParams();
         
-        // Load theme as soon as DOM elements are available
+        // Load scene as soon as DOM elements are available
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', async () => {
                 await loadBuildInfo();
-                loadThemeEarly();
+                loadSceneEarly();
                 updateVersionDisplay();
                 startTimeUpdateInterval();
                 init();
@@ -6799,7 +7936,7 @@
         } else {
             (async () => {
                 await loadBuildInfo();
-                loadThemeEarly();
+                loadSceneEarly();
                 updateVersionDisplay();
                 startTimeUpdateInterval();
                 init();
