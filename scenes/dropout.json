@@ -23,7 +23,7 @@
     "lens_distortion", "wave_distortion", "squeeze_horizontal", "squeeze_vertical",
     "radial_wobble", "complex_ripple", "squish_face", "stretch_face", "funhouse_mirror",
     "pinch_cheeks", "bulge_eyes", "warp_face", "funny_squash", "funny_stretch",
-    "wobble_face", "elastic_face", "gentle_ripple", "smush_face"
+    "wobble_face", "elastic_face", "gentle_ripple", "smush_face", "upside_down"
   ]
 }
 

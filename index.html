@@ -2294,7 +2294,7 @@
                           'rotate_zoom', 'radial_wave', 'zoom_in', 'zoom_out', 'fast_zoom_in',
                           'fast_zoom_out', 'shake', 'pulse', 'spiral_zoom', 'extreme_closeup',
                           'puzzle', 'rotate', 'rotate_45', 'rotate_90', 'flip_horizontal',
-                          'flip_vertical', 'flip_both', 'quad_mirror', 'tile', 'radial_tile',
+                          'flip_vertical', 'flip_both', 'upside_down', 'quad_mirror', 'tile', 'radial_tile',
                           'zoom_blur', 'melt', 'kaleidoscope', 'glitch', 'double_vision',
                           'multi_ripple', 'radial_squeeze', 'elastic_stretch', 'lens_distortion',
                           'wave_distortion', 'squeeze_horizontal', 'squeeze_vertical', 'radial_wobble', 'complex_ripple',
@@ -2788,7 +2788,14 @@
                 groupTitle.textContent = category;
                 group.appendChild(groupTitle);
                 
-                filters.forEach(filter => {
+                // Sort filters alphabetically by formatted name
+                const sortedFilters = [...filters].sort((a, b) => {
+                    const nameA = formatFilterName(a).toLowerCase();
+                    const nameB = formatFilterName(b).toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+                
+                sortedFilters.forEach(filter => {
                     // Skip if pinned (shown in pinned section)
                     if (pinnedFilters.includes(filter)) return;
                     
@@ -3100,12 +3107,23 @@
             const noneItem = createGridItem('');
             fxGridContainer.appendChild(noneItem);
             
-            // Add all filters from all categories
+            // Collect all filters from all categories
+            const allFiltersList = [];
             Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
-                categoryFilters.forEach(filter => {
-                    const gridItem = createGridItem(filter);
-                    fxGridContainer.appendChild(gridItem);
-                });
+                allFiltersList.push(...categoryFilters);
+            });
+            
+            // Sort all filters alphabetically by formatted name
+            allFiltersList.sort((a, b) => {
+                const nameA = formatFilterName(a).toLowerCase();
+                const nameB = formatFilterName(b).toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            // Add sorted filters to grid
+            allFiltersList.forEach(filter => {
+                const gridItem = createGridItem(filter);
+                fxGridContainer.appendChild(gridItem);
             });
             
             // Update visible items for performance
@@ -4309,12 +4327,31 @@
                     faceMaskName = parts[parts.length - 1].toLowerCase();
                 }
                 
+                // Split filter name and value into individual words for better partial matching
+                const filterNameWords = filterName.split(/\s+/);
+                const filterValueWords = filterValueLower.split('_');
+                
                 // Check if search query appears anywhere in any of these strings
-                return text.includes(searchLower) || 
-                       filterName.includes(searchLower) || 
-                       filterValueLower.includes(searchLower) ||
-                       (faceMaskName && faceMaskName.includes(searchLower)) ||
-                       (faceMaskName && `mask_${faceMaskName}`.includes(searchLower));
+                const exactMatch = text.includes(searchLower) || 
+                                  filterName.includes(searchLower) || 
+                                  filterValueLower.includes(searchLower) ||
+                                  (faceMaskName && faceMaskName.includes(searchLower)) ||
+                                  (faceMaskName && `mask_${faceMaskName}`.includes(searchLower));
+                
+                // Also check if all search words match individual words in the filter
+                // This allows searching "upside" or "down" to match "upside_down"
+                const searchWords = searchLower.split(/\s+/).filter(w => w.length > 0);
+                if (searchWords.length > 0) {
+                    const allWordsMatch = searchWords.every(searchWord => {
+                        return filterNameWords.some(word => word.includes(searchWord)) ||
+                               filterValueWords.some(word => word.includes(searchWord)) ||
+                               text.includes(searchWord) ||
+                               filterValueLower.includes(searchWord);
+                    });
+                    if (allWordsMatch) return true;
+                }
+                
+                return exactMatch;
             }
             
             if (pinnedContainer) {
@@ -4606,7 +4643,7 @@
                     "lens_distortion", "wave_distortion", "squeeze_horizontal", "squeeze_vertical",
                     "radial_wobble", "complex_ripple", "squish_face", "stretch_face", "funhouse_mirror",
                     "pinch_cheeks", "bulge_eyes", "warp_face", "funny_squash", "funny_stretch",
-                    "wobble_face", "elastic_face", "gentle_ripple", "smush_face"]
+                    "wobble_face", "elastic_face", "gentle_ripple", "smush_face", "upside_down"]
             },
             "wesworld": {
                 "name": "WesWorld",
@@ -4636,13 +4673,13 @@
                     "wave_distortion", "squeeze_horizontal", "squeeze_vertical", "radial_wobble", "complex_ripple",
                     "squish_face", "stretch_face", "funhouse_mirror", "pinch_cheeks", "bulge_eyes",
                     "warp_face", "funny_squash", "funny_stretch", "wobble_face", "elastic_face",
-                    "gentle_ripple", "smush_face",
+                    "gentle_ripple", "smush_face", "upside_down",
                     "concave", "convex", "spiral", "radial_stretch", "radial_compress",
                     "vertical_wave", "horizontal_wave", "skew_horizontal", "skew_vertical",
                     "rotate_zoom", "radial_wave", "zoom_in", "zoom_out", "fast_zoom_in",
                     "fast_zoom_out", "shake", "pulse", "spiral_zoom", "extreme_closeup",
                     "puzzle", "rotate", "rotate_45", "rotate_90", "flip_horizontal",
-                    "flip_vertical", "flip_both", "quad_mirror", "tile", "radial_tile",
+                    "flip_vertical", "flip_both", "upside_down", "quad_mirror", "tile", "radial_tile",
                     "zoom_blur", "melt", "kaleidoscope", "glitch", "double_vision",
                     "black_white", "sepia", "vintage", "neon_glow",
                     "pixelate", "blur", "sharpen", "emboss", "red_tint", "blue_tint",
@@ -5127,6 +5164,20 @@
                 }
             },
             applyFlipVertical(data, width, height) {
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcIdx = (y * width + x) * 4;
+                        const dstIdx = ((height - y - 1) * width + x) * 4;
+                        data[srcIdx] = temp[dstIdx];
+                        data[srcIdx + 1] = temp[dstIdx + 1];
+                        data[srcIdx + 2] = temp[dstIdx + 2];
+                        data[srcIdx + 3] = temp[dstIdx + 3];
+                    }
+                }
+            },
+            applyUpsideDown(data, width, height) {
+                // Same as flip_vertical - flips image upside down
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -7540,6 +7591,7 @@
                 'flip_horizontal': () => FilterImplementations.applyFlipHorizontal(data, width, height),
                 'flip_vertical': () => FilterImplementations.applyFlipVertical(data, width, height),
                 'flip_both': () => FilterImplementations.applyFlipBoth(data, width, height),
+                'upside_down': () => FilterImplementations.applyUpsideDown(data, width, height),
                 'rotate': () => FilterImplementations.applyRotate(data, width, height),
                 'rotate_45': () => FilterImplementations.applyRotate45(data, width, height),
                 'rotate_90': () => FilterImplementations.applyRotate90(data, width, height),
