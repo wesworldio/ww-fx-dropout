@@ -1764,9 +1764,9 @@
         </button>
         
         <!-- Settings Section -->
-        <div class="settings-section expanded">
-            <div class="section-title" id="settingsToggle">Settings</div>
-            <div class="settings-section-content">
+        <div class="settings-section">
+            <div style="font-size: 14px; font-weight: bold; color: var(--group-title-color, #5250ef); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Settings</div>
+            <div>
                 <label>
                     Scene:
                     <select id="sceneSelect">
@@ -8007,25 +8007,7 @@
                 }
             });
             
-            // Settings toggle
-            const settingsToggle = document.getElementById('settingsToggle');
-            if (settingsToggle) {
-                settingsToggle.addEventListener('click', () => {
-                    // Prevent hiding menu until camera is started and active
-                    const cameraStatusText = document.getElementById('cameraStatusText');
-                    const isCameraActive = cameraStatusText && cameraStatusText.textContent === 'Camera: Active';
-                    
-                    if (!isCameraActive) {
-                        // Camera not active - keep menu expanded, don't allow hiding
-                        return;
-                    }
-                    
-                    // Camera is active - allow toggle
-                    const settingsSection = settingsToggle.closest('.settings-section');
-                    settingsSection.classList.toggle('expanded');
-                    settingsToggle.classList.toggle('expanded');
-                });
-            }
+            // Settings section is always visible - no toggle needed
             
             // Help section toggle
             const helpToggle = document.getElementById('helpToggle');
