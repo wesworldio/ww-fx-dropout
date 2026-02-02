@@ -2547,6 +2547,92 @@
         let hasFrontCamera = false;
         let hasBackCamera = false;
         
+        // Get supported resolutions for a camera
+        async function getSupportedResolutions(deviceId) {
+            try {
+                // Request a stream from the specific camera to get capabilities
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: deviceId ? { exact: deviceId } : undefined }
+                });
+                
+                const track = stream.getVideoTracks()[0];
+                const capabilities = track.getCapabilities ? track.getCapabilities() : null;
+                
+                // Stop the stream immediately
+                stream.getTracks().forEach(t => t.stop());
+                
+                if (!capabilities || !capabilities.width || !capabilities.height) {
+                    console.log('Camera capabilities not available, showing all resolutions');
+                    return null; // Return null to show all resolutions
+                }
+                
+                const maxWidth = capabilities.width.max || 1920;
+                const maxHeight = capabilities.height.max || 1080;
+                
+                console.log(`Camera max resolution: ${maxWidth}×${maxHeight}`);
+                
+                // Define all possible resolutions
+                const allResolutions = [
+                    { value: '4k', width: 3840, height: 2160, label: '4K (3840×2160)' },
+                    { value: '1440p', width: 2560, height: 1440, label: '1440p (2560×1440)' },
+                    { value: '1080p', width: 1920, height: 1080, label: '1080p (1920×1080)' },
+                    { value: '720p', width: 1280, height: 720, label: '720p (1280×720)' },
+                    { value: '480p', width: 854, height: 480, label: '480p (854×480)' },
+                    { value: '360p', width: 640, height: 360, label: '360p (640×360)' }
+                ];
+                
+                // Filter to only show resolutions the camera can support
+                const supported = allResolutions.filter(res => 
+                    res.width <= maxWidth && res.height <= maxHeight
+                );
+                
+                return supported.length > 0 ? supported : allResolutions;
+            } catch (error) {
+                console.error('Error getting camera capabilities:', error);
+                return null; // Return null to show all resolutions on error
+            }
+        }
+        
+        // Update resolution dropdown based on camera capabilities
+        async function updateResolutionOptions(deviceId) {
+            const resolutionSelect = document.getElementById('resolutionSelect');
+            if (!resolutionSelect) return;
+            
+            const savedResolution = localStorage.getItem('wesworld-fx-resolution') || '1080p';
+            
+            // Get supported resolutions for this camera
+            const supportedResolutions = await getSupportedResolutions(deviceId);
+            
+            // If we couldn't get capabilities, show all options
+            const resolutions = supportedResolutions || [
+                { value: '4k', label: '4K (3840×2160)' },
+                { value: '1440p', label: '1440p (2560×1440)' },
+                { value: '1080p', label: '1080p (1920×1080)' },
+                { value: '720p', label: '720p (1280×720)' },
+                { value: '480p', label: '480p (854×480)' },
+                { value: '360p', label: '360p (640×360)' }
+            ];
+            
+            // Clear and repopulate dropdown
+            resolutionSelect.innerHTML = '';
+            resolutions.forEach(res => {
+                const option = document.createElement('option');
+                option.value = res.value;
+                option.textContent = res.label;
+                resolutionSelect.appendChild(option);
+            });
+            
+            // Restore saved resolution if it's still available
+            const availableValues = resolutions.map(r => r.value);
+            if (availableValues.includes(savedResolution)) {
+                resolutionSelect.value = savedResolution;
+            } else {
+                // If saved resolution isn't available, pick the highest one
+                resolutionSelect.value = resolutions[0].value;
+                localStorage.setItem('wesworld-fx-resolution', resolutions[0].value);
+            }
+        }
+        
         // Load cameras
         async function loadCameras() {
             try {
@@ -2594,6 +2680,12 @@
                 const savedCamera = localStorage.getItem('wesworld-fx-camera');
                 if (savedCamera) {
                     cameraSelect.value = savedCamera;
+                }
+                
+                // Update resolution options based on selected camera
+                const selectedDeviceId = cameraSelect.value;
+                if (selectedDeviceId) {
+                    await updateResolutionOptions(selectedDeviceId);
                 }
             } catch (error) {
                 console.error('Error loading cameras:', error);
@@ -8290,6 +8382,10 @@
             if (cameraSelect) {
                 cameraSelect.addEventListener('change', async (e) => {
                     const newDeviceId = e.target.value;
+                    
+                    // Update resolution options for the newly selected camera
+                    await updateResolutionOptions(newDeviceId);
+                    
                     // Only restart if camera was already active
                     if (localStream) {
                         console.log('Camera selection changed, restarting with new camera...');
