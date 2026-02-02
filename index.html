@@ -1768,7 +1768,8 @@
                         Quality Preset:
                     </label>
                     <select id="resolutionSelect" style="width: 100%; padding: 8px; background: var(--surface-color, #1a1a1a); color: var(--text-color, white); border: 1px solid var(--border-color, #333); border-radius: 4px; cursor: pointer;">
-                        <option value="1080p">1080p (Best Performance)</option>
+                        <option value="720p">720p (Lower Performance)</option>
+                        <option value="1080p">1080p (Recommended)</option>
                         <option value="4k">4K (Best Quality)</option>
                     </select>
                     <div style="font-size: 10px; color: var(--text-secondary-color, #999); margin-top: 4px;">
@@ -2583,12 +2584,21 @@
             try {
                 // Get selected resolution preference
                 const resolution = localStorage.getItem('wesworld-fx-resolution') || '1080p';
-                const videoConstraints = resolution === '4k' 
-                    ? { ideal: 3840, max: 3840 }
-                    : { ideal: 1920, max: 1920 };
-                const heightConstraints = resolution === '4k'
-                    ? { ideal: 2160, max: 2160 }
-                    : { ideal: 1080, max: 1080 };
+                let videoConstraints, heightConstraints;
+                
+                if (resolution === '4k') {
+                    // 4K: Request 4K explicitly
+                    videoConstraints = { ideal: 3840 };
+                    heightConstraints = { ideal: 2160 };
+                } else if (resolution === '720p') {
+                    // 720p: Cap at 720p
+                    videoConstraints = { ideal: 1280, max: 1280 };
+                    heightConstraints = { ideal: 720, max: 720 };
+                } else {
+                    // 1080p (default): Request 1080p but allow camera native resolution
+                    videoConstraints = { ideal: 1920 };
+                    heightConstraints = { ideal: 1080 };
+                }
                 
                 const constraints = {
                     video: {
