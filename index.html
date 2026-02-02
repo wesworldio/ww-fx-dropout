@@ -2177,15 +2177,12 @@
         let controlsVisible = true;
         let isRandomCycling = false;
         let randomCycleInterval = null;
-        let faceMaskImages = {}; // Cache for face mask images
-        let discoveredFaceMasks = []; // Dynamically discovered face mask names
         let maskProcessingCanvas = null; // Cached canvas for mask processing (reused to reduce allocations)
         let maskProcessingCtx = null; // Cached context
         let offscreenCanvas = null; // OffscreenCanvas for better performance (if supported)
         let offscreenCtx = null; // OffscreenCanvas context
         let lastFrameTime = 0; // Frame rate limiting
         const targetFPS = 30; // Reduced from 60 for better performance
-        let faceMaskScale = 1.0; // Scale factor for face mask size adjustment
         const frameInterval = 1000 / targetFPS;
         let frameSkipCounter = 0; // Counter for frame skipping optimization
         
@@ -2388,29 +2385,20 @@
                 if (Array.isArray(currentScene.fx)) {
                     // Flat array: filter default categories to only include enabled filters
                     const enabledFilters = new Set(currentScene.fx);
-                    const faceMaskCategory = currentScene.faceMasks?.categoryName;
                     
                     Object.entries(DEFAULT_FILTER_CATEGORIES).forEach(([category, filters]) => {
-                        if (category !== faceMaskCategory) {
-                            FILTER_CATEGORIES[category] = filters.filter(f => enabledFilters.has(f));
-                        }
+                        FILTER_CATEGORIES[category] = filters.filter(f => enabledFilters.has(f));
                     });
                 } else if (typeof currentScene.fx === 'object') {
                     // Groups: use the groups directly
-                    const faceMaskCategory = currentScene.faceMasks?.categoryName;
                     Object.entries(currentScene.fx).forEach(([groupName, filters]) => {
-                        if (groupName !== faceMaskCategory) {
-                            FILTER_CATEGORIES[groupName] = Array.isArray(filters) ? filters : [];
-                        }
+                        FILTER_CATEGORIES[groupName] = Array.isArray(filters) ? filters : [];
                     });
                 }
             } else {
                 // No fx config: use all default categories
-                const faceMaskCategory = currentScene.faceMasks?.categoryName;
                 Object.entries(DEFAULT_FILTER_CATEGORIES).forEach(([category, filters]) => {
-                    if (category !== faceMaskCategory) {
-                        FILTER_CATEGORIES[category] = [...filters];
-                    }
+                    FILTER_CATEGORIES[category] = [...filters];
                 });
             }
             
@@ -4880,10 +4868,10 @@
         
         // Embedded build info for file:// protocol fallback
         const EMBEDDED_BUILD_INFO = {
-            "buildNumber": 147,
-            "buildTimestamp": 1770060799000,
-            "commitHash": "bb478a3",
-            "commitTime": 1770060799000
+            "buildNumber": 149,
+            "buildTimestamp": 1770061041833,
+            "commitHash": "9bd66a1",
+            "commitTime": 1770061041833
         };
         
         // Fallback scene (used if file loading fails) - uses first available embedded scene
@@ -9514,10 +9502,7 @@
                 await loadCameras();
                 loadPinnedFilters();
                 
-                // Discover face masks first (this updates FILTER_CATEGORIES)
-                await discoverFaceMasks();
-                
-                // Now load filters (which will include discovered face masks)
+                // Load filters
                 loadFilters();
                 setupEventListeners();
                 
