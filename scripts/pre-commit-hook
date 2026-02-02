@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Pre-commit hook to automatically update build info
+# This hook runs scripts/update_build_info.py before each commit
+#
+
+echo "🔄 Updating build info..."
+
+# Run the update script
+python3 scripts/update_build_info.py
+
+if [ $? -eq 0 ]; then
+    # Add the updated files to the commit
+    git add build-info.json index.html
+    echo "✅ Build info updated and staged"
+else
+    echo "❌ Failed to update build info"
+    exit 1
+fi
+
+exit 0
