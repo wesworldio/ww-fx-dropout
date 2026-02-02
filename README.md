@@ -16,6 +16,8 @@ Creative custom face filters with distortion effects that integrate with OBS via
 - Open `index.html` in any modern browser (no server required).
 - Grant camera access when prompted and start testing filters instantly.
 
+**Experiencing lag?** See [docs/PERFORMANCE_TIPS.md](./docs/PERFORMANCE_TIPS.md) for optimization tips.
+
 See [docs/WASM_README.md](./docs/WASM_README.md) for WASM documentation.
 
 ## Features

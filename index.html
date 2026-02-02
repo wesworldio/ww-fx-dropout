@@ -1763,6 +1763,18 @@
                 <div class="camera-status" style="margin-top: 4px;">
                     <span id="cameraResolutionText" style="font-size: 11px; color: var(--text-secondary-color, #999);"></span>
                 </div>
+                <div style="margin-top: 10px; margin-bottom: 10px;">
+                    <label style="display: block; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary-color, #cccccc);">
+                        Quality Preset:
+                    </label>
+                    <select id="resolutionSelect" style="width: 100%; padding: 8px; background: var(--surface-color, #1a1a1a); color: var(--text-color, white); border: 1px solid var(--border-color, #333); border-radius: 4px; cursor: pointer;">
+                        <option value="1080p">1080p (Best Performance)</option>
+                        <option value="4k">4K (Best Quality)</option>
+                    </select>
+                    <div style="font-size: 10px; color: var(--text-secondary-color, #999); margin-top: 4px;">
+                        Restart camera to apply
+                    </div>
+                </div>
                 <button id="startButton">Start Camera</button>
                 <button id="stopButton" style="display: none;">Stop Camera</button>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color, #333);">
@@ -2157,7 +2169,7 @@
         let offscreenCanvas = null; // OffscreenCanvas for better performance (if supported)
         let offscreenCtx = null; // OffscreenCanvas context
         let lastFrameTime = 0; // Frame rate limiting
-        const targetFPS = 60;
+        const targetFPS = 30; // Reduced from 60 for better performance
         let faceMaskScale = 1.0; // Scale factor for face mask size adjustment
         const frameInterval = 1000 / targetFPS;
         
@@ -2300,7 +2312,11 @@
                           'wave_distortion', 'squeeze_horizontal', 'squeeze_vertical', 'radial_wobble', 'complex_ripple',
                           'squish_face', 'stretch_face', 'funhouse_mirror', 'pinch_cheeks', 'bulge_eyes',
                           'warp_face', 'funny_squash', 'funny_stretch', 'wobble_face', 'elastic_face',
-                          'gentle_ripple', 'smush_face'],
+                          'gentle_ripple', 'smush_face',
+                          // V1 versions for comparison
+                          'upside_down_v1', 'multi_ripple_v1', 'radial_squeeze_v1', 'elastic_stretch_v1',
+                          'lens_distortion_v1', 'wave_distortion_v1', 'squeeze_horizontal_v1', 'squeeze_vertical_v1',
+                          'complex_ripple_v1', 'squish_face_v1', 'stretch_face_v1', 'warp_face_v1', 'funny_stretch_v1'],
             'Color & Style': ['black_white', 'sepia', 'vintage', 'neon_glow',
                              'pixelate', 'blur', 'sharpen', 'emboss', 'red_tint', 'blue_tint',
                              'green_tint', 'rainbow', 'negative', 'posterize', 'sketch', 'cartoon',
@@ -2563,11 +2579,20 @@
             
             // Start new stream with new facing mode
             try {
+                // Get selected resolution preference
+                const resolution = localStorage.getItem('wesworld-fx-resolution') || '1080p';
+                const videoConstraints = resolution === '4k' 
+                    ? { min: 1280, ideal: 3840, max: 3840 }
+                    : { min: 640, ideal: 1280, max: 1920 };
+                const heightConstraints = resolution === '4k'
+                    ? { min: 720, ideal: 2160, max: 2160 }
+                    : { min: 480, ideal: 720, max: 1080 };
+                
                 const constraints = {
                     video: {
                         facingMode: currentFacingMode,
-                        width: { min: 1280, ideal: 3840 },
-                        height: { min: 720, ideal: 2160 }
+                        width: videoConstraints,
+                        height: heightConstraints
                     }
                 };
                 
@@ -3154,10 +3179,20 @@
                 allFiltersList.push(...categoryFilters);
             });
             
-            // Sort all filters alphabetically by formatted name
+            // Sort filters alphabetically, but keep v1 versions right after their v2 counterparts
             allFiltersList.sort((a, b) => {
-                const nameA = formatFilterName(a).toLowerCase();
-                const nameB = formatFilterName(b).toLowerCase();
+                // Remove _v1 suffix for comparison
+                const aBase = a.replace(/_v1$/, '');
+                const bBase = b.replace(/_v1$/, '');
+                
+                // If same base filter, v2 (non-v1) comes first
+                if (aBase === bBase) {
+                    return a.includes('_v1') ? 1 : -1;
+                }
+                
+                // Otherwise sort alphabetically by base name
+                const nameA = formatFilterName(aBase).toLowerCase();
+                const nameB = formatFilterName(bBase).toLowerCase();
                 return nameA.localeCompare(nameB);
             });
             
@@ -3375,39 +3410,50 @@
                 return;
             }
             
-            // Get current item position
-            const currentRect = currentItem.getBoundingClientRect();
-            const currentCenterX = currentRect.left + currentRect.width / 2;
-            const currentCenterY = currentRect.top + currentRect.height / 2;
+            // Get current index
+            const currentIndex = gridItems.indexOf(currentItem);
+            if (currentIndex === -1) return;
             
-            let bestItem = null;
-            let bestDistance = Infinity;
-            const threshold = 50; // Maximum distance to consider for adjacent items
+            const currentFilter = currentItem.dataset.filter;
+            console.log(`Navigating ${direction} from index ${currentIndex} (${currentFilter})`);
             
-            gridItems.forEach(item => {
-                if (item === currentItem) return;
+            let targetIndex = currentIndex;
+            
+            // Use index-based navigation for left/right (sequential order)
+            // Use position-based navigation for up/down (grid layout)
+            if (direction === 'left') {
+                targetIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
+            } else if (direction === 'right') {
+                targetIndex = currentIndex < gridItems.length - 1 ? currentIndex + 1 : currentIndex;
+            } else {
+                // For up/down, use spatial positioning
+                const currentRect = currentItem.getBoundingClientRect();
+                const currentCenterX = currentRect.left + currentRect.width / 2;
+                const currentCenterY = currentRect.top + currentRect.height / 2;
                 
-                const itemRect = item.getBoundingClientRect();
-                const itemCenterX = itemRect.left + itemRect.width / 2;
-                const itemCenterY = itemRect.top + itemRect.height / 2;
+                let bestItem = null;
+                let bestDistance = Infinity;
+                const threshold = 50;
                 
-                let isCandidate = false;
-                let distance = Infinity;
-                
-                switch (direction) {
-                    case 'up':
-                        // Item should be above current item
+                gridItems.forEach(item => {
+                    if (item === currentItem) return;
+                    
+                    const itemRect = item.getBoundingClientRect();
+                    const itemCenterX = itemRect.left + itemRect.width / 2;
+                    const itemCenterY = itemRect.top + itemRect.height / 2;
+                    
+                    let isCandidate = false;
+                    let distance = Infinity;
+                    
+                    if (direction === 'up') {
                         if (itemCenterY < currentCenterY - threshold) {
-                            // Prefer items that are vertically aligned (similar X position)
                             const horizontalDiff = Math.abs(itemCenterX - currentCenterX);
                             if (horizontalDiff < itemRect.width) {
                                 distance = currentCenterY - itemCenterY + horizontalDiff * 0.1;
                                 isCandidate = true;
                             }
                         }
-                        break;
-                    case 'down':
-                        // Item should be below current item
+                    } else if (direction === 'down') {
                         if (itemCenterY > currentCenterY + threshold) {
                             const horizontalDiff = Math.abs(itemCenterX - currentCenterX);
                             if (horizontalDiff < itemRect.width) {
@@ -3415,77 +3461,28 @@
                                 isCandidate = true;
                             }
                         }
-                        break;
-                    case 'left':
-                        // Item should be to the left of current item
-                        if (itemCenterX < currentCenterX - threshold) {
-                            // Prefer items that are horizontally aligned (similar Y position)
-                            const verticalDiff = Math.abs(itemCenterY - currentCenterY);
-                            if (verticalDiff < itemRect.height) {
-                                distance = currentCenterX - itemCenterX + verticalDiff * 0.1;
-                                isCandidate = true;
-                            }
-                        }
-                        break;
-                    case 'right':
-                        // Item should be to the right of current item
-                        if (itemCenterX > currentCenterX + threshold) {
-                            const verticalDiff = Math.abs(itemCenterY - currentCenterY);
-                            if (verticalDiff < itemRect.height) {
-                                distance = itemCenterX - currentCenterX + verticalDiff * 0.1;
-                                isCandidate = true;
-                            }
-                        }
-                        break;
-                }
+                    }
                 
-                if (isCandidate && distance < bestDistance) {
-                    bestDistance = distance;
-                    bestItem = item;
-                }
-            });
-            
-            // If no candidate found, wrap around to the opposite side
-            if (!bestItem) {
-                switch (direction) {
-                    case 'up':
-                        // Find bottom-most item
-                        bestItem = gridItems.reduce((bottom, item) => {
-                            const itemRect = item.getBoundingClientRect();
-                            const bottomRect = bottom.getBoundingClientRect();
-                            return itemRect.bottom > bottomRect.bottom ? item : bottom;
-                        });
-                        break;
-                    case 'down':
-                        // Find top-most item
-                        bestItem = gridItems.reduce((top, item) => {
-                            const itemRect = item.getBoundingClientRect();
-                            const topRect = top.getBoundingClientRect();
-                            return itemRect.top < topRect.top ? item : top;
-                        });
-                        break;
-                    case 'left':
-                        // Find right-most item
-                        bestItem = gridItems.reduce((right, item) => {
-                            const itemRect = item.getBoundingClientRect();
-                            const rightRect = right.getBoundingClientRect();
-                            return itemRect.right > rightRect.right ? item : right;
-                        });
-                        break;
-                    case 'right':
-                        // Find left-most item
-                        bestItem = gridItems.reduce((left, item) => {
-                            const itemRect = item.getBoundingClientRect();
-                            const leftRect = left.getBoundingClientRect();
-                            return itemRect.left < leftRect.left ? item : left;
-                        });
-                        break;
+                    if (isCandidate && distance < bestDistance) {
+                        bestDistance = distance;
+                        bestItem = item;
+                    }
+                });
+                
+                // For up/down, use the best item found
+                if (bestItem) {
+                    targetIndex = gridItems.indexOf(bestItem);
                 }
             }
             
-            if (bestItem) {
-                bestItem.focus();
-                bestItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // Focus the target item
+            if (targetIndex !== currentIndex && gridItems[targetIndex]) {
+                const targetFilter = gridItems[targetIndex].dataset.filter;
+                console.log(`Moving to index ${targetIndex} (${targetFilter})`);
+                gridItems[targetIndex].focus();
+                gridItems[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                console.log(`Already at boundary or no change`);
             }
         }
         
@@ -4333,25 +4330,40 @@
         
         // Cycle to next filter
         function cycleNextFilter() {
+            // Build sorted filter list same as grid
+            const sortedFilters = [];
+            Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
+                sortedFilters.push(...categoryFilters);
+            });
+            
+            // Sort filters alphabetically, but keep v1 versions right after their v2 counterparts
+            sortedFilters.sort((a, b) => {
+                const aBase = a.replace(/_v1$/, '');
+                const bBase = b.replace(/_v1$/, '');
+                if (aBase === bBase) {
+                    return a.includes('_v1') ? 1 : -1;
+                }
+                const nameA = formatFilterName(aBase).toLowerCase();
+                const nameB = formatFilterName(bBase).toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
             // If we have pinned filters, cycle through those first
             if (pinnedFilters.length > 0) {
                 if (currentFilter === '') {
-                    // Start with first pinned filter
                     selectFilter(pinnedFilters[0]);
                 } else {
                     const currentIndex = pinnedFilters.indexOf(currentFilter);
                     if (currentIndex >= 0) {
-                        // Cycle within pinned filters
                         const nextIndex = (currentIndex + 1) % pinnedFilters.length;
                         selectFilter(pinnedFilters[nextIndex]);
                     } else {
-                        // Current filter not in pinned, go to first pinned
                         selectFilter(pinnedFilters[0]);
                     }
                 }
             } else {
-                // Cycle through all filters
-                const filters = ['', ...allFilters];
+                // Cycle through sorted filters
+                const filters = ['', ...sortedFilters];
                 const currentIndex = filters.indexOf(currentFilter);
                 const nextIndex = (currentIndex + 1) % filters.length;
                 selectFilter(filters[nextIndex]);
@@ -4360,25 +4372,40 @@
         
         // Cycle to previous filter
         function cyclePrevFilter() {
+            // Build sorted filter list same as grid
+            const sortedFilters = [];
+            Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
+                sortedFilters.push(...categoryFilters);
+            });
+            
+            // Sort filters alphabetically, but keep v1 versions right after their v2 counterparts
+            sortedFilters.sort((a, b) => {
+                const aBase = a.replace(/_v1$/, '');
+                const bBase = b.replace(/_v1$/, '');
+                if (aBase === bBase) {
+                    return a.includes('_v1') ? 1 : -1;
+                }
+                const nameA = formatFilterName(aBase).toLowerCase();
+                const nameB = formatFilterName(bBase).toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
             // If we have pinned filters, cycle through those first
             if (pinnedFilters.length > 0) {
                 if (currentFilter === '') {
-                    // Start with last pinned filter
                     selectFilter(pinnedFilters[pinnedFilters.length - 1]);
                 } else {
                     const currentIndex = pinnedFilters.indexOf(currentFilter);
                     if (currentIndex >= 0) {
-                        // Cycle within pinned filters
                         const prevIndex = (currentIndex - 1 + pinnedFilters.length) % pinnedFilters.length;
                         selectFilter(pinnedFilters[prevIndex]);
                     } else {
-                        // Current filter not in pinned, go to last pinned
                         selectFilter(pinnedFilters[pinnedFilters.length - 1]);
                     }
                 }
             } else {
-                // Cycle through all filters
-                const filters = ['', ...allFilters];
+                // Cycle through sorted filters
+                const filters = ['', ...sortedFilters];
                 const currentIndex = filters.indexOf(currentFilter);
                 const prevIndex = (currentIndex - 1 + filters.length) % filters.length;
                 selectFilter(filters[prevIndex]);
@@ -4509,7 +4536,7 @@
             }
             console.log('Starting roulette with', filters.length, 'filters');
             let cycles = 0;
-            const maxCycles = 10;
+            const maxCycles = 8; // Reduced from 10
             randomCycleInterval = setInterval(() => {
                 const randomFilter = filters[Math.floor(Math.random() * filters.length)];
                 // Skip URL updates during roulette
@@ -4524,7 +4551,7 @@
                     isRandomCycling = false;
                     console.log('Roulette finished on:', finalFilter);
                 }
-            }, 100);
+            }, 200); // Increased from 100ms to reduce performance strain
         }
         
         // Load test image
@@ -4595,11 +4622,23 @@
             isProcessing = true;
             
             try {
-                // Set canvas size to match video
-                if (canvasOutput.width !== videoInput.videoWidth || 
-                    canvasOutput.height !== videoInput.videoHeight) {
-                    canvasOutput.width = videoInput.videoWidth;
-                    canvasOutput.height = videoInput.videoHeight;
+                // Set canvas size to match video, but cap at reasonable resolution for performance
+                // Cap at 1920x1080 to avoid processing very large canvases
+                const maxWidth = 1920;
+                const maxHeight = 1080;
+                let targetWidth = videoInput.videoWidth;
+                let targetHeight = videoInput.videoHeight;
+                
+                // Scale down if video is larger than max dimensions
+                if (targetWidth > maxWidth || targetHeight > maxHeight) {
+                    const scale = Math.min(maxWidth / targetWidth, maxHeight / targetHeight);
+                    targetWidth = Math.floor(targetWidth * scale);
+                    targetHeight = Math.floor(targetHeight * scale);
+                }
+                
+                if (canvasOutput.width !== targetWidth || canvasOutput.height !== targetHeight) {
+                    canvasOutput.width = targetWidth;
+                    canvasOutput.height = targetHeight;
                 }
                 
                 // Draw video frame to canvas FIRST (always show the video)
@@ -4732,11 +4771,27 @@
                     "groupTitle": "#feea3b",
                     "selectedText": "#000000"
                 },
-                "fx": ["ultimate_distortion", "water_ripple", "pincushion", "multi_ripple", "radial_squeeze", "elastic_stretch",
-                    "lens_distortion", "wave_distortion", "squeeze_horizontal", "squeeze_vertical",
-                    "radial_wobble", "complex_ripple", "squish_face", "stretch_face", "funhouse_mirror",
-                    "pinch_cheeks", "bulge_eyes", "warp_face", "funny_squash", "funny_stretch",
-                    "wobble_face", "elastic_face", "gentle_ripple", "smush_face", "upside_down"],
+                "fx": [
+                    "upside_down", "upside_down_v1",
+                    "multi_ripple", "multi_ripple_v1",
+                    "radial_squeeze", "radial_squeeze_v1",
+                    "elastic_stretch", "elastic_stretch_v1",
+                    "lens_distortion", "lens_distortion_v1",
+                    "wave_distortion", "wave_distortion_v1",
+                    "squeeze_horizontal", "squeeze_horizontal_v1",
+                    "squeeze_vertical", "squeeze_vertical_v1",
+                    "complex_ripple", "complex_ripple_v1",
+                    "squish_face", "squish_face_v1",
+                    "stretch_face", "stretch_face_v1",
+                    "warp_face", "warp_face_v1",
+                    "funny_stretch", "funny_stretch_v1",
+                    "ultimate_distortion", "water_ripple",
+                    "pincushion", "radial_wobble",
+                    "funhouse_mirror", "pinch_cheeks",
+                    "bulge_eyes", "funny_squash",
+                    "wobble_face", "elastic_face",
+                    "gentle_ripple", "smush_face"
+                ],
                 "faceMasks": {
                     "categoryName": "DROPOUT",
                     "filterPrefix": "dropout_",
@@ -5282,12 +5337,17 @@
                 }
             },
             applyUpsideDown(data, width, height) {
-                // Same as flip_vertical - flips image upside down
+                // Flips image upside down with added distortion for visibility
+                const centerX = width / 2, centerY = height / 2;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
+                        // Add slight wave distortion to make the flip more dramatic
+                        const wave = Math.sin(x / 30) * 5;
                         const srcIdx = (y * width + x) * 4;
-                        const dstIdx = ((height - y - 1) * width + x) * 4;
+                        const flippedY = height - y - 1;
+                        const newY = Math.max(0, Math.min(height - 1, flippedY + Math.round(wave)));
+                        const dstIdx = (newY * width + x) * 4;
                         data[srcIdx] = temp[dstIdx];
                         data[srcIdx + 1] = temp[dstIdx + 1];
                         data[srcIdx + 2] = temp[dstIdx + 2];
@@ -6606,10 +6666,10 @@
                     for (let x = 0; x < width; x++) {
                         const dx = x - centerX, dy = y - centerY;
                         const dist = Math.sqrt(dx * dx + dy * dy);
-                        // Multiple overlapping ripples for complex distortion
-                        const ripple1 = Math.sin(dist * 0.05) * 15;
-                        const ripple2 = Math.sin(dist * 0.08) * 10;
-                        const ripple3 = Math.sin(dist * 0.12) * 8;
+                        // Multiple overlapping ripples for complex distortion - reduced for subtlety
+                        const ripple1 = Math.sin(dist * 0.05) * 8;
+                        const ripple2 = Math.sin(dist * 0.08) * 5;
+                        const ripple3 = Math.sin(dist * 0.12) * 4;
                         const totalRipple = ripple1 + ripple2 + ripple3;
                         const angle = Math.atan2(dy, dx);
                         const newX = Math.round(x + totalRipple * Math.cos(angle));
@@ -6627,7 +6687,7 @@
             },
             applyRadialSqueeze(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const radius = Math.min(width, height) / 2, strength = 0.5;
+                const radius = Math.min(width, height) / 2, strength = 1.2;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6652,7 +6712,7 @@
             },
             applyElasticStretch(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const radius = Math.min(width, height) / 2, strength = 0.6;
+                const radius = Math.min(width, height) / 2, strength = 1.3;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6679,7 +6739,7 @@
             applyLensDistortion(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
                 const radius = Math.min(width, height) / 2;
-                const k1 = 0.3, k2 = 0.1; // Lens distortion coefficients
+                const k1 = 0.7, k2 = 0.3; // Lens distortion coefficients - increased for visibility
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6710,9 +6770,9 @@
                         const dx = x - centerX, dy = y - centerY;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         const angle = Math.atan2(dy, dx);
-                        // Complex wave pattern with multiple frequencies
-                        const waveX = Math.sin(dist * 0.08 + angle * 2) * 20;
-                        const waveY = Math.cos(dist * 0.06 - angle * 2) * 20;
+                        // Complex wave pattern with multiple frequencies - reduced for subtlety
+                        const waveX = Math.sin(dist * 0.08 + angle * 2) * 10;
+                        const waveY = Math.cos(dist * 0.06 - angle * 2) * 10;
                         const newX = Math.round(x + waveX);
                         const newY = Math.round(y + waveY);
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
@@ -6728,7 +6788,7 @@
             },
             applySqueezeHorizontal(data, width, height) {
                 const centerX = width / 2;
-                const strength = 0.4;
+                const strength = 0.9;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6749,7 +6809,7 @@
             },
             applySqueezeVertical(data, width, height) {
                 const centerY = height / 2;
-                const strength = 0.4;
+                const strength = 0.9;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6802,9 +6862,9 @@
                         const dx = x - centerX, dy = y - centerY;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         const angle = Math.atan2(dy, dx);
-                        // Complex ripple with angular variation
-                        const radialRipple = Math.sin(dist * 0.06) * 18;
-                        const angularRipple = Math.sin(angle * 4) * 8;
+                        // Complex ripple with angular variation - reduced for subtlety
+                        const radialRipple = Math.sin(dist * 0.06) * 10;
+                        const angularRipple = Math.sin(angle * 4) * 5;
                         const totalRipple = radialRipple + angularRipple;
                         const newX = Math.round(x + totalRipple * Math.cos(angle));
                         const newY = Math.round(y + totalRipple * Math.sin(angle));
@@ -6821,7 +6881,7 @@
             },
             applySquishFace(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const strength = 0.3;
+                const strength = 0.7;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6842,7 +6902,7 @@
             },
             applyStretchFace(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const strength = 0.4;
+                const strength = 0.9;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6941,15 +7001,15 @@
             },
             applyWarpFace(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const strength = 0.2;
+                const strength = 0.5;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
                         const dx = (x - centerX) / (width / 2);
                         const dy = (y - centerY) / (height / 2);
-                        // Subtle warping that creates funny expressions
-                        const warpX = strength * Math.sin(dy * Math.PI * 2) * 15;
-                        const warpY = strength * Math.cos(dx * Math.PI * 2) * 15;
+                        // Warping that creates funny expressions - increased for visibility
+                        const warpX = strength * Math.sin(dy * Math.PI * 2) * 30;
+                        const warpY = strength * Math.cos(dx * Math.PI * 2) * 30;
                         const newX = Math.round(x + warpX);
                         const newY = Math.round(y + warpY);
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
@@ -6986,7 +7046,7 @@
             },
             applyFunnyStretch(data, width, height) {
                 const centerX = width / 2;
-                const strength = 0.35;
+                const strength = 0.8;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -7032,6 +7092,292 @@
                     }
                 }
             },
+
+            // ===== V1 (Original) Versions for Comparison =====
+            applyUpsideDownV1(data, width, height) {
+                // Original version - simple flip
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcIdx = (y * width + x) * 4;
+                        const dstIdx = ((height - y - 1) * width + x) * 4;
+                        data[srcIdx] = temp[dstIdx];
+                        data[srcIdx + 1] = temp[dstIdx + 1];
+                        data[srcIdx + 2] = temp[dstIdx + 2];
+                        data[srcIdx + 3] = temp[dstIdx + 3];
+                    }
+                }
+            },
+            applyMultiRippleV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const ripple1 = Math.sin(dist * 0.05) * 15;
+                        const ripple2 = Math.sin(dist * 0.08) * 10;
+                        const ripple3 = Math.sin(dist * 0.12) * 8;
+                        const totalRipple = ripple1 + ripple2 + ripple3;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(x + totalRipple * Math.cos(angle));
+                        const newY = Math.round(y + totalRipple * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyRadialSqueezeV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.5;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const newDist = normalizedDist * (1 + strength * normalizedDist * normalizedDist) * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyElasticStretchV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2, strength = 0.6;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const normalizedDist = Math.min(dist / radius, 1);
+                        const elasticFactor = 1.0 + strength * Math.sin(normalizedDist * Math.PI);
+                        const newDist = normalizedDist * elasticFactor * radius;
+                        const angle = Math.atan2(dy, dx);
+                        const newX = Math.round(centerX + newDist * Math.cos(angle));
+                        const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyLensDistortionV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const k1 = 0.3, k2 = 0.1;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / radius;
+                        const dy = (y - centerY) / radius;
+                        const r2 = dx * dx + dy * dy;
+                        const r4 = r2 * r2;
+                        const distortion = 1.0 + k1 * r2 + k2 * r4;
+                        const newX = Math.round(centerX + dx * radius * distortion);
+                        const newY = Math.round(centerY + dy * radius * distortion);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyWaveDistortionV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const waveX = Math.sin(dist * 0.08 + angle * 2) * 20;
+                        const waveY = Math.cos(dist * 0.06 - angle * 2) * 20;
+                        const newX = Math.round(x + waveX);
+                        const newY = Math.round(y + waveY);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySqueezeHorizontalV1(data, width, height) {
+                const centerX = width / 2;
+                const strength = 0.4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        const squeezeFactor = 1.0 - strength * dx * dx;
+                        const newX = Math.round(centerX + (x - centerX) * squeezeFactor);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySqueezeVerticalV1(data, width, height) {
+                const centerY = height / 2;
+                const strength = 0.4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dy = (y - centerY) / (height / 2);
+                        const squeezeFactor = 1.0 - strength * dy * dy;
+                        const newY = Math.round(centerY + (y - centerY) * squeezeFactor);
+                        if (newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + x) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyComplexRippleV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = x - centerX, dy = y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const radialRipple = Math.sin(dist * 0.06) * 18;
+                        const angularRipple = Math.sin(angle * 4) * 8;
+                        const totalRipple = radialRipple + angularRipple;
+                        const newX = Math.round(x + totalRipple * Math.cos(angle));
+                        const newY = Math.round(y + totalRipple * Math.sin(angle));
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applySquishFaceV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const strength = 0.3;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dy = (y - centerY) / (height / 2);
+                        const squishFactor = 1.0 - strength * dy * dy;
+                        const newX = Math.round(centerX + (x - centerX) / squishFactor);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyStretchFaceV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const strength = 0.4;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        const stretchFactor = 1.0 + strength * dx * dx;
+                        const newY = Math.round(centerY + (y - centerY) / stretchFactor);
+                        if (newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + x) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyWarpFaceV1(data, width, height) {
+                const centerX = width / 2, centerY = height / 2;
+                const strength = 0.2;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        const dy = (y - centerY) / (height / 2);
+                        const warpX = strength * Math.sin(dy * Math.PI * 2) * 15;
+                        const warpY = strength * Math.cos(dx * Math.PI * 2) * 15;
+                        const newX = Math.round(x + warpX);
+                        const newY = Math.round(y + warpY);
+                        if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (newY * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+            applyFunnyStretchV1(data, width, height) {
+                const centerX = width / 2;
+                const strength = 0.35;
+                const temp = new Uint8ClampedArray(data);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const dx = (x - centerX) / (width / 2);
+                        const stretchFactor = 1.0 + strength * dx * dx;
+                        const newX = Math.round(centerX + (x - centerX) / stretchFactor);
+                        if (newX >= 0 && newX < width) {
+                            const srcIdx = (y * width + x) * 4;
+                            const dstIdx = (y * width + newX) * 4;
+                            data[srcIdx] = temp[dstIdx];
+                            data[srcIdx + 1] = temp[dstIdx + 1];
+                            data[srcIdx + 2] = temp[dstIdx + 2];
+                            data[srcIdx + 3] = temp[dstIdx + 3];
+                        }
+                    }
+                }
+            },
+
             applyElasticFace(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
                 const radius = Math.min(width, height) / 2;
@@ -7790,7 +8136,21 @@
                 'elastic_face': () => FilterImplementations.applyElasticFace(data, width, height),
                 'gentle_ripple': () => FilterImplementations.applyGentleRipple(data, width, height),
                 'smush_face': () => FilterImplementations.applySmushFace(data, width, height),
-                'ultimate_distortion': () => FilterImplementations.applyUltimateDistortion(data, width, height)
+                'ultimate_distortion': () => FilterImplementations.applyUltimateDistortion(data, width, height),
+                // V1 (Original) versions for comparison
+                'upside_down_v1': () => FilterImplementations.applyUpsideDownV1(data, width, height),
+                'multi_ripple_v1': () => FilterImplementations.applyMultiRippleV1(data, width, height),
+                'radial_squeeze_v1': () => FilterImplementations.applyRadialSqueezeV1(data, width, height),
+                'elastic_stretch_v1': () => FilterImplementations.applyElasticStretchV1(data, width, height),
+                'lens_distortion_v1': () => FilterImplementations.applyLensDistortionV1(data, width, height),
+                'wave_distortion_v1': () => FilterImplementations.applyWaveDistortionV1(data, width, height),
+                'squeeze_horizontal_v1': () => FilterImplementations.applySqueezeHorizontalV1(data, width, height),
+                'squeeze_vertical_v1': () => FilterImplementations.applySqueezeVerticalV1(data, width, height),
+                'complex_ripple_v1': () => FilterImplementations.applyComplexRippleV1(data, width, height),
+                'squish_face_v1': () => FilterImplementations.applySquishFaceV1(data, width, height),
+                'stretch_face_v1': () => FilterImplementations.applyStretchFaceV1(data, width, height),
+                'warp_face_v1': () => FilterImplementations.applyWarpFaceV1(data, width, height),
+                'funny_stretch_v1': () => FilterImplementations.applyFunnyStretchV1(data, width, height)
             };
             
             const filterFunc = filterMap[filterType];
@@ -7816,11 +8176,20 @@
                     currentFacingMode = savedFacingMode;
                 }
                 
+                // Get selected resolution preference
+                const resolution = localStorage.getItem('wesworld-fx-resolution') || '1080p';
+                const videoConstraints = resolution === '4k' 
+                    ? { min: 1280, ideal: 3840, max: 3840 }
+                    : { min: 640, ideal: 1280, max: 1920 };
+                const heightConstraints = resolution === '4k'
+                    ? { min: 720, ideal: 2160, max: 2160 }
+                    : { min: 480, ideal: 720, max: 1080 };
+                
                 const constraints = {
                     video: {
                         deviceId: deviceId ? { exact: deviceId } : undefined,
-                        width: { min: 1280, ideal: 3840 },
-                        height: { min: 720, ideal: 2160 }
+                        width: videoConstraints,
+                        height: heightConstraints
                     }
                 };
                 
@@ -8393,6 +8762,32 @@
             
             // Setup corner tap areas
             setupCornerTapAreas();
+            
+            // Resolution select handler
+            const resolutionSelect = document.getElementById('resolutionSelect');
+            if (resolutionSelect) {
+                // Load saved preference
+                const savedResolution = localStorage.getItem('wesworld-fx-resolution') || '1080p';
+                resolutionSelect.value = savedResolution;
+                
+                resolutionSelect.addEventListener('change', (e) => {
+                    const newResolution = e.target.value;
+                    localStorage.setItem('wesworld-fx-resolution', newResolution);
+                    console.log('Resolution preference changed to:', newResolution);
+                    
+                    // Restart camera if it's currently running
+                    if (localStream) {
+                        console.log('Restarting camera with new resolution...');
+                        stopCamera();
+                        setTimeout(() => {
+                            startCamera().catch(error => {
+                                console.error('Error restarting camera:', error);
+                                updateStatus('Camera error: ' + error.message, 'error');
+                            });
+                        }, 100);
+                    }
+                });
+            }
             
             if (startButton) {
                 startButton.addEventListener('click', startCamera);

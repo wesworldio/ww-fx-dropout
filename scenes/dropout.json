@@ -18,12 +18,25 @@
     "selectedText": "#000000"
   },
   "fx": [
-    "ultimate_distortion",
-    "water_ripple", "pincushion", "multi_ripple", "radial_squeeze", "elastic_stretch",
-    "lens_distortion", "wave_distortion", "squeeze_horizontal", "squeeze_vertical",
-    "radial_wobble", "complex_ripple", "squish_face", "stretch_face", "funhouse_mirror",
-    "pinch_cheeks", "bulge_eyes", "warp_face", "funny_squash", "funny_stretch",
-    "wobble_face", "elastic_face", "gentle_ripple", "smush_face", "upside_down"
+    "upside_down", "upside_down_v1",
+    "multi_ripple", "multi_ripple_v1",
+    "radial_squeeze", "radial_squeeze_v1",
+    "elastic_stretch", "elastic_stretch_v1",
+    "lens_distortion", "lens_distortion_v1",
+    "wave_distortion", "wave_distortion_v1",
+    "squeeze_horizontal", "squeeze_horizontal_v1",
+    "squeeze_vertical", "squeeze_vertical_v1",
+    "complex_ripple", "complex_ripple_v1",
+    "squish_face", "squish_face_v1",
+    "stretch_face", "stretch_face_v1",
+    "warp_face", "warp_face_v1",
+    "funny_stretch", "funny_stretch_v1",
+    "ultimate_distortion", "water_ripple",
+    "pincushion", "radial_wobble",
+    "funhouse_mirror", "pinch_cheeks",
+    "bulge_eyes", "funny_squash",
+    "wobble_face", "elastic_face",
+    "gentle_ripple", "smush_face"
   ],
   "faceMasks": {
     "categoryName": "DROPOUT",
