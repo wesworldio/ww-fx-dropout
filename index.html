@@ -8389,15 +8389,25 @@
         
         // Stop camera
         function stopCamera() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
+            // Stop animation frame first
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
             }
-            videoInput.srcObject = null;
+            
+            // Clear video source before stopping tracks
+            if (videoInput.srcObject) {
+                videoInput.srcObject = null;
+            }
+            
+            // Stop all media tracks
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log('Stopped track:', track.kind, track.label);
+                });
+                localStream = null;
+            }
             ctx.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
             startButton.style.display = 'block';
             stopButton.style.display = 'none';
@@ -8831,12 +8841,13 @@
                     if (localStream) {
                         console.log('Restarting camera with new resolution...');
                         stopCamera();
+                        // Wait longer for tracks to fully release
                         setTimeout(() => {
                             startCamera().catch(error => {
                                 console.error('Error restarting camera:', error);
                                 updateStatus('Camera error: ' + error.message, 'error');
                             });
-                        }, 100);
+                        }, 500);
                     }
                 });
             }
@@ -8857,7 +8868,7 @@
                         console.log('Camera selection changed, restarting with new camera...');
                         // Stop current camera
                         stopCamera();
-                        // Wait a moment for cleanup, then start new camera
+                        // Wait longer for tracks to fully release before starting new camera
                         setTimeout(() => {
                             if (newDeviceId) {
                                 startCamera().catch(error => {
@@ -8865,7 +8876,7 @@
                                     updateStatus('Camera error: ' + error.message, 'error');
                                 });
                             }
-                        }, 100);
+                        }, 500);
                     }
                 });
             }
