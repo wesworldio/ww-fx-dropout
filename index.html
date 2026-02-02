@@ -4286,10 +4286,12 @@
                 if (clearFilterButton) {
                     clearFilterButton.style.display = 'flex';
                 }
-                // Update overlay
-                if (currentFxOverlay && currentFxOverlayName) {
+                // Update overlay (only show if controls are visible)
+                if (currentFxOverlay && currentFxOverlayName && controlsVisible) {
                     currentFxOverlayName.textContent = formatFilterName(currentFilter);
                     currentFxOverlay.classList.add('active');
+                } else if (currentFxOverlay && !controlsVisible) {
+                    currentFxOverlay.classList.remove('active');
                 }
                 // Update title with filter name
                 document.title = 'WesWorld FX - ' + formatFilterName(currentFilter);
@@ -8386,9 +8388,17 @@
             if (controlsVisible) {
                 controls.classList.add('visible');
                 controls.classList.remove('hidden');
+                // Show FX overlay if filter is active
+                if (currentFilter && currentFxOverlay) {
+                    currentFxOverlay.classList.add('active');
+                }
             } else {
                 controls.classList.add('hidden');
                 controls.classList.remove('visible');
+                // Hide FX overlay when menu is hidden
+                if (currentFxOverlay) {
+                    currentFxOverlay.classList.remove('active');
+                }
             }
         }
         

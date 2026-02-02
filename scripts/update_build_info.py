@@ -56,11 +56,13 @@ def update_build_info_json():
     repo_root = Path(__file__).parent.parent
     output_file = repo_root / 'build-info.json'
     
+    commit_time = get_git_commit_time()
+    
     build_info = {
         'buildNumber': get_git_commit_count(),
-        'buildTimestamp': get_git_commit_time(),
+        'buildTimestamp': commit_time,  # Use commit time, not current time
         'commitHash': get_git_commit_hash(),
-        'commitTime': get_git_commit_time()
+        'commitTime': commit_time
     }
     
     with open(output_file, 'w') as f:
