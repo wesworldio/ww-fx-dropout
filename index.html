@@ -1369,6 +1369,26 @@
             font-size: 12px;
         }
         
+        /* Category headers in grid */
+        .fx-grid-category-header {
+            grid-column: 1 / -1;
+            padding: 16px 8px 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color, #fff);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color, #333);
+            margin-bottom: 8px;
+        }
+        
+        .fx-favorites-header {
+            color: var(--accent-color, #5250ef);
+            border-bottom-color: var(--accent-color, #5250ef);
+            font-size: 18px;
+            margin-top: 0;
+        }
+        
         @media (max-width: 768px) {
             .fx-grid-modal {
                 padding: 10px;
@@ -1768,9 +1788,7 @@
                         Quality Preset:
                     </label>
                     <select id="resolutionSelect" style="width: 100%; padding: 8px; background: var(--surface-color, #1a1a1a); color: var(--text-color, white); border: 1px solid var(--border-color, #333); border-radius: 4px; cursor: pointer;">
-                        <option value="720p">720p</option>
-                        <option value="1080p">1080p (Recommended)</option>
-                        <option value="4k">4K</option>
+                        <option value="1080p">1080p</option>
                     </select>
                     <div style="font-size: 10px; color: var(--text-secondary-color, #999); margin-top: 4px;">
                         Restart camera to apply
@@ -2301,9 +2319,11 @@
         
         // Default filter categories (for organizing when using flat array)
         const DEFAULT_FILTER_CATEGORIES = {
-            'Distortion': ['ultimate_distortion', 'bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
-                          'twirl', 'ripple', 'sphere', 'tunnel', 'water_ripple',
-                          'radial_blur', 'cylinder', 'barrel', 'pincushion', 'whirlpool', 'radial_zoom',
+            'Favorites': ['ultimate_distortion', 'water_ripple', 'radial_wobble', 'bulge_eyes',
+                         'pincushion', 'funhouse_mirror', 'pinch_cheeks', 'funny_squash', 'wobble_face'],
+            'Distortion': ['bulge', 'stretch', 'swirl', 'fisheye', 'pinch', 'wave', 'mirror',
+                          'twirl', 'ripple', 'sphere', 'tunnel',
+                          'radial_blur', 'cylinder', 'barrel', 'whirlpool', 'radial_zoom',
                           'concave', 'convex', 'spiral', 'radial_stretch', 'radial_compress',
                           'vertical_wave', 'horizontal_wave', 'skew_horizontal', 'skew_vertical',
                           'rotate_zoom', 'radial_wave', 'zoom_in', 'zoom_out', 'fast_zoom_in',
@@ -2312,9 +2332,9 @@
                           'flip_vertical', 'flip_both', 'upside_down', 'quad_mirror', 'tile', 'radial_tile',
                           'zoom_blur', 'melt', 'kaleidoscope', 'glitch', 'double_vision',
                           'multi_ripple', 'radial_squeeze', 'elastic_stretch', 'lens_distortion',
-                          'wave_distortion', 'squeeze_horizontal', 'squeeze_vertical', 'radial_wobble', 'complex_ripple',
-                          'squish_face', 'stretch_face', 'funhouse_mirror', 'pinch_cheeks', 'bulge_eyes',
-                          'warp_face', 'funny_squash', 'funny_stretch', 'wobble_face', 'elastic_face',
+                          'wave_distortion', 'squeeze_horizontal', 'squeeze_vertical', 'complex_ripple',
+                          'squish_face', 'stretch_face', 'elastic_face',
+                          'warp_face', 'funny_stretch',
                           'gentle_ripple', 'smush_face',
                           // V1 versions for comparison
                           'upside_down_v1', 'multi_ripple_v1', 'radial_squeeze_v1', 'elastic_stretch_v1',
@@ -2582,23 +2602,9 @@
             
             // Start new stream with new facing mode
             try {
-                // Get selected resolution preference
-                const resolution = localStorage.getItem('wesworld-fx-resolution') || '1080p';
-                let videoConstraints, heightConstraints;
-                
-                if (resolution === '4k') {
-                    // 4K: Request 4K explicitly
-                    videoConstraints = { ideal: 3840 };
-                    heightConstraints = { ideal: 2160 };
-                } else if (resolution === '720p') {
-                    // 720p: Cap at 720p
-                    videoConstraints = { ideal: 1280, max: 1280 };
-                    heightConstraints = { ideal: 720, max: 720 };
-                } else {
-                    // 1080p (default): Request 1080p but allow camera native resolution
-                    videoConstraints = { ideal: 1920 };
-                    heightConstraints = { ideal: 1080 };
-                }
+                // 1080p: Request 1080p resolution
+                const videoConstraints = { ideal: 1920 };
+                const heightConstraints = { ideal: 1080 };
                 
                 const constraints = {
                     video: {
@@ -3185,33 +3191,62 @@
             const noneItem = createGridItem('');
             fxGridContainer.appendChild(noneItem);
             
-            // Collect all filters from all categories
+            // Process categories in order (Favorites first, then others)
+            const categoryOrder = ['Favorites', 'Distortion', 'Color & Style'];
+            const processedFilters = new Set();
+            
+            categoryOrder.forEach(categoryName => {
+                const categoryFilters = FILTER_CATEGORIES[categoryName];
+                if (!categoryFilters || categoryFilters.length === 0) return;
+                
+                // Add category header if not Favorites (or if you want it for all)
+                if (categoryName === 'Favorites') {
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'fx-grid-category-header fx-favorites-header';
+                    headerDiv.innerHTML = '⭐ ' + categoryName;
+                    headerDiv.setAttribute('role', 'heading');
+                    headerDiv.setAttribute('aria-level', '3');
+                    fxGridContainer.appendChild(headerDiv);
+                }
+                
+                // Sort filters within category alphabetically, but keep v1 versions after v2
+                const sortedCategoryFilters = [...categoryFilters].sort((a, b) => {
+                    // Remove _v1 suffix for comparison
+                    const aBase = a.replace(/_v1$/, '');
+                    const bBase = b.replace(/_v1$/, '');
+                    
+                    // If same base filter, v2 (non-v1) comes first
+                    if (aBase === bBase) {
+                        return a.includes('_v1') ? 1 : -1;
+                    }
+                    
+                    // Otherwise sort alphabetically by base name
+                    const nameA = formatFilterName(aBase).toLowerCase();
+                    const nameB = formatFilterName(bBase).toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+                
+                // Add filters from this category
+                sortedCategoryFilters.forEach(filter => {
+                    if (!processedFilters.has(filter)) {
+                        const gridItem = createGridItem(filter);
+                        fxGridContainer.appendChild(gridItem);
+                        processedFilters.add(filter);
+                    }
+                });
+            });
+            
+            // Add any remaining filters not in predefined categories
             const allFiltersList = [];
             Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
                 allFiltersList.push(...categoryFilters);
             });
             
-            // Sort filters alphabetically, but keep v1 versions right after their v2 counterparts
-            allFiltersList.sort((a, b) => {
-                // Remove _v1 suffix for comparison
-                const aBase = a.replace(/_v1$/, '');
-                const bBase = b.replace(/_v1$/, '');
-                
-                // If same base filter, v2 (non-v1) comes first
-                if (aBase === bBase) {
-                    return a.includes('_v1') ? 1 : -1;
-                }
-                
-                // Otherwise sort alphabetically by base name
-                const nameA = formatFilterName(aBase).toLowerCase();
-                const nameB = formatFilterName(bBase).toLowerCase();
-                return nameA.localeCompare(nameB);
-            });
-            
-            // Add sorted filters to grid
             allFiltersList.forEach(filter => {
-                const gridItem = createGridItem(filter);
-                fxGridContainer.appendChild(gridItem);
+                if (!processedFilters.has(filter)) {
+                    const gridItem = createGridItem(filter);
+                    fxGridContainer.appendChild(gridItem);
+                }
             });
             
             // Update visible items for performance
@@ -5356,8 +5391,8 @@
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
-                        // Add slight wave distortion to make the flip more dramatic
-                        const wave = Math.sin(x / 30) * 5;
+                        // Add stronger wave distortion to make the flip more dramatic
+                        const wave = Math.sin(x / 30) * 15;
                         const srcIdx = (y * width + x) * 4;
                         const flippedY = height - y - 1;
                         const newY = Math.max(0, Math.min(height - 1, flippedY + Math.round(wave)));
@@ -6681,9 +6716,9 @@
                         const dx = x - centerX, dy = y - centerY;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         // Multiple overlapping ripples for complex distortion - reduced for subtlety
-                        const ripple1 = Math.sin(dist * 0.05) * 8;
-                        const ripple2 = Math.sin(dist * 0.08) * 5;
-                        const ripple3 = Math.sin(dist * 0.12) * 4;
+                        const ripple1 = Math.sin(dist * 0.05) * 5;
+                        const ripple2 = Math.sin(dist * 0.08) * 3;
+                        const ripple3 = Math.sin(dist * 0.12) * 2;
                         const totalRipple = ripple1 + ripple2 + ripple3;
                         const angle = Math.atan2(dy, dx);
                         const newX = Math.round(x + totalRipple * Math.cos(angle));
@@ -6701,7 +6736,7 @@
             },
             applyRadialSqueeze(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const radius = Math.min(width, height) / 2, strength = 1.2;
+                const radius = Math.min(width, height) / 2, strength = 1.8;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6726,7 +6761,7 @@
             },
             applyElasticStretch(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const radius = Math.min(width, height) / 2, strength = 1.3;
+                const radius = Math.min(width, height) / 2, strength = 2.0;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6753,7 +6788,7 @@
             applyLensDistortion(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
                 const radius = Math.min(width, height) / 2;
-                const k1 = 0.7, k2 = 0.3; // Lens distortion coefficients - increased for visibility
+                const k1 = 1.2, k2 = 0.6; // Lens distortion coefficients - increased for visibility
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6785,8 +6820,8 @@
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         const angle = Math.atan2(dy, dx);
                         // Complex wave pattern with multiple frequencies - reduced for subtlety
-                        const waveX = Math.sin(dist * 0.08 + angle * 2) * 10;
-                        const waveY = Math.cos(dist * 0.06 - angle * 2) * 10;
+                        const waveX = Math.sin(dist * 0.08 + angle * 2) * 6;
+                        const waveY = Math.cos(dist * 0.06 - angle * 2) * 6;
                         const newX = Math.round(x + waveX);
                         const newY = Math.round(y + waveY);
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
@@ -6802,7 +6837,7 @@
             },
             applySqueezeHorizontal(data, width, height) {
                 const centerX = width / 2;
-                const strength = 0.9;
+                const strength = 1.4;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6823,7 +6858,7 @@
             },
             applySqueezeVertical(data, width, height) {
                 const centerY = height / 2;
-                const strength = 0.9;
+                const strength = 1.4;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6877,8 +6912,8 @@
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         const angle = Math.atan2(dy, dx);
                         // Complex ripple with angular variation - reduced for subtlety
-                        const radialRipple = Math.sin(dist * 0.06) * 10;
-                        const angularRipple = Math.sin(angle * 4) * 5;
+                        const radialRipple = Math.sin(dist * 0.06) * 6;
+                        const angularRipple = Math.sin(angle * 4) * 3;
                         const totalRipple = radialRipple + angularRipple;
                         const newX = Math.round(x + totalRipple * Math.cos(angle));
                         const newY = Math.round(y + totalRipple * Math.sin(angle));
@@ -6895,7 +6930,7 @@
             },
             applySquishFace(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const strength = 0.7;
+                const strength = 1.1;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -6916,7 +6951,7 @@
             },
             applyStretchFace(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const strength = 0.9;
+                const strength = 1.4;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -7015,15 +7050,15 @@
             },
             applyWarpFace(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
-                const strength = 0.5;
+                const strength = 0.8;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
                         const dx = (x - centerX) / (width / 2);
                         const dy = (y - centerY) / (height / 2);
                         // Warping that creates funny expressions - increased for visibility
-                        const warpX = strength * Math.sin(dy * Math.PI * 2) * 30;
-                        const warpY = strength * Math.cos(dx * Math.PI * 2) * 30;
+                        const warpX = strength * Math.sin(dy * Math.PI * 2) * 45;
+                        const warpY = strength * Math.cos(dx * Math.PI * 2) * 45;
                         const newX = Math.round(x + warpX);
                         const newY = Math.round(y + warpY);
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
@@ -7060,7 +7095,7 @@
             },
             applyFunnyStretch(data, width, height) {
                 const centerX = width / 2;
-                const strength = 0.8;
+                const strength = 1.2;
                 const temp = new Uint8ClampedArray(data);
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -7571,20 +7606,20 @@
                     newY = centerY + barrelNewDist * Math.sin(angle);
                     break;
                 case 'radial_squeeze':
-                    const squeezeStrength = 0.5;
+                    const squeezeStrength = 1.8;
                     const squeezeNewDist = normalizedDist * (1 + squeezeStrength * normalizedDist * normalizedDist) * radius;
                     newX = centerX + squeezeNewDist * Math.cos(angle);
                     newY = centerY + squeezeNewDist * Math.sin(angle);
                     break;
                 case 'squish_face':
-                    const squishStrength = 0.3;
+                    const squishStrength = 1.1;
                     const squishDy = dy / (height / 2);
                     const squishFactor = 1.0 - squishStrength * squishDy * squishDy;
                     newX = centerX + dx / squishFactor;
                     newY = y;
                     break;
                 case 'stretch_face':
-                    const stretchFaceStrength = 0.4;
+                    const stretchFaceStrength = 1.4;
                     const stretchFaceDx = dx / (width / 2);
                     const stretchFaceFactor = 1.0 + stretchFaceStrength * stretchFaceDx * stretchFaceDx;
                     newX = x;
@@ -7606,41 +7641,41 @@
                     newY = centerY + wobbleNewDist * Math.sin(angle);
                     break;
                 case 'multi_ripple':
-                    const ripple1 = Math.sin(dist * 0.05) * 15;
-                    const ripple2 = Math.sin(dist * 0.08) * 10;
-                    const ripple3 = Math.sin(dist * 0.12) * 8;
+                    const ripple1 = Math.sin(dist * 0.05) * 5;
+                    const ripple2 = Math.sin(dist * 0.08) * 3;
+                    const ripple3 = Math.sin(dist * 0.12) * 2;
                     const totalRipple = ripple1 + ripple2 + ripple3;
                     newX = x + totalRipple * Math.cos(angle);
                     newY = y + totalRipple * Math.sin(angle);
                     break;
                 case 'elastic_stretch':
-                    const elasticStrength = 0.5;
-                    const elasticFactor = 1.0 + elasticStrength * Math.sin(normalizedDist * Math.PI * 2) * 0.3;
+                    const elasticStrength = 2.0;
+                    const elasticFactor = 1.0 + elasticStrength * Math.sin(normalizedDist * Math.PI);
                     const elasticNewDist = normalizedDist * elasticFactor * radius;
                     newX = centerX + elasticNewDist * Math.cos(angle);
                     newY = centerY + elasticNewDist * Math.sin(angle);
                     break;
                 case 'wave_distortion':
-                    const waveX = Math.sin(dist * 0.08 + angle * 2) * 20;
-                    const waveY = Math.cos(dist * 0.06 - angle * 2) * 20;
+                    const waveX = Math.sin(dist * 0.08 + angle * 2) * 6;
+                    const waveY = Math.cos(dist * 0.06 - angle * 2) * 6;
                     newX = x + waveX;
                     newY = y + waveY;
                     break;
                 case 'squeeze_horizontal':
                     const squeezeHDx = dx / (width / 2);
-                    const squeezeHFactor = 1.0 - 0.4 * squeezeHDx * squeezeHDx;
+                    const squeezeHFactor = 1.0 - 1.4 * squeezeHDx * squeezeHDx;
                     newX = centerX + dx * squeezeHFactor;
                     newY = y;
                     break;
                 case 'squeeze_vertical':
                     const squeezeVDy = dy / (height / 2);
-                    const squeezeVFactor = 1.0 - 0.4 * squeezeVDy * squeezeVDy;
+                    const squeezeVFactor = 1.0 - 1.4 * squeezeVDy * squeezeVDy;
                     newX = x;
                     newY = centerY + dy * squeezeVFactor;
                     break;
                 case 'complex_ripple':
-                    const radialRipple = Math.sin(dist * 0.06) * 18;
-                    const angularRipple = Math.sin(angle * 4) * 8;
+                    const radialRipple = Math.sin(dist * 0.06) * 6;
+                    const angularRipple = Math.sin(angle * 4) * 3;
                     const complexTotalRipple = radialRipple + angularRipple;
                     newX = x + complexTotalRipple * Math.cos(angle);
                     newY = y + complexTotalRipple * Math.sin(angle);
@@ -7865,7 +7900,7 @@
                     newY = centerY + dy * extremeCloseupFactor;
                     break;
                 case 'lens_distortion':
-                    const lensStrength = 0.35;
+                    const lensStrength = 0.7;
                     const lensFactor = 1.0 - lensStrength * normalizedDist * normalizedDist;
                     newX = centerX + dx * lensFactor;
                     newY = centerY + dy * lensFactor;
@@ -7888,7 +7923,7 @@
                     }
                     break;
                 case 'warp_face':
-                    const warpStrength = 0.3;
+                    const warpStrength = 0.8;
                     const warpDx = dx / (width / 2);
                     const warpDy = dy / (height / 2);
                     const warpX = warpDx * (1.0 + warpStrength * Math.sin(warpDy * Math.PI * 2));
@@ -7904,7 +7939,7 @@
                     newY = y;
                     break;
                 case 'funny_stretch':
-                    const funnyStretchStrength = 0.4;
+                    const funnyStretchStrength = 1.2;
                     const funnyStretchDx = dx / (width / 2);
                     const funnyStretchFactor = 1.0 + funnyStretchStrength * funnyStretchDx * funnyStretchDx;
                     newX = x;
@@ -8190,23 +8225,9 @@
                     currentFacingMode = savedFacingMode;
                 }
                 
-                // Get selected resolution preference
-                const resolution = localStorage.getItem('wesworld-fx-resolution') || '1080p';
-                let videoConstraints, heightConstraints;
-                
-                if (resolution === '4k') {
-                    // 4K: Request 4K explicitly
-                    videoConstraints = { ideal: 3840 };
-                    heightConstraints = { ideal: 2160 };
-                } else if (resolution === '720p') {
-                    // 720p: Cap at 720p
-                    videoConstraints = { ideal: 1280, max: 1280 };
-                    heightConstraints = { ideal: 720, max: 720 };
-                } else {
-                    // 1080p (default): Request 1080p but allow camera native resolution
-                    videoConstraints = { ideal: 1920 };
-                    heightConstraints = { ideal: 1080 };
-                }
+                // 1080p: Request 1080p resolution
+                const videoConstraints = { ideal: 1920 };
+                const heightConstraints = { ideal: 1080 };
                 
                 const constraints = {
                     video: {
