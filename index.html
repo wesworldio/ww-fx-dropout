@@ -1788,7 +1788,12 @@
                         Quality Preset:
                     </label>
                     <select id="resolutionSelect" style="width: 100%; padding: 8px; background: var(--surface-color, #1a1a1a); color: var(--text-color, white); border: 1px solid var(--border-color, #333); border-radius: 4px; cursor: pointer;">
-                        <option value="1080p">1080p</option>
+                        <option value="4k">4K (3840×2160)</option>
+                        <option value="1440p">1440p (2560×1440)</option>
+                        <option value="1080p">1080p (1920×1080)</option>
+                        <option value="720p">720p (1280×720)</option>
+                        <option value="480p">480p (854×480)</option>
+                        <option value="360p">360p (640×360)</option>
                     </select>
                     <div style="font-size: 10px; color: var(--text-secondary-color, #999); margin-top: 4px;">
                         Restart camera to apply
@@ -7633,9 +7638,24 @@
                     currentFacingMode = savedFacingMode;
                 }
                 
-                // 1080p: Request 1080p resolution
-                const videoConstraints = { ideal: 1920 };
-                const heightConstraints = { ideal: 1080 };
+                // Get resolution from dropdown
+                const resolutionSelect = document.getElementById('resolutionSelect');
+                const selectedResolution = resolutionSelect ? resolutionSelect.value : '1080p';
+                
+                // Map resolution presets to actual dimensions
+                const resolutionMap = {
+                    '4k': { width: 3840, height: 2160 },
+                    '1440p': { width: 2560, height: 1440 },
+                    '1080p': { width: 1920, height: 1080 },
+                    '720p': { width: 1280, height: 720 },
+                    '480p': { width: 854, height: 480 },
+                    '360p': { width: 640, height: 360 }
+                };
+                
+                const resolution = resolutionMap[selectedResolution] || resolutionMap['1080p'];
+                
+                const videoConstraints = { ideal: resolution.width };
+                const heightConstraints = { ideal: resolution.height };
                 
                 const constraints = {
                     video: {
