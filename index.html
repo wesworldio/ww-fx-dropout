@@ -2307,6 +2307,43 @@
             }
         }
         
+        // Sync build number with URL hash
+        function syncBuildNumberToHash() {
+            const buildNum = getBuildNumber();
+            if (buildNum > 0) {
+                const currentHash = window.location.hash;
+                const expectedHash = `#b=${buildNum}`;
+                
+                // Only update if different
+                if (currentHash !== expectedHash) {
+                    console.log('Updating URL hash to build number:', buildNum);
+                    window.location.hash = `b=${buildNum}`;
+                }
+            }
+        }
+        
+        // Check if hash has wrong build number and update it
+        function checkAndUpdateHashBuildNumber() {
+            const currentHash = window.location.hash;
+            const buildNum = getBuildNumber();
+            
+            if (buildNum > 0) {
+                // Parse hash to check for existing build number
+                const hashMatch = currentHash.match(/[#&]b=(\d+)/);
+                
+                if (hashMatch) {
+                    const hashBuildNum = parseInt(hashMatch[1], 10);
+                    if (hashBuildNum !== buildNum) {
+                        console.log(`Hash has wrong build number (${hashBuildNum}), updating to ${buildNum}`);
+                        syncBuildNumberToHash();
+                    }
+                } else {
+                    // No build number in hash, add it
+                    syncBuildNumberToHash();
+                }
+            }
+        }
+        
         // Filter categories - will be built from current scene's fx configuration
         // Face masks will be added dynamically after discovery
         let FILTER_CATEGORIES = {};
@@ -9043,6 +9080,7 @@
                 loadSceneEarly();
                 updateVersionDisplay();
                 startTimeUpdateInterval();
+                checkAndUpdateHashBuildNumber();
                 init();
             });
         } else {
@@ -9051,6 +9089,7 @@
                 loadSceneEarly();
                 updateVersionDisplay();
                 startTimeUpdateInterval();
+                checkAndUpdateHashBuildNumber();
                 init();
             })();
         }
