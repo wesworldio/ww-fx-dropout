@@ -1,23 +1,28 @@
 # Exclude examples directory (contains large files)
-examples/
+examples
+examples/**
 
 # Exclude development and build files
-archive/
-wasm/build/
-tests/
-__pycache__/
+archive
+archive/**
+wasm/build
+wasm/build/**
+tests
+tests/**
+__pycache__
+**/__pycache__/**
 *.pyc
-venv/
-.venv/
-node_modules/
+venv
+.venv
+node_modules
 
 # Exclude documentation
-docs/
+docs
+docs/**
 *.md
-!README.md
 
 # Exclude development files
-.git/
+.git
 .gitignore
 Makefile
 requirements*.txt
