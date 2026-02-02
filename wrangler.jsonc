@@ -2,7 +2,6 @@
   "name": "ww-fx-dropout",
   "compatibility_date": "2026-02-02",
   "assets": {
-    "directory": ".",
-    "binding": "ASSETS"
+    "directory": "."
   }
 }
