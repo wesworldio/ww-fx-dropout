@@ -1797,13 +1797,6 @@
                 <button id="startButton">Start Camera</button>
                 <button id="stopButton" style="display: none;">Stop Camera</button>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color, #333);">
-                    <label style="display: block; margin-bottom: 8px;">
-                        Face Mask Zoom:
-                        <span id="faceMaskZoomDisplay" style="font-weight: bold; color: var(--accent-color, #5250ef);">100%</span>
-                    </label>
-                    <button id="resetFaceMaskZoomButton" style="width: 100%;">Reset to Default</button>
-                </div>
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color, #333);">
                     <div style="font-size: 12px; color: var(--text-secondary-color, #cccccc);">
                         <div style="margin-bottom: 4px;">
                             <strong>Version:</strong> <span id="appVersion">1.0.0</span>
@@ -2112,13 +2105,6 @@
                 }
             }
             
-            // Suppress expected 404 errors during mask discovery
-            if ((message.includes('face_mask') || message.includes('mask_')) && 
-                (message.includes('404') || message.includes('Failed to load') || 
-                 message.includes('GET') || message.includes('Not Found'))) {
-                return; // Suppress expected mask discovery errors
-            }
-            
             // Suppress CORS errors when using file:// protocol (we handle with embedded data)
             if (window.location.protocol === 'file:' && 
                 (message.includes('CORS') || message.includes('Cross origin') || 
@@ -2363,22 +2349,8 @@
                 return;
             }
             
-            // Preserve face masks (added dynamically) if scene has face mask config
-            let existingFaceMasks = [];
-            if (currentScene.faceMasks) {
-                const categoryName = currentScene.faceMasks.categoryName;
-                if (categoryName && FILTER_CATEGORIES[categoryName]) {
-                    existingFaceMasks = FILTER_CATEGORIES[categoryName].filter(
-                        f => f.includes('face_mask')
-                    );
-                }
-            }
-            
-            // Start with face masks category if scene has face mask config
+            // Reset filter categories
             FILTER_CATEGORIES = {};
-            if (currentScene.faceMasks && currentScene.faceMasks.categoryName) {
-                FILTER_CATEGORIES[currentScene.faceMasks.categoryName] = existingFaceMasks;
-            }
             
             // Process scene's fx configuration
             if (currentScene.fx) {
@@ -2886,53 +2858,10 @@
             option.setAttribute('aria-label', `Apply filter: ${formatFilterName(filter)}`);
             option.setAttribute('tabindex', '0');
             
-            if (filter.includes('face_mask')) {
-                const optionText = document.createElement('span');
-                optionText.className = 'fx-option-text';
-                optionText.textContent = formatFilterName(filter);
-                
-                const optionImage = document.createElement('img');
-                optionImage.className = 'fx-option-image';
-                
-                // Get current scene and its face mask configuration
-                const currentSceneKey = sceneSelect ? sceneSelect.value : null;
-                const currentScene = currentSceneKey ? SCENES[currentSceneKey] : null;
-                
-                if (currentScene && currentScene.faceMasks) {
-                    const faceMaskConfig = currentScene.faceMasks;
-                    const filterPrefix = faceMaskConfig.filterPrefix || '';
-                    
-                    // Extract mask name from filter
-                    let maskName = '';
-                    if (filter.startsWith(filterPrefix + 'face_mask_')) {
-                        maskName = filter.substring((filterPrefix + 'face_mask_').length);
-                    } else if (filter.includes('face_mask_')) {
-                        const parts = filter.split('face_mask_');
-                        if (parts.length > 1) {
-                            maskName = parts[parts.length - 1];
-                        }
-                    }
-                    
-                    if (maskName) {
-                        const basePath = faceMaskConfig.assetPath || '';
-                        const maskPattern = faceMaskConfig.maskFilePattern || 'mask_{name}.png';
-                        optionImage.src = `${basePath}${maskPattern.replace('{name}', maskName)}`;
-                    }
-                }
-                optionImage.alt = formatFilterName(filter);
-                optionImage.setAttribute('aria-hidden', 'true'); // Decorative image
-                optionImage.onerror = function() {
-                    this.style.display = 'none';
-                };
-                
-                option.appendChild(optionImage);
-                option.appendChild(optionText);
-            } else {
-                const optionText = document.createElement('span');
-                optionText.className = 'fx-option-text';
-                optionText.textContent = formatFilterName(filter);
-                option.appendChild(optionText);
-            }
+            const optionText = document.createElement('span');
+            optionText.className = 'fx-option-text';
+            optionText.textContent = formatFilterName(filter);
+            option.appendChild(optionText);
             
             // Pin icon creation disabled - pinning is hidden
             // if (filter) {
@@ -3541,317 +3470,16 @@
             }
         }
         
-        // Update face mask zoom display
-        function updateFaceMaskZoomDisplay() {
-            const display = document.getElementById('faceMaskZoomDisplay');
-            if (display) {
-                const percentage = Math.round(faceMaskScale * 100);
-                display.textContent = `${percentage}%`;
-            }
-        }
-        
-        // Adjust face mask size with keyboard controls
-        function adjustFaceMaskSize(delta) {
-            faceMaskScale = Math.max(0.5, Math.min(2.0, faceMaskScale + delta));
-            try {
-                localStorage.setItem('wesworld-fx-face-mask-scale', faceMaskScale.toString());
-                console.log('Face mask scale adjusted to:', faceMaskScale.toFixed(2));
-                updateFaceMaskZoomDisplay();
-            } catch (error) {
-                console.error('Error saving face mask scale to localStorage:', error);
-            }
-        }
-        
-        // Reset face mask size to default
-        function resetFaceMaskSize() {
-            faceMaskScale = 1.0;
-            try {
-                localStorage.setItem('wesworld-fx-face-mask-scale', '1.0');
-                console.log('Face mask scale reset to default');
-                updateFaceMaskZoomDisplay();
-            } catch (error) {
-                console.error('Error saving face mask scale to localStorage:', error);
-            }
-        }
-        
-        // Discover face mask files dynamically
-        // This function attempts to discover available face mask PNG files
-        // Configuration is read from the current scene's faceMasks config
-        // Since browser WASM cannot directly access the file system, we use JavaScript to discover files
-        let directoryListingAttempted = {};
-        async function discoverFaceMasks() {
-            // Get current scene and its face mask configuration
-            const currentSceneKey = sceneSelect ? sceneSelect.value : null;
-            const currentScene = currentSceneKey ? SCENES[currentSceneKey] : null;
-            
-            if (!currentScene || !currentScene.faceMasks) {
-                // No face mask configuration for this scene
-                return [];
-            }
-            
-            const faceMaskConfig = currentScene.faceMasks;
-            const basePath = faceMaskConfig.assetPath || '';
-            const maskPattern = faceMaskConfig.maskFilePattern || 'mask_{name}.png';
-            
-            // Check if we've already attempted discovery for this path
-            if (directoryListingAttempted[basePath]) {
-                return discoveredFaceMasks;
-            }
-            
-            console.log(`Discovering face mask files for scene ${currentSceneKey} (looking in ${basePath})...`);
-            discoveredFaceMasks = [];
-            
-            // First, try to discover from a directory listing if available (for server environments)
-            // This is the most reliable method and doesn't require hardcoded names
-            // Only try once to avoid duplicate 404 errors
-            if (window.location.protocol !== 'file:' && !directoryListingAttempted[basePath]) {
-                directoryListingAttempted[basePath] = true;
-                try {
-                    // Try to fetch directory listing (some servers support this)
-                    // Note: Most servers don't support directory listings, so 404 is expected
-                    const response = await fetch(basePath).catch(() => null);
-                    
-                    if (response && response.ok && response.status !== 404) {
-                        const text = await response.text();
-                        // Parse HTML directory listing for .png files matching mask_*.png pattern
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(text, 'text/html');
-                        const links = doc.querySelectorAll('a[href$=".png"]');
-                        links.forEach(link => {
-                            const fileName = link.getAttribute('href');
-                            // Look for files matching the pattern (e.g., mask_<name>.png)
-                            // Extract name from pattern: mask_{name}.png -> extract {name} part
-                            const patternRegex = maskPattern.replace('{name}', '(.+)').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                            const match = fileName.match(new RegExp(patternRegex));
-                            if (match && match[1]) {
-                                const maskName = match[1];
-                                if (maskName && !discoveredFaceMasks.includes(maskName)) {
-                                    discoveredFaceMasks.push(maskName);
-                                    console.log('Discovered face mask from directory listing:', maskName);
-                                }
-                            }
-                        });
-                    }
-                    // Silently ignore 404s - they're expected when directory listing isn't supported
-                } catch (error) {
-                    // Directory listing not available (404 is expected on most servers)
-                    // Silently continue to fallback method - don't log errors
-                }
-            }
-            
-            // Fallback: For file:// protocol or when directory listing fails,
-            // try to discover by attempting to load files matching mask_*.png pattern
-            // We'll try a reasonable range of potential mask names
-            if (discoveredFaceMasks.length === 0) {
-                console.log('Using fallback discovery method (trying mask_*.png pattern)...');
-                
-                // Common potential mask names to try (can be extended)
-                // These are just common names - the system will discover any mask_*.png file
-                const potentialNames = [
-                    // No default masks - masks are discovered dynamically
-                ];
-                
-                // Error suppression is handled globally - 404s during discovery are expected
-                const discoveryPromises = potentialNames.map(async (maskName) => {
-                    const assetPath = `${basePath}${maskPattern.replace('{name}', maskName)}`;
-                    
-                    return new Promise((resolve) => {
-                        const img = new Image();
-                        
-                        // For file:// protocol, don't set crossOrigin
-                        if (window.location.protocol !== 'file:') {
-                            img.crossOrigin = 'anonymous';
-                        }
-                        
-                        img.onload = () => {
-                            console.log('Discovered face mask:', maskName);
-                            if (!discoveredFaceMasks.includes(maskName)) {
-                                discoveredFaceMasks.push(maskName);
-                            }
-                            // Preload the image
-                            faceMaskImages[assetPath] = img;
-                            resolve({ name: maskName, found: true });
-                        };
-                        
-                        img.onerror = () => {
-                            // Mask not found, continue silently (404s are expected during discovery)
-                            resolve({ name: maskName, found: false });
-                        };
-                        
-                        img.src = assetPath;
-                    });
-                });
-                
-                await Promise.all(discoveryPromises);
-            }
-            
-            console.log('Face mask discovery complete. Found:', discoveredFaceMasks);
-            
-            // Add discovered masks to filter categories using scene configuration
-            if (discoveredFaceMasks.length > 0 && currentScene && currentScene.faceMasks) {
-                const categoryName = faceMaskConfig.categoryName;
-                const filterPrefix = faceMaskConfig.filterPrefix || '';
-                
-                if (categoryName && FILTER_CATEGORIES[categoryName]) {
-                    // Remove any existing face mask entries
-                    FILTER_CATEGORIES[categoryName] = FILTER_CATEGORIES[categoryName].filter(
-                        f => !f.includes('face_mask')
-                    );
-                    
-                    // Add discovered masks
-                    discoveredFaceMasks.forEach(maskName => {
-                        FILTER_CATEGORIES[categoryName].push(`${filterPrefix}face_mask_${maskName}`);
-                    });
-                    
-                    // Rebuild allFilters array
-                    allFilters = [];
-                    Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
-                        allFilters.push(...categoryFilters);
-                    });
-                    
-                    console.log('Updated filter categories with discovered masks');
-                }
-            }
-            
-            return discoveredFaceMasks;
-        }
-        
-        // Preload face mask images
-        async function preloadFaceMasks() {
-            // Get current scene and its face mask configuration
-            const currentSceneKey = sceneSelect ? sceneSelect.value : null;
-            const currentScene = currentSceneKey ? SCENES[currentSceneKey] : null;
-            
-            if (!currentScene || !currentScene.faceMasks) {
-                return; // No face mask configuration for this scene
-            }
-            
-            // Masks should already be discovered, but ensure they are
-            if (discoveredFaceMasks.length === 0) {
-                await discoverFaceMasks();
-            }
-            
-            const faceMaskConfig = currentScene.faceMasks;
-            const basePath = faceMaskConfig.assetPath || '';
-            const maskPattern = faceMaskConfig.maskFilePattern || 'mask_{name}.png';
-            
-            console.log('Preloading face mask images...');
-            
-            // Preload all discovered masks
-            for (const maskName of discoveredFaceMasks) {
-                const assetPath = `${basePath}${maskPattern.replace('{name}', maskName)}`;
-                if (!faceMaskImages[assetPath]) {
-                    try {
-                        const img = new Image();
-                        
-                        // For file:// protocol, don't set crossOrigin
-                        if (window.location.protocol !== 'file:') {
-                            img.crossOrigin = 'anonymous';
-                        }
-                        
-                        await new Promise((resolve) => {
-                            img.onload = () => {
-                                console.log('Preloaded face mask:', assetPath);
-                                faceMaskImages[assetPath] = img;
-                                resolve();
-                            };
-                            img.onerror = (err) => {
-                                // For file:// protocol, this is expected - images will load on-demand
-                                if (window.location.protocol === 'file:') {
-                                    console.log('Face mask will load on-demand (file:// protocol):', assetPath);
-                                } else {
-                                    console.warn('Failed to preload face mask:', assetPath);
-                                }
-                                resolve(); // Don't reject, just continue - will try to load on-demand
-                            };
-                            img.src = assetPath;
-                        });
-                    } catch (error) {
-                        // Silently handle errors - will try to load on-demand
-                        if (window.location.protocol !== 'file:') {
-                            console.warn('Error preloading face mask:', assetPath, error);
-                        }
-                    }
-                }
-            }
-            console.log('Face mask preloading complete');
-        }
-        
         // Track if we've already warned about tainted canvas (to avoid spam)
         let taintedCanvasWarned = false;
         
-        // Apply face mask to canvas with eye alignment
-        function applyFaceMask(ctx, faceRect, faceLandmarks, filterName) {
-            // Get current scene and its face mask configuration
-            const currentSceneKey = sceneSelect ? sceneSelect.value : null;
-            const currentScene = currentSceneKey ? SCENES[currentSceneKey] : null;
-            
-            if (!currentScene || !currentScene.faceMasks) {
-                return; // No face mask configuration for this scene
-            }
-            
-            const faceMaskConfig = currentScene.faceMasks;
-            const filterPrefix = faceMaskConfig.filterPrefix || '';
-            
-            // Extract mask name from filter (e.g., <prefix>face_mask_<name> -> <name>)
-            let maskName = '';
-            if (filterName.startsWith(filterPrefix + 'face_mask_')) {
-                maskName = filterName.substring((filterPrefix + 'face_mask_').length);
-            } else if (filterName.includes('face_mask_')) {
-                const parts = filterName.split('face_mask_');
-                if (parts.length > 1) {
-                    maskName = parts[parts.length - 1];
-                }
-            }
-            
-            if (!maskName) {
-                return;
-            }
-            
-            // Determine asset path using scene configuration
-            const basePath = faceMaskConfig.assetPath || '';
-            const maskPattern = faceMaskConfig.maskFilePattern || 'mask_{name}.png';
-            const assetPath = `${basePath}${maskPattern.replace('{name}', maskName)}`;
-            
-            if (!assetPath) {
-                return;
-            }
-            
-            // Get cached image (should be preloaded)
-            let img = faceMaskImages[assetPath];
-            
-            // If image not loaded yet, try to load it synchronously (for file:// protocol)
-            if (!img || !img.complete || !img.naturalWidth || !img.naturalHeight) {
-                // Try to load the image if we're on file:// protocol
-                if (window.location.protocol === 'file:') {
-                    try {
-                        const newImg = new Image();
-                        newImg.src = assetPath;
-                        if (newImg.complete && newImg.naturalWidth > 0) {
-                            img = newImg;
-                            faceMaskImages[assetPath] = newImg;
-                        } else {
-                            // Image not ready, skip this frame
-                            return;
-                        }
-                    } catch (e) {
-                        return;
-                    }
-                } else {
-                    // Image not ready yet, skip this frame
-                    return;
-                }
-            }
-            
-            // Save context state
-            ctx.save();
-            
-            // Calculate eye positions from MediaPipe landmarks
-            // MediaPipe Face Landmarker provides 468 landmarks
-            // Left eye landmarks: 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246
-            // Right eye landmarks: 362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398
-            let leftEyeX = 0, leftEyeY = 0, rightEyeX = 0, rightEyeY = 0;
-            let leftEyeCount = 0, rightEyeCount = 0;
+        // Clear filter function
+        function clearFilter() {
+            selectFilter('');
+            closeFxSearchModal();
+        }
+        
+        // Select filter
             
             if (faceLandmarks && faceLandmarks.length >= 468) {
                 // Left eye key points
@@ -4249,13 +3877,6 @@
                 ctx.translate(-eyeCenterX, -eyeCenterY);
                 
                 // Draw mask centered on eye center
-                ctx.drawImage(img, eyeCenterX - drawW / 2, eyeCenterY - drawH / 2, drawW, drawH);
-            }
-            
-            // Restore context state
-            ctx.restore();
-        }
-        
         // Clear filter function
         function clearFilter() {
             selectFilter('');
@@ -4494,14 +4115,6 @@
                 const filterName = formatFilterName(filterValue).toLowerCase();
                 const text = displayText.toLowerCase();
                 const filterValueLower = filterValue.toLowerCase();
-                
-                // Extract face mask name for better matching (e.g., "maskname" from "<prefix>face_mask_maskname")
-                let faceMaskName = '';
-                if (filterValue.includes('face_mask')) {
-                    const parts = filterValue.split('_');
-                    // Get the last part which is the mask name
-                    faceMaskName = parts[parts.length - 1].toLowerCase();
-                }
                 
                 // Split filter name and value into individual words for better partial matching
                 const filterNameWords = filterName.split(/\s+/);
@@ -4868,10 +4481,10 @@
         
         // Embedded build info for file:// protocol fallback
         const EMBEDDED_BUILD_INFO = {
-            "buildNumber": 149,
-            "buildTimestamp": 1770061041833,
-            "commitHash": "9bd66a1",
-            "commitTime": 1770061041833
+            "buildNumber": 156,
+            "buildTimestamp": 1770062860146,
+            "commitHash": "0d29a19",
+            "commitTime": 1770062860146
         };
         
         // Fallback scene (used if file loading fails) - uses first available embedded scene
@@ -8700,26 +8313,6 @@
                     case 'clear-filter':
                         clearFilter();
                         break;
-                    case 'increase-mask':
-                        // Check if face mask filter is active (supports both 'face_mask' and 'mask_' patterns)
-                        console.log('Increase mask clicked. Current filter:', currentFilter, 'Type:', typeof currentFilter);
-                        if (currentFilter && (currentFilter.includes('face_mask') || currentFilter.includes('mask_'))) {
-                            console.log('Adjusting face mask size +0.1');
-                            adjustFaceMaskSize(0.1);
-                        } else {
-                            console.warn('Face mask controls: No face mask filter active. Current filter:', currentFilter);
-                        }
-                        break;
-                    case 'decrease-mask':
-                        // Check if face mask filter is active (supports both 'face_mask' and 'mask_' patterns)
-                        console.log('Decrease mask clicked. Current filter:', currentFilter, 'Type:', typeof currentFilter);
-                        if (currentFilter && (currentFilter.includes('face_mask') || currentFilter.includes('mask_'))) {
-                            console.log('Adjusting face mask size -0.1');
-                            adjustFaceMaskSize(-0.1);
-                        } else {
-                            console.warn('Face mask controls: No face mask filter active. Current filter:', currentFilter);
-                        }
-                        break;
                 }
             }
             
@@ -8886,14 +8479,6 @@
                             }
                         }, 500);
                     }
-                });
-            }
-            
-            // Face mask zoom reset button
-            const resetFaceMaskZoomButton = document.getElementById('resetFaceMaskZoomButton');
-            if (resetFaceMaskZoomButton) {
-                resetFaceMaskZoomButton.addEventListener('click', () => {
-                    resetFaceMaskSize();
                 });
             }
             
@@ -9293,22 +8878,6 @@
                             clearFilter();
                         }
                         break;
-                    case '-':
-                    case '_':
-                        // Decrease face mask size when in face mask mode
-                        if (currentFilter && currentFilter.includes('face_mask')) {
-                            e.preventDefault();
-                            adjustFaceMaskSize(-0.1);
-                        }
-                        break;
-                    case '+':
-                    case '=':
-                        // Increase face mask size when in face mask mode
-                        if (currentFilter && currentFilter.includes('face_mask')) {
-                            e.preventDefault();
-                            adjustFaceMaskSize(0.1);
-                        }
-                        break;
                     case 'f':
                     case 'F':
                         e.preventDefault();
@@ -9510,20 +9079,6 @@
                 updateVersionDisplay();
                 startTimeUpdateInterval();
                 
-                // Load face mask scale from localStorage
-                try {
-                    const savedScale = localStorage.getItem('wesworld-fx-face-mask-scale');
-                    if (savedScale) {
-                        faceMaskScale = parseFloat(savedScale);
-                        // Clamp to valid range
-                        faceMaskScale = Math.max(0.5, Math.min(2.0, faceMaskScale));
-                        console.log('Loaded face mask scale from localStorage:', faceMaskScale);
-                    }
-                    updateFaceMaskZoomDisplay();
-                } catch (error) {
-                    console.error('Error loading face mask scale from localStorage:', error);
-                }
-                
                 // Load FX from URL if present, otherwise load from localStorage (after filters are loaded)
                 setTimeout(() => {
                     const urlParams = new URLSearchParams(window.location.search);
@@ -9544,9 +9099,6 @@
                         }
                     }
                 }, 100);
-                
-                // Preload face masks
-                await preloadFaceMasks();
                 
                 // Debug: Check if modal elements exist
                 console.log('Modal elements check:', {
