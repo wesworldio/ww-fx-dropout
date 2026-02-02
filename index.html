@@ -7164,15 +7164,21 @@
                 const centerX = width / 2, centerY = height / 2;
                 const radius = Math.min(width, height) / 2, strength = 0.5;
                 const temp = new Uint8ClampedArray(data);
+                const invRadius = 1 / radius;
+                
                 for (let y = 0; y < height; y++) {
+                    const dy = y - centerY;
+                    const dy2 = dy * dy;
+                    
                     for (let x = 0; x < width; x++) {
-                        const dx = x - centerX, dy = y - centerY;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        const normalizedDist = Math.min(dist / radius, 1);
+                        const dx = x - centerX;
+                        const dist = Math.sqrt(dx * dx + dy2);
+                        const normalizedDist = Math.min(dist * invRadius, 1);
                         const newDist = normalizedDist * (1 + strength * normalizedDist * normalizedDist) * radius;
                         const angle = Math.atan2(dy, dx);
                         const newX = Math.round(centerX + newDist * Math.cos(angle));
                         const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
                             const srcIdx = (y * width + x) * 4;
                             const dstIdx = (newY * width + newX) * 4;
@@ -7188,16 +7194,22 @@
                 const centerX = width / 2, centerY = height / 2;
                 const radius = Math.min(width, height) / 2, strength = 0.6;
                 const temp = new Uint8ClampedArray(data);
+                const invRadius = 1 / radius;
+                
                 for (let y = 0; y < height; y++) {
+                    const dy = y - centerY;
+                    const dy2 = dy * dy;
+                    
                     for (let x = 0; x < width; x++) {
-                        const dx = x - centerX, dy = y - centerY;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        const normalizedDist = Math.min(dist / radius, 1);
+                        const dx = x - centerX;
+                        const dist = Math.sqrt(dx * dx + dy2);
+                        const normalizedDist = Math.min(dist * invRadius, 1);
                         const elasticFactor = 1.0 + strength * Math.sin(normalizedDist * Math.PI);
                         const newDist = normalizedDist * elasticFactor * radius;
                         const angle = Math.atan2(dy, dx);
                         const newX = Math.round(centerX + newDist * Math.cos(angle));
                         const newY = Math.round(centerY + newDist * Math.sin(angle));
+                        
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
                             const srcIdx = (y * width + x) * 4;
                             const dstIdx = (newY * width + newX) * 4;
@@ -7214,15 +7226,20 @@
                 const radius = Math.min(width, height) / 2;
                 const k1 = 0.3, k2 = 0.1;
                 const temp = new Uint8ClampedArray(data);
+                const invRadius = 1 / radius;
+                
                 for (let y = 0; y < height; y++) {
+                    const dy = (y - centerY) * invRadius;
+                    const dy2 = dy * dy;
+                    
                     for (let x = 0; x < width; x++) {
-                        const dx = (x - centerX) / radius;
-                        const dy = (y - centerY) / radius;
-                        const r2 = dx * dx + dy * dy;
+                        const dx = (x - centerX) * invRadius;
+                        const r2 = dx * dx + dy2;
                         const r4 = r2 * r2;
                         const distortion = 1.0 + k1 * r2 + k2 * r4;
                         const newX = Math.round(centerX + dx * radius * distortion);
                         const newY = Math.round(centerY + dy * radius * distortion);
+                        
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
                             const srcIdx = (y * width + x) * 4;
                             const dstIdx = (newY * width + newX) * 4;
@@ -7237,15 +7254,30 @@
             applyWaveDistortionV1(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
                 const temp = new Uint8ClampedArray(data);
+                
+                // Pre-calculate maximum distance for optimization
+                const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+                
+                // Process in blocks to improve cache locality
                 for (let y = 0; y < height; y++) {
+                    const dy = y - centerY;
+                    const dy2 = dy * dy;
+                    
                     for (let x = 0; x < width; x++) {
-                        const dx = x - centerX, dy = y - centerY;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const dx = x - centerX;
+                        const dist = Math.sqrt(dx * dx + dy2);
+                        
+                        // Skip pixels too far from center (optimization)
+                        if (dist > maxDist * 0.8) {
+                            continue;
+                        }
+                        
                         const angle = Math.atan2(dy, dx);
                         const waveX = Math.sin(dist * 0.08 + angle * 2) * 20;
                         const waveY = Math.cos(dist * 0.06 - angle * 2) * 20;
                         const newX = Math.round(x + waveX);
                         const newY = Math.round(y + waveY);
+                        
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
                             const srcIdx = (y * width + x) * 4;
                             const dstIdx = (newY * width + newX) * 4;
@@ -7261,14 +7293,19 @@
                 const centerX = width / 2;
                 const strength = 0.4;
                 const temp = new Uint8ClampedArray(data);
+                const halfWidth = width / 2;
+                
                 for (let y = 0; y < height; y++) {
+                    const yOffset = y * width * 4;
+                    
                     for (let x = 0; x < width; x++) {
-                        const dx = (x - centerX) / (width / 2);
+                        const dx = (x - centerX) / halfWidth;
                         const squeezeFactor = 1.0 - strength * dx * dx;
                         const newX = Math.round(centerX + (x - centerX) * squeezeFactor);
+                        
                         if (newX >= 0 && newX < width) {
-                            const srcIdx = (y * width + x) * 4;
-                            const dstIdx = (y * width + newX) * 4;
+                            const srcIdx = yOffset + x * 4;
+                            const dstIdx = yOffset + newX * 4;
                             data[srcIdx] = temp[dstIdx];
                             data[srcIdx + 1] = temp[dstIdx + 1];
                             data[srcIdx + 2] = temp[dstIdx + 2];
@@ -7281,18 +7318,23 @@
                 const centerY = height / 2;
                 const strength = 0.4;
                 const temp = new Uint8ClampedArray(data);
+                const halfHeight = height / 2;
+                
                 for (let y = 0; y < height; y++) {
-                    for (let x = 0; x < width; x++) {
-                        const dy = (y - centerY) / (height / 2);
-                        const squeezeFactor = 1.0 - strength * dy * dy;
-                        const newY = Math.round(centerY + (y - centerY) * squeezeFactor);
-                        if (newY >= 0 && newY < height) {
-                            const srcIdx = (y * width + x) * 4;
-                            const dstIdx = (newY * width + x) * 4;
-                            data[srcIdx] = temp[dstIdx];
-                            data[srcIdx + 1] = temp[dstIdx + 1];
-                            data[srcIdx + 2] = temp[dstIdx + 2];
-                            data[srcIdx + 3] = temp[dstIdx + 3];
+                    const dy = (y - centerY) / halfHeight;
+                    const squeezeFactor = 1.0 - strength * dy * dy;
+                    const newY = Math.round(centerY + (y - centerY) * squeezeFactor);
+                    
+                    if (newY >= 0 && newY < height) {
+                        const srcRow = y * width * 4;
+                        const dstRow = newY * width * 4;
+                        
+                        for (let x = 0; x < width; x++) {
+                            const idx = x * 4;
+                            data[srcRow + idx] = temp[dstRow + idx];
+                            data[srcRow + idx + 1] = temp[dstRow + idx + 1];
+                            data[srcRow + idx + 2] = temp[dstRow + idx + 2];
+                            data[srcRow + idx + 3] = temp[dstRow + idx + 3];
                         }
                     }
                 }
