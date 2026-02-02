@@ -2271,11 +2271,13 @@
             if (buildEl) {
                 const buildNum = getBuildNumber();
                 buildEl.textContent = buildNum.toString();
+                console.log('Updated build number display:', buildNum);
             }
             
             if (updateEl) {
                 const buildTimestamp = getBuildTimestamp();
                 updateEl.textContent = formatTimeSince(buildTimestamp);
+                console.log('Updated timestamp display:', new Date(buildTimestamp).toISOString(), '=', formatTimeSince(buildTimestamp));
             }
         }
         
@@ -4853,10 +4855,10 @@
         
         // Embedded build info for file:// protocol fallback
         const EMBEDDED_BUILD_INFO = {
-            "buildNumber": 121,
-            "buildTimestamp": 1765179928000,
-            "commitHash": "8874b31",
-            "commitTime": 1765179928000
+            "buildNumber": 133,
+            "buildTimestamp": 1770035602000,
+            "commitHash": "3aa4cba",
+            "commitTime": 1770035602000
         };
         
         // Fallback scene (used if file loading fails) - uses first available embedded scene
