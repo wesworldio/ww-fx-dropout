@@ -2264,9 +2264,9 @@
                     }
                 }
                 
-                // Console log for debugging
+                // Console log for debugging (always show in production)
                 const filterName = currentFilter || 'None (Original)';
-                console.log(`FPS: ${currentFPS} | Filter: ${filterName}`);
+                originalConsole.log(`FPS: ${currentFPS} | Filter: ${filterName}`);
                 
                 fpsDisplayFrames = 0;
                 fpsDisplayLastTime = now;
@@ -3749,9 +3749,9 @@
         function selectFilter(filterValue, skipURLUpdate = false) {
             currentFilter = filterValue || '';
             
-            // Console log for debugging
+            // Console log for debugging (always show in production)
             const filterName = currentFilter || 'None (Original)';
-            console.log(`Filter selected: ${filterName}`);
+            originalConsole.log(`Filter selected: ${filterName}`);
             
             // Save to localStorage (works even with file:// protocol)
             try {
@@ -4302,10 +4302,10 @@
         
         // Embedded build info for file:// protocol fallback
         const EMBEDDED_BUILD_INFO = {
-            "buildNumber": 167,
-            "buildTimestamp": 1770069295398,
-            "commitHash": "d19fb48",
-            "commitTime": 1770069295398
+            "buildNumber": 168,
+            "buildTimestamp": 1770069821404,
+            "commitHash": "e67c940",
+            "commitTime": 1770069821404
         };
         
         // Fallback scene (used if file loading fails) - uses first available embedded scene
