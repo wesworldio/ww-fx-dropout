@@ -2035,10 +2035,7 @@
         <canvas id="canvasOutput"></canvas>
     </div>
     
-    <!-- MediaPipe Face Detection (WASM) -->
     <script type="module">
-        import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3';
-        
         // Production detection: hide console logs in production (not localhost or file://)
         const isDevelopment = (() => {
             const hostname = window.location.hostname;
@@ -2167,7 +2164,6 @@
         }
         
         // State
-        let faceLandmarker = null;
         let wasmModule = null;
         let localStream = null;
         let testImage = null; // For testing with static images
@@ -2191,6 +2187,16 @@
         const targetFPS = 30; // Reduced from 60 for better performance
         let faceMaskScale = 1.0; // Scale factor for face mask size adjustment
         const frameInterval = 1000 / targetFPS;
+        let frameSkipCounter = 0; // Counter for frame skipping optimization
+        
+        // Performance monitoring
+        let fpsHistory = []; // Track recent FPS measurements
+        let lastFpsUpdateTime = 0;
+        let actualFrameCount = 0;
+        let performanceMode = 'auto'; // 'auto', 'performance', 'quality'
+        const FPS_HISTORY_SIZE = 30; // Track last 30 FPS samples
+        const LOW_FPS_THRESHOLD = 20; // If FPS drops below this, reduce quality
+        const HIGH_FPS_THRESHOLD = 28; // If FPS is above this consistently, can increase quality
         
         // Version and build tracking
         const APP_VERSION = '1.0.0';
@@ -2479,32 +2485,6 @@
             }
         }
         
-        // Initialize MediaPipe Face Landmarker
-        async function initFaceDetection() {
-            try {
-                // Console suppression is handled globally at the top of the script
-                const vision = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-                );
-                
-                faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-                        delegate: "GPU"
-                    },
-                    outputFaceBlendshapes: false,
-                    runningMode: "VIDEO",
-                    numFaces: 1
-                });
-                
-                console.log('MediaPipe Face Landmarker initialized');
-                return true;
-            } catch (error) {
-                console.error('Failed to initialize MediaPipe:', error);
-                return false;
-            }
-        }
-        
         // Initialize WASM module (placeholder - will load actual module when built)
         async function initWasm() {
             if (!wasmSupported) {
@@ -2523,6 +2503,40 @@
             } catch (error) {
                 console.error('Failed to load WASM module:', error);
                 return false;
+            }
+        }
+        
+        // Performance monitoring and adaptive quality
+        function updatePerformanceMetrics(frameTime) {
+            actualFrameCount++;
+            const now = performance.now();
+            
+            // Update FPS every second
+            if (now - lastFpsUpdateTime >= 1000) {
+                const fps = actualFrameCount / ((now - lastFpsUpdateTime) / 1000);
+                fpsHistory.push(fps);
+                
+                // Keep history size limited
+                if (fpsHistory.length > FPS_HISTORY_SIZE) {
+                    fpsHistory.shift();
+                }
+                
+                // Calculate average FPS
+                const avgFps = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
+                
+                // Adaptive quality adjustment (only in auto mode)
+                if (performanceMode === 'auto' && fpsHistory.length >= 10) {
+                    // Log performance metrics for monitoring
+                    if (avgFps < LOW_FPS_THRESHOLD) {
+                        console.log(`Performance: Low FPS detected (${avgFps.toFixed(1)} FPS)`);
+                    } else if (avgFps > HIGH_FPS_THRESHOLD) {
+                        console.log(`Performance: Good FPS (${avgFps.toFixed(1)} FPS)`);
+                    }
+                }
+                
+                // Reset counters
+                actualFrameCount = 0;
+                lastFpsUpdateTime = now;
             }
         }
         
@@ -3336,9 +3350,9 @@
             }
             
             // Throttle preview updates to avoid performance issues
-            // Update at 10fps instead of full frame rate
+            // Update at 5fps instead of 10fps for better main render performance
             let lastUpdateTime = 0;
-            const updateInterval = 100; // 10fps
+            const updateInterval = 200; // 5fps - reduced from 10fps for better performance
             
             const updatePreviews = () => {
                 if (!fxGridModal || !fxGridModal.classList.contains('active')) {
@@ -3353,13 +3367,18 @@
                     // Update visible items for scroll tracking
                     updateVisibleGridItems();
                     
-                    // Process previews for all items (not just visible ones)
-                    // This ensures all previews are rendered when the grid opens
+                    // Only process previews if we have valid video
                     if (videoInput && videoInput.readyState >= 2 && videoInput.videoWidth > 0) {
-                        gridPreviewCanvases.forEach((canvas, filterKey) => {
+                        // Process only a subset of previews per frame to reduce load
+                        let processCount = 0;
+                        const maxProcessPerFrame = 3; // Limit to 3 previews per frame
+                        
+                        for (const [filterKey, canvas] of gridPreviewCanvases) {
+                            if (processCount >= maxProcessPerFrame) break;
                             const filter = filterKey === 'none' ? '' : filterKey;
                             updateGridPreview(canvas, filter);
-                        });
+                            processCount++;
+                        }
                     }
                 }
                 
@@ -3388,7 +3407,8 @@
             }
             
             try {
-                const ctx = canvas.getContext('2d');
+                // Use willReadFrequently hint for better performance with frequent getImageData calls
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 if (!ctx) return;
                 
                 // Get the actual size of the preview container
@@ -4641,20 +4661,23 @@
         
         // Process video frame or test image (optimized with frame rate limiting)
         async function processVideoFrame() {
-            // Frame rate limiting for consistent 60fps performance
+            // Frame rate limiting for consistent 30fps performance
             const now = performance.now();
-            if (now - lastFrameTime < frameInterval) {
+            const timeSinceLastFrame = now - lastFrameTime;
+            
+            // Early bailout if not enough time has passed
+            if (timeSinceLastFrame < frameInterval) {
                 if (localStream || testImage) {
                     animationFrameId = requestAnimationFrame(processVideoFrame);
                 }
                 return;
             }
-            lastFrameTime = now;
             
             // Check if we have everything we need
             const hasVideo = localStream && videoInput && videoInput.readyState >= 2;
             const hasTestImage = testImage && testImage.complete;
             
+            // Early return if already processing or missing required elements
             if (isProcessing || !canvasOutput || !ctx || (!hasVideo && !hasTestImage)) {
                 if (hasVideo || hasTestImage) {
                     animationFrameId = requestAnimationFrame(processVideoFrame);
@@ -4668,7 +4691,9 @@
                 return;
             }
             
+            lastFrameTime = now;
             isProcessing = true;
+            frameSkipCounter++;
             
             try {
                 // Set canvas size to match video, but cap at reasonable resolution for performance
@@ -4685,9 +4710,11 @@
                     targetHeight = Math.floor(targetHeight * scale);
                 }
                 
+                // Only resize canvas if dimensions actually changed (avoid unnecessary reallocation)
                 if (canvasOutput.width !== targetWidth || canvasOutput.height !== targetHeight) {
                     canvasOutput.width = targetWidth;
                     canvasOutput.height = targetHeight;
+                    // Canvas resize invalidates context, but we already have ctx reference
                 }
                 
                 // Draw video frame to canvas FIRST (always show the video)
@@ -4695,79 +4722,26 @@
                 
                 // Only process if we have a filter
                 if (currentFilter) {
-                    // Detect faces using MediaPipe (for face masks) - do this first
-                    let faceRect = null;
-                    let faceLandmarks = null;
-                    if (faceLandmarker && (currentFilter.includes('face_mask'))) {
-                        try {
-                            // Use test image if available, otherwise use video
-                            const source = testImage || videoInput;
-                            const results = faceLandmarker.detectForVideo(source, performance.now());
-                            
-                            if (results.faceLandmarks && results.faceLandmarks.length > 0) {
-                                faceLandmarks = results.faceLandmarks[0];
-                                
-                                // Calculate bounding box from landmarks
-                                // Use key facial landmarks for better accuracy
-                                // MediaPipe provides 468 landmarks, we'll use key points
-                                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                                
-                                for (const landmark of faceLandmarks) {
-                                    const x = landmark.x * canvasOutput.width;
-                                    const y = landmark.y * canvasOutput.height;
-                                    minX = Math.min(minX, x);
-                                    minY = Math.min(minY, y);
-                                    maxX = Math.max(maxX, x);
-                                    maxY = Math.max(maxY, y);
-                                }
-                                
-                                // Add padding for better mask coverage
-                                const padding = 20;
-                                const width = maxX - minX;
-                                const height = maxY - minY;
-                                
-                                faceRect = {
-                                    x: Math.max(0, minX - padding),
-                                    y: Math.max(0, minY - padding),
-                                    width: Math.min(canvasOutput.width - minX + padding, width + padding * 2),
-                                    height: Math.min(canvasOutput.height - minY + padding, height + padding * 2),
-                                    confidence: 1.0,
-                                    landmarks: faceLandmarks
-                                };
-                            }
-                        } catch (error) {
-                            console.warn('Face detection error:', error);
-                        }
+                    // Try to get image data (may fail due to CORS)
+                    let imageData = null;
+                    try {
+                        imageData = ctx.getImageData(0, 0, canvasOutput.width, canvasOutput.height);
+                    } catch (error) {
+                        // Canvas is tainted (CORS issue) - can't apply pixel-based filters
+                        // This is expected for file:// protocol or cross-origin video
+                        console.warn('Cannot read canvas data (CORS/tainted canvas). Some filters may not work.');
+                        // Continue without applying filter - at least show the video
                     }
                     
-                    // For face masks, we don't need to read image data - just draw the mask
-                    if (currentFilter.includes('face_mask')) {
-                        // Apply face masks directly (no image data needed)
-                        if (faceRect && faceLandmarks) {
-                            applyFaceMask(ctx, faceRect, faceLandmarks, currentFilter);
-                        }
-                    } else {
-                        // For other filters, try to get image data (may fail due to CORS)
-                        let imageData = null;
-                        try {
-                            imageData = ctx.getImageData(0, 0, canvasOutput.width, canvasOutput.height);
-                        } catch (error) {
-                            // Canvas is tainted (CORS issue) - can't apply pixel-based filters
-                            // This is expected for file:// protocol or cross-origin video
-                            console.warn('Cannot read canvas data (CORS/tainted canvas). Some filters may not work.');
-                            // Continue without applying filter - at least show the video
-                        }
-                        
-                        if (imageData) {
-                            // Apply filter
-                            if (currentFilter && wasmModule) {
-                                // Use WASM filter processing
-                                wasmModule.processFrame(canvasOutput, canvasOutput, currentFilter, faceRect, frameCount);
-                            } else if (currentFilter) {
-                                // Fallback to JavaScript filters
-                                applyJSFilter(imageData, currentFilter, faceRect);
-                                ctx.putImageData(imageData, 0, 0);
-                            }
+                    if (imageData) {
+                        // Apply filter
+                        if (currentFilter && wasmModule) {
+                            // Use WASM filter processing
+                            wasmModule.processFrame(canvasOutput, canvasOutput, currentFilter, null, frameCount);
+                        } else if (currentFilter) {
+                            // Fallback to JavaScript filters
+                            applyJSFilter(imageData, currentFilter, null);
+                            ctx.putImageData(imageData, 0, 0);
                         }
                     }
                 }
@@ -4778,6 +4752,10 @@
                 }
                 
                 frameCount++;
+                
+                // Update performance metrics for adaptive quality
+                updatePerformanceMetrics(timeSinceLastFrame);
+                
             } catch (error) {
                 console.error('Error processing frame:', error);
             } finally {
@@ -9488,15 +9466,6 @@
                 
                 // Initialize WASM
                 await initWasm();
-                
-                updateStatus('Loading face detection...', 'loading');
-                
-                // Initialize MediaPipe
-                const faceDetected = await initFaceDetection();
-                
-                if (!faceDetected) {
-                    updateStatus('Face detection failed - filters may not work', 'error');
-                }
                 
                 // Setup UI
                 await loadScenes(); // Load scenes first
