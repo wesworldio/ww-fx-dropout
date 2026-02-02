@@ -1178,285 +1178,6 @@
             opacity: 1;
         }
         
-        /* FX Grid Modal */
-        .fx-grid-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 10001;
-            align-items: flex-start;
-            justify-content: center;
-            padding: 20px;
-            animation: fadeIn 0.2s ease-out;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-y;
-        }
-        
-        .fx-grid-modal.active,
-        .fx-grid-modal[aria-hidden="false"] {
-            display: flex;
-        }
-        
-        .fx-grid-modal[aria-hidden="true"] {
-            display: none;
-        }
-        
-        .fx-grid-modal-content {
-            width: 100%;
-            max-width: 1400px;
-            background: var(--surface-color, #1e1e1e);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-            overflow: hidden;
-            animation: slideDown 0.2s ease-out;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            margin: 0;
-            position: relative;
-            pointer-events: auto;
-            color: var(--text-color, #ffffff);
-            border: 1px solid var(--border-color, #333);
-        }
-        
-        .fx-grid-modal-content * {
-            pointer-events: auto;
-        }
-        
-        .fx-grid-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color, #333);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--surface-hover-color, #252525);
-        }
-        
-        .fx-grid-header h2 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--text-color, #ffffff);
-        }
-        
-        .fx-grid-close {
-            background: none;
-            border: none;
-            color: var(--text-secondary-color, #cccccc);
-            cursor: pointer;
-            font-size: 28px;
-            line-height: 1;
-            padding: 8px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            transition: all 0.2s;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .fx-grid-close:hover,
-        .fx-grid-close:focus {
-            background: var(--surface-color, #2a2a2a);
-            color: var(--text-color, #ffffff);
-            outline: 2px solid var(--accent-color, rgba(255, 215, 0, 0.3));
-            outline-offset: 2px;
-        }
-        
-        .fx-grid-container {
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 16px;
-            align-items: start;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-            scrollbar-color: var(--accent-color, #ffd700) transparent;
-            box-sizing: border-box;
-        }
-        
-        @media (min-width: 1400px) {
-            .fx-grid-container {
-                grid-template-columns: repeat(6, 1fr);
-            }
-        }
-        
-        .fx-grid-container > * {
-            min-width: 0;
-            min-height: 0;
-        }
-        
-        .fx-grid-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .fx-grid-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        .fx-grid-container::-webkit-scrollbar-thumb {
-            background: var(--border-color, #555);
-            border-radius: 4px;
-        }
-        
-        .fx-grid-container::-webkit-scrollbar-thumb:hover {
-            background: var(--border-hover-color, #666);
-        }
-        
-        .fx-grid-item {
-            position: relative;
-            background: var(--surface-hover-color, #2a2a2a);
-            border: 2px solid var(--border-color, #333);
-            border-radius: 8px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            display: flex;
-            flex-direction: column;
-            aspect-ratio: 4/3;
-            -webkit-tap-highlight-color: transparent;
-            z-index: 1;
-            box-sizing: border-box;
-            width: 100%;
-            height: 100%;
-            contain: layout style paint;
-        }
-        
-        .fx-grid-item.selected {
-            z-index: 2;
-        }
-        
-        .fx-grid-item:hover {
-            border-color: var(--accent-color, #5250ef);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            z-index: 2;
-        }
-        
-        .fx-grid-item:focus,
-        .fx-grid-item:focus-visible {
-            outline: 2px solid var(--accent-color, #5250ef);
-            outline-offset: -2px;
-            border-color: var(--accent-color, #5250ef);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            z-index: 3;
-        }
-        
-        .fx-grid-item.selected {
-            border-color: var(--accent-color, #5250ef);
-            background: var(--accent-color, #5250ef);
-            z-index: 2;
-        }
-        
-        .fx-grid-item-preview {
-            flex: 1;
-            width: 100%;
-            min-width: 0;
-            min-height: 0;
-            background: #000;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .fx-grid-item-preview canvas {
-            width: 100%;
-            height: 100%;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        
-        .fx-grid-item-label {
-            padding: 8px 12px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-color, #ffffff);
-            text-align: center;
-            background: rgba(0, 0, 0, 0.6);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            min-width: 0;
-            flex-shrink: 0;
-        }
-        
-        .fx-grid-item.selected .fx-grid-item-label {
-            color: var(--selected-text-color, #000000);
-            background: var(--accent-color, #5250ef);
-        }
-        
-        .fx-grid-item-loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--text-secondary-color, #999);
-            font-size: 12px;
-        }
-        
-        /* Category headers in grid */
-        .fx-grid-category-header {
-            grid-column: 1 / -1;
-            padding: 16px 8px 8px;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-color, #fff);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid var(--border-color, #333);
-            margin-bottom: 8px;
-        }
-        
-        .fx-favorites-header {
-            color: var(--accent-color, #5250ef);
-            border-bottom-color: var(--accent-color, #5250ef);
-            font-size: 18px;
-            margin-top: 0;
-        }
-        
-        @media (max-width: 768px) {
-            .fx-grid-modal {
-                padding: 10px;
-            }
-            
-            .fx-grid-modal-content {
-                max-height: 95vh;
-                border-radius: 8px;
-            }
-            
-            .fx-grid-header {
-                padding: 16px;
-            }
-            
-            .fx-grid-header h2 {
-                font-size: 20px;
-            }
-            
-            .fx-grid-container {
-                padding: 12px;
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                gap: 12px;
-            }
-            
-            .fx-grid-item-label {
-                font-size: 11px;
-                padding: 6px 8px;
-            }
-        }
-        
         .fx-search-input {
             width: 100%;
             padding: 8px;
@@ -1902,22 +1623,6 @@
                         <span class="help-command-desc">Toggle wireframe overlay</span>
                         <span class="help-command-key">W</span>
                     </div>
-                    <div class="help-command" data-action="toggle-grid">
-                        <span class="help-command-desc">Show grid</span>
-                        <span class="help-command-key">G</span>
-                    </div>
-                </div>
-                
-                <div class="help-category">
-                    <div class="help-category-title">Grid Navigation</div>
-                    <div class="help-command" data-action="grid-navigate">
-                        <span class="help-command-desc">Move around in grid</span>
-                        <span class="help-command-key">↑ ↓ ← →</span>
-                    </div>
-                    <div class="help-command" data-action="grid-select">
-                        <span class="help-command-desc">Select highlighted filter</span>
-                        <span class="help-command-key">Enter</span>
-                    </div>
                 </div>
                 
                 <div class="help-category">
@@ -2017,38 +1722,6 @@
                 aria-atomic="false"
             >
                 <div id="fxOptionsContainer" class="fx-dropdown-menu" role="group"></div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- FX Grid Modal -->
-    <div 
-        id="fxGridModal" 
-        class="fx-grid-modal" 
-        role="dialog" 
-        aria-modal="true" 
-        aria-labelledby="fxGridModalTitle" 
-        aria-hidden="true"
-        tabindex="-1"
-    >
-        <div class="fx-grid-modal-content">
-            <div class="fx-grid-header">
-                <h2 id="fxGridModalTitle">FX Grid</h2>
-                <button 
-                    class="fx-grid-close" 
-                    id="fxGridClose" 
-                    type="button" 
-                    aria-label="Close grid"
-                    tabindex="0"
-                >×</button>
-            </div>
-            <div 
-                class="fx-grid-container" 
-                id="fxGridContainer" 
-                role="grid"
-                aria-label="Filter grid"
-            >
-                <!-- Grid items will be dynamically generated -->
             </div>
         </div>
     </div>
@@ -2520,9 +2193,6 @@
         const fxSearchTrigger = document.getElementById('fxSearchTrigger');
         const fxSearchModal = document.getElementById('fxSearchModal');
         const fxSearchClear = document.getElementById('fxSearchClear');
-        const fxGridModal = document.getElementById('fxGridModal');
-        const fxGridContainer = document.getElementById('fxGridContainer');
-        const fxGridClose = document.getElementById('fxGridClose');
         const pinnedFxContainer = document.getElementById('pinnedFxContainer');
         const currentFxOverlay = document.getElementById('currentFxOverlay');
         const currentFxOverlayName = document.getElementById('currentFxOverlayName');
@@ -3012,7 +2682,15 @@
         
         // Load filters
         function loadFilters() {
+            if (!fxOptionsContainer) {
+                console.error('fxOptionsContainer not found');
+                return;
+            }
+            
             fxOptionsContainer.innerHTML = '';
+            
+            console.log('loadFilters called, FILTER_CATEGORIES:', FILTER_CATEGORIES);
+            console.log('Number of categories:', Object.keys(FILTER_CATEGORIES).length);
             
             // Add "None" option
             const noneOption = document.createElement('button');
@@ -3203,8 +2881,14 @@
                 console.log('Modal style display:', fxSearchModal.style.display);
                 
                 // Load filters if not already loaded
-                if (fxOptionsContainer && fxOptionsContainer.children.length === 0) {
-                    loadFilters();
+                if (fxOptionsContainer) {
+                    console.log('fxOptionsContainer children count:', fxOptionsContainer.children.length);
+                    if (fxOptionsContainer.children.length === 0) {
+                        console.log('Loading filters because container is empty');
+                        loadFilters();
+                    } else {
+                        console.log('Filters already loaded, count:', fxOptionsContainer.children.length);
+                    }
                 }
                 
                 // Focus search input after modal opens (accessibility best practice)
@@ -3253,438 +2937,6 @@
                     }
                 }
                 previousActiveElement = null;
-            }
-        }
-        
-        // FX Grid Modal functions
-        let gridPreviewCanvases = new Map(); // Map of filter name to canvas element
-        let gridAnimationFrameId = null;
-        let gridUpdateInterval = null;
-        let gridVisibleItems = new Set();
-        
-        // Open FX grid modal
-        function openFxGridModal() {
-            if (fxGridModal) {
-                // Store current focus for restoration
-                previousActiveElement = document.activeElement;
-                
-                // Update ARIA attributes
-                fxGridModal.setAttribute('aria-hidden', 'false');
-                fxGridModal.classList.add('active');
-                fxGridModal.style.display = 'flex';
-                
-                // Prevent body scroll when modal is open
-                document.body.style.overflow = 'hidden';
-                
-                // Always reload grid to ensure it has the latest filters for current scene
-                if (fxGridContainer) {
-                    loadFxGrid();
-                    
-                    // Initialize all previews immediately
-                    setTimeout(() => {
-                        if (videoInput && videoInput.readyState >= 2 && videoInput.videoWidth > 0) {
-                            gridPreviewCanvases.forEach((canvas, filterKey) => {
-                                const filter = filterKey === 'none' ? '' : filterKey;
-                                updateGridPreview(canvas, filter);
-                            });
-                        }
-                    }, 100);
-                }
-                
-                // Start preview updates
-                startGridPreviewUpdates();
-                
-                // Focus first grid item for keyboard navigation
-                setTimeout(() => {
-                    const firstItem = fxGridContainer?.querySelector('.fx-grid-item');
-                    if (firstItem) {
-                        firstItem.focus();
-                    }
-                }, 100);
-            }
-        }
-        
-        // Close FX grid modal
-        function closeFxGridModal() {
-            if (fxGridModal) {
-                fxGridModal.setAttribute('aria-hidden', 'true');
-                fxGridModal.classList.remove('active');
-                fxGridModal.style.display = 'none';
-                
-                // Restore body scroll
-                document.body.style.overflow = '';
-                
-                // Stop preview updates
-                stopGridPreviewUpdates();
-                
-                // Restore focus to previous element (accessibility)
-                if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
-                    try {
-                        previousActiveElement.focus();
-                    } catch (e) {
-                        console.warn('Could not restore focus to previous element');
-                    }
-                }
-                previousActiveElement = null;
-            }
-        }
-        
-        // Load FX grid with all filters
-        function loadFxGrid() {
-            if (!fxGridContainer) return;
-            
-            fxGridContainer.innerHTML = '';
-            gridPreviewCanvases.clear();
-            
-            // Add "None" option first
-            const noneItem = createGridItem('');
-            fxGridContainer.appendChild(noneItem);
-            
-            // Process categories in order (Favorites first, then others)
-            const categoryOrder = ['Favorites', 'Distortion', 'Color & Style'];
-            const processedFilters = new Set();
-            
-            categoryOrder.forEach(categoryName => {
-                const categoryFilters = FILTER_CATEGORIES[categoryName];
-                if (!categoryFilters || categoryFilters.length === 0) return;
-                
-                // Add category header if not Favorites (or if you want it for all)
-                if (categoryName === 'Favorites') {
-                    const headerDiv = document.createElement('div');
-                    headerDiv.className = 'fx-grid-category-header fx-favorites-header';
-                    headerDiv.innerHTML = '⭐ ' + categoryName;
-                    headerDiv.setAttribute('role', 'heading');
-                    headerDiv.setAttribute('aria-level', '3');
-                    fxGridContainer.appendChild(headerDiv);
-                }
-                
-                // Sort filters within category alphabetically, but keep v1 versions after v2
-                const sortedCategoryFilters = [...categoryFilters].sort((a, b) => {
-                    // Remove _v1 suffix for comparison
-                    const aBase = a.replace(/_v1$/, '');
-                    const bBase = b.replace(/_v1$/, '');
-                    
-                    // If same base filter, v2 (non-v1) comes first
-                    if (aBase === bBase) {
-                        return a.includes('_v1') ? 1 : -1;
-                    }
-                    
-                    // Otherwise sort alphabetically by base name
-                    const nameA = formatFilterName(aBase).toLowerCase();
-                    const nameB = formatFilterName(bBase).toLowerCase();
-                    return nameA.localeCompare(nameB);
-                });
-                
-                // Add filters from this category
-                sortedCategoryFilters.forEach(filter => {
-                    if (!processedFilters.has(filter)) {
-                        const gridItem = createGridItem(filter);
-                        fxGridContainer.appendChild(gridItem);
-                        processedFilters.add(filter);
-                    }
-                });
-            });
-            
-            // Add any remaining filters not in predefined categories
-            const allFiltersList = [];
-            Object.values(FILTER_CATEGORIES).forEach(categoryFilters => {
-                allFiltersList.push(...categoryFilters);
-            });
-            
-            allFiltersList.forEach(filter => {
-                if (!processedFilters.has(filter)) {
-                    const gridItem = createGridItem(filter);
-                    fxGridContainer.appendChild(gridItem);
-                }
-            });
-            
-            // Update visible items for performance
-            updateVisibleGridItems();
-        }
-        
-        // Create a grid item with preview canvas
-        function createGridItem(filter) {
-            const item = document.createElement('div');
-            item.className = 'fx-grid-item' + (currentFilter === filter ? ' selected' : '');
-            item.setAttribute('role', 'gridcell');
-            item.setAttribute('tabindex', '0');
-            item.setAttribute('aria-label', `Apply filter: ${formatFilterName(filter)}`);
-            item.dataset.filter = filter || 'none';
-            
-            const preview = document.createElement('div');
-            preview.className = 'fx-grid-item-preview';
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = 200;
-            canvas.height = 150;
-            canvas.dataset.filter = filter || 'none';
-            preview.appendChild(canvas);
-            
-            const label = document.createElement('div');
-            label.className = 'fx-grid-item-label';
-            label.textContent = formatFilterName(filter);
-            
-            item.appendChild(preview);
-            item.appendChild(label);
-            
-            // Store canvas reference (use 'none' for empty filter)
-            const filterKey = filter || 'none';
-            gridPreviewCanvases.set(filterKey, canvas);
-            
-            // Handle click
-            const handleClick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                selectFilter(filter);
-                closeFxGridModal();
-            };
-            
-            item.onclick = handleClick;
-            item.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleClick(e);
-            }, { passive: false });
-            
-            // Keyboard support
-            item.onkeydown = (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleClick(e);
-                }
-            };
-            
-            return item;
-        }
-        
-        // Update visible grid items for performance optimization
-        function updateVisibleGridItems() {
-            if (!fxGridContainer) return;
-            
-            const containerRect = fxGridContainer.getBoundingClientRect();
-            const items = fxGridContainer.querySelectorAll('.fx-grid-item');
-            
-            gridVisibleItems.clear();
-            items.forEach(item => {
-                const rect = item.getBoundingClientRect();
-                // Check if item is visible (with some margin)
-                if (rect.bottom >= containerRect.top - 100 && rect.top <= containerRect.bottom + 100) {
-                    const filterKey = item.dataset.filter;
-                    if (filterKey) {
-                        gridVisibleItems.add(filterKey);
-                    }
-                }
-            });
-        }
-        
-        // Start grid preview updates
-        function startGridPreviewUpdates() {
-            // Update visible items on scroll
-            if (fxGridContainer) {
-                fxGridContainer.addEventListener('scroll', updateVisibleGridItems, { passive: true });
-            }
-            
-            // Throttle preview updates to avoid performance issues
-            // Update at 5fps instead of 10fps for better main render performance
-            let lastUpdateTime = 0;
-            const updateInterval = 200; // 5fps - reduced from 10fps for better performance
-            
-            const updatePreviews = () => {
-                if (!fxGridModal || !fxGridModal.classList.contains('active')) {
-                    stopGridPreviewUpdates();
-                    return;
-                }
-                
-                const now = performance.now();
-                if (now - lastUpdateTime >= updateInterval) {
-                    lastUpdateTime = now;
-                    
-                    // Update visible items for scroll tracking
-                    updateVisibleGridItems();
-                    
-                    // Only process previews if we have valid video
-                    if (videoInput && videoInput.readyState >= 2 && videoInput.videoWidth > 0) {
-                        // Process only a subset of previews per frame to reduce load
-                        let processCount = 0;
-                        const maxProcessPerFrame = 3; // Limit to 3 previews per frame
-                        
-                        for (const [filterKey, canvas] of gridPreviewCanvases) {
-                            if (processCount >= maxProcessPerFrame) break;
-                            const filter = filterKey === 'none' ? '' : filterKey;
-                            updateGridPreview(canvas, filter);
-                            processCount++;
-                        }
-                    }
-                }
-                
-                gridAnimationFrameId = requestAnimationFrame(updatePreviews);
-            };
-            
-            updatePreviews();
-        }
-        
-        // Stop grid preview updates
-        function stopGridPreviewUpdates() {
-            if (gridAnimationFrameId) {
-                cancelAnimationFrame(gridAnimationFrameId);
-                gridAnimationFrameId = null;
-            }
-            
-            if (fxGridContainer) {
-                fxGridContainer.removeEventListener('scroll', updateVisibleGridItems);
-            }
-        }
-        
-        // Update a single grid preview
-        function updateGridPreview(canvas, filter) {
-            if (!videoInput || videoInput.readyState < 2 || videoInput.videoWidth === 0) {
-                return;
-            }
-            
-            try {
-                // Use willReadFrequently hint for better performance with frequent getImageData calls
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                if (!ctx) return;
-                
-                // Get the actual size of the preview container
-                const previewContainer = canvas.parentElement;
-                if (!previewContainer) return;
-                
-                const containerRect = previewContainer.getBoundingClientRect();
-                const containerWidth = Math.max(containerRect.width || 180, 100);
-                const containerHeight = Math.max(containerRect.height || 135, 75);
-                
-                // Set canvas size to match container (maintain aspect ratio)
-                const aspectRatio = videoInput.videoWidth / videoInput.videoHeight;
-                const targetHeight = containerWidth / aspectRatio;
-                canvas.width = containerWidth;
-                canvas.height = Math.min(targetHeight, containerHeight);
-                
-                // Draw video frame
-                ctx.drawImage(videoInput, 0, 0, canvas.width, canvas.height);
-                
-                // Apply filter if specified
-                if (filter) {
-                    try {
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        
-                        if (wasmModule) {
-                            // Use WASM filter processing
-                            wasmModule.processFrame(canvas, canvas, filter, null, frameCount);
-                        } else {
-                            // Fallback to JavaScript filters
-                            applyJSFilter(imageData, filter, null);
-                            ctx.putImageData(imageData, 0, 0);
-                        }
-                    } catch (error) {
-                        // Canvas might be tainted (CORS), just show video without filter
-                        console.warn('Cannot apply filter to preview:', error);
-                    }
-                }
-                
-                // Draw wireframe overlay if enabled and filter is active
-                if (showWireframe && filter && ctx) {
-                    drawWireframeOverlay(ctx, canvas.width, canvas.height, filter);
-                }
-                
-                // Store filter name in dataset for visibility tracking
-                canvas.dataset.filter = filter || 'none';
-            } catch (error) {
-                // Silently handle errors (preview might fail due to CORS, etc.)
-            }
-        }
-        
-        // Navigate grid with arrow keys
-        function navigateGrid(direction) {
-            if (!fxGridContainer) return;
-            
-            const gridItems = Array.from(fxGridContainer.querySelectorAll('.fx-grid-item'));
-            if (gridItems.length === 0) return;
-            
-            // Get currently focused item or first item
-            let currentItem = document.activeElement;
-            if (!currentItem || !currentItem.classList.contains('fx-grid-item')) {
-                // No item focused, focus the first one
-                if (gridItems.length > 0) {
-                    gridItems[0].focus();
-                    gridItems[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-                return;
-            }
-            
-            // Get current index
-            const currentIndex = gridItems.indexOf(currentItem);
-            if (currentIndex === -1) return;
-            
-            const currentFilter = currentItem.dataset.filter;
-            console.log(`Navigating ${direction} from index ${currentIndex} (${currentFilter})`);
-            
-            let targetIndex = currentIndex;
-            
-            // Use index-based navigation for left/right (sequential order)
-            // Use position-based navigation for up/down (grid layout)
-            if (direction === 'left') {
-                targetIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
-            } else if (direction === 'right') {
-                targetIndex = currentIndex < gridItems.length - 1 ? currentIndex + 1 : currentIndex;
-            } else {
-                // For up/down, use spatial positioning
-                const currentRect = currentItem.getBoundingClientRect();
-                const currentCenterX = currentRect.left + currentRect.width / 2;
-                const currentCenterY = currentRect.top + currentRect.height / 2;
-                
-                let bestItem = null;
-                let bestDistance = Infinity;
-                const threshold = 50;
-                
-                gridItems.forEach(item => {
-                    if (item === currentItem) return;
-                    
-                    const itemRect = item.getBoundingClientRect();
-                    const itemCenterX = itemRect.left + itemRect.width / 2;
-                    const itemCenterY = itemRect.top + itemRect.height / 2;
-                    
-                    let isCandidate = false;
-                    let distance = Infinity;
-                    
-                    if (direction === 'up') {
-                        if (itemCenterY < currentCenterY - threshold) {
-                            const horizontalDiff = Math.abs(itemCenterX - currentCenterX);
-                            if (horizontalDiff < itemRect.width) {
-                                distance = currentCenterY - itemCenterY + horizontalDiff * 0.1;
-                                isCandidate = true;
-                            }
-                        }
-                    } else if (direction === 'down') {
-                        if (itemCenterY > currentCenterY + threshold) {
-                            const horizontalDiff = Math.abs(itemCenterX - currentCenterX);
-                            if (horizontalDiff < itemRect.width) {
-                                distance = itemCenterY - currentCenterY + horizontalDiff * 0.1;
-                                isCandidate = true;
-                            }
-                        }
-                    }
-                
-                    if (isCandidate && distance < bestDistance) {
-                        bestDistance = distance;
-                        bestItem = item;
-                    }
-                });
-                
-                // For up/down, use the best item found
-                if (bestItem) {
-                    targetIndex = gridItems.indexOf(bestItem);
-                }
-            }
-            
-            // Focus the target item
-            if (targetIndex !== currentIndex && gridItems[targetIndex]) {
-                const targetFilter = gridItems[targetIndex].dataset.filter;
-                console.log(`Moving to index ${targetIndex} (${targetFilter})`);
-                gridItems[targetIndex].focus();
-                gridItems[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } else {
-                console.log(`Already at boundary or no change`);
             }
         }
         
@@ -3796,19 +3048,6 @@
                     opt.classList.remove('selected');
                     if (opt.value === currentFilter) {
                         opt.classList.add('selected');
-                    }
-                });
-            }
-            
-            // Update grid modal selected state if open
-            if (fxGridContainer) {
-                const allGridItems = fxGridContainer.querySelectorAll('.fx-grid-item');
-                allGridItems.forEach(item => {
-                    item.classList.remove('selected');
-                    const itemFilter = item.dataset.filter;
-                    const filterKey = currentFilter || 'none';
-                    if (itemFilter === filterKey) {
-                        item.classList.add('selected');
                     }
                 });
             }
@@ -3933,7 +3172,12 @@
                 const filterName = formatFilterName(filterValue).toLowerCase();
                 const text = displayText.toLowerCase();
                 const filterValueLower = filterValue.toLowerCase();
-                
+
+                // Extract face mask name if this is a mask filter
+                const faceMaskName = filterValueLower.startsWith('mask_')
+                    ? filterValueLower.replace('mask_', '')
+                    : null;
+
                 // Split filter name and value into individual words for better partial matching
                 const filterNameWords = filterName.split(/\s+/);
                 const filterValueWords = filterValueLower.split('_');
@@ -4009,37 +3253,23 @@
             }
         }
         
-        // Start random cycle (roulette) - cycles through filters like a slot machine
+        // Start random cycle (roulette) - instantly picks a random filter
         function startRandomCycle() {
             if (isRandomCycling) {
                 console.log('Roulette already running');
                 return;
             }
-            isRandomCycling = true;
+            
             const filters = pinnedFilters.length > 0 ? pinnedFilters : allFilters;
             if (filters.length === 0) {
                 console.log('No filters available for roulette');
-                isRandomCycling = false;
                 return;
             }
-            console.log('Starting roulette with', filters.length, 'filters');
-            let cycles = 0;
-            const maxCycles = 8; // Reduced from 10
-            randomCycleInterval = setInterval(() => {
-                const randomFilter = filters[Math.floor(Math.random() * filters.length)];
-                // Skip URL updates during roulette
-                selectFilter(randomFilter, true);
-                cycles++;
-                if (cycles >= maxCycles) {
-                    clearInterval(randomCycleInterval);
-                    randomCycleInterval = null;
-                    const finalFilter = filters[Math.floor(Math.random() * filters.length)];
-                    // Update URL only after roulette ends
-                    selectFilter(finalFilter, false);
-                    isRandomCycling = false;
-                    console.log('Roulette finished on:', finalFilter);
-                }
-            }, 200); // Increased from 100ms to reduce performance strain
+            
+            // Instantly pick a random filter (no cycling animation)
+            const randomFilter = filters[Math.floor(Math.random() * filters.length)];
+            console.log('Roulette selected:', randomFilter);
+            selectFilter(randomFilter, false);
         }
         
         // Load test image
@@ -4512,11 +3742,6 @@
             // Reload filters if they've been loaded already
             if (fxOptionsContainer) {
                 loadFilters();
-            }
-            
-            // Reload grid if it's currently open
-            if (fxGridModal && fxGridModal.classList.contains('active')) {
-                loadFxGrid();
             }
         }
         
@@ -8630,57 +7855,6 @@
                 }, { passive: false });
             }
             
-            // FX Grid Modal event listeners
-            if (fxGridClose) {
-                fxGridClose.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    closeFxGridModal();
-                });
-                fxGridClose.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    closeFxGridModal();
-                }, { passive: false });
-            }
-            
-            // Close grid modal when clicking/tapping outside
-            if (fxGridModal) {
-                const handleGridModalClose = (e) => {
-                    const clickedContent = e.target.closest('.fx-grid-modal-content');
-                    if (e.target === fxGridModal || !clickedContent) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        closeFxGridModal();
-                    }
-                };
-                
-                fxGridModal.addEventListener('mousedown', (e) => {
-                    if (e.target === fxGridModal) {
-                        handleGridModalClose(e);
-                    }
-                });
-                
-                fxGridModal.addEventListener('click', handleGridModalClose);
-                
-                // Touch events for mobile
-                fxGridModal.addEventListener('touchstart', (e) => {
-                    if (e.target === fxGridModal) {
-                        fxGridModal._touchTarget = e.target;
-                    }
-                }, { passive: true });
-                
-                fxGridModal.addEventListener('touchend', (e) => {
-                    if (fxGridModal._touchTarget === fxGridModal && 
-                        (e.target === fxGridModal || !e.target.closest('.fx-grid-modal-content'))) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        closeFxGridModal();
-                    }
-                    fxGridModal._touchTarget = null;
-                }, { passive: false });
-            }
-            
             // Toggle UI when clicking/tapping on video (same as pressing 'h')
             // Also hide menu when tapping outside if camera is active
             if (videoContainer && canvasOutput) {
@@ -8852,22 +8026,12 @@
                     case 'ArrowUp':
                     case 'ArrowLeft':
                         e.preventDefault();
-                        // If grid modal is open, navigate grid instead
-                        if (fxGridModal && fxGridModal.classList.contains('active')) {
-                            navigateGrid(e.key === 'ArrowUp' ? 'up' : 'left');
-                        } else {
-                            cyclePrevFilter();
-                        }
+                        cyclePrevFilter();
                         break;
                     case 'ArrowDown':
                     case 'ArrowRight':
                         e.preventDefault();
-                        // If grid modal is open, navigate grid instead
-                        if (fxGridModal && fxGridModal.classList.contains('active')) {
-                            navigateGrid(e.key === 'ArrowDown' ? 'down' : 'right');
-                        } else {
-                            cycleNextFilter();
-                        }
+                        cycleNextFilter();
                         break;
                     case ' ':
                         e.preventDefault();
@@ -8880,10 +8044,7 @@
                         break;
                     case 'Escape':
                         // Close modals first, then clear filter
-                        if (fxGridModal && fxGridModal.classList.contains('active')) {
-                            e.preventDefault();
-                            closeFxGridModal();
-                        } else if (fxSearchModal && fxSearchModal.classList.contains('active')) {
+                        if (fxSearchModal && fxSearchModal.classList.contains('active')) {
                             e.preventDefault();
                             closeFxSearchModal();
                         } else {
@@ -8900,15 +8061,6 @@
                     case 'T':
                         e.preventDefault();
                         showTutorial();
-                        break;
-                    case 'g':
-                    case 'G':
-                        e.preventDefault();
-                        if (fxGridModal && fxGridModal.classList.contains('active')) {
-                            closeFxGridModal();
-                        } else {
-                            openFxGridModal();
-                        }
                         break;
                 }
                 

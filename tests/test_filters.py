@@ -65,20 +65,18 @@ def test_page_loads(page: Page):
     expect(page.locator("#start-btn")).to_be_visible()
 
 
-def test_filter_grid_exists(page: Page):
-    """Test that the filter grid is present and contains filters."""
+def test_filter_search_exists(page: Page):
+    """Test that the filter search modal is available."""
     page.goto(BASE_URL)
     page.wait_for_load_state("networkidle")
     
-    # Check that filter grid exists
-    filter_grid = page.locator("#filter-grid")
-    expect(filter_grid).to_be_visible()
+    # Check that filter search trigger exists
+    filter_search_trigger = page.locator("#fxSearchTrigger")
+    expect(filter_search_trigger).to_be_visible()
     
-    # Check that there are filter buttons
-    filter_buttons = page.locator(".filter-btn")
-    count = filter_buttons.count()
-    assert count > 0, "No filter buttons found"
-    print(f"✓ Found {count} filter buttons")
+    # Check that search modal exists (but may not be visible initially)
+    search_modal = page.locator("#fxSearchModal")
+    expect(search_modal).to_be_attached()
 
 
 def test_filter_search(page: Page):
