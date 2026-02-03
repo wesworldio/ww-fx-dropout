@@ -30,7 +30,7 @@ class CameraViewController: NSViewController {
     private var filterLabel: NSTextField!
     private var filterSelector: NSPopUpButton!
     private var cameraSelector: NSPopUpButton!
-    private var uiVisible: Bool = true
+    private var uiVisible: Bool = false
     
     // Performance tracking
     private var lastFrameTime: CFTimeInterval = 0
@@ -100,7 +100,7 @@ class CameraViewController: NSViewController {
         controlsView.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.85).cgColor
         controlsView.layer?.cornerRadius = 8
         controlsView.autoresizingMask = [.minYMargin]
-        controlsView.isHidden = false
+        controlsView.isHidden = true
         view.addSubview(controlsView)
         
         // FPS Label
