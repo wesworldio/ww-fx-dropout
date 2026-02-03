@@ -10,6 +10,25 @@ Creative custom face filters with distortion effects that integrate with OBS via
 - ✅ **Cross-Platform** - Browser, mobile, Windows, macOS, Linux
 - ✅ **High Performance** - WASM-based processing
 - ✅ **Mobile Optimized** - Works on iOS and Android
+- ✅ **Desktop App** - Native apps with better FPS than browsers
+
+## Desktop App (NEW!)
+
+Get better performance with the native desktop app:
+- **50-60+ FPS** (vs 30-45 in browsers)
+- **Hardware acceleration** enabled by default
+- **Lower latency** camera access
+- **Works offline** - no internet required
+
+### Download Desktop App
+
+**Latest Release:** [Download from GitHub Releases](https://github.com/wesworldio/ww-fx-1/releases/latest)
+
+- **macOS**: Download `.dmg` (Intel or Apple Silicon)
+- **Windows**: Download `.exe` installer
+- **Linux**: Download `.AppImage` or `.deb`
+
+See [DESKTOP_APP_GUIDE.md](DESKTOP_APP_GUIDE.md) for full desktop app documentation.
 
 ## Quick Start (Browser)
 - Download/clone the repo.

@@ -1,0 +1,2 @@
+/opt/homebrew/Cellar/emscripten/4.0.18/libexec/emar qc libwwfx_wasm.a CMakeFiles/wwfx_wasm.dir/src/filters.cpp.o CMakeFiles/wwfx_wasm.dir/src/image_processing.cpp.o CMakeFiles/wwfx_wasm.dir/src/wasm_bindings.cpp.o
+/opt/homebrew/Cellar/emscripten/4.0.18/libexec/emranlib libwwfx_wasm.a

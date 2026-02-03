@@ -1,0 +1,234 @@
+name: Build and Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Trigger on version tags like v1.0.0, v1.2.3, etc.
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="$(date +%Y.%m.%d)-dev"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: WesWorld FX Desktop v${{ steps.get_version.outputs.version }}
+          body: |
+            ## WesWorld FX Desktop App v${{ steps.get_version.outputs.version }}
+            
+            High-performance desktop application for face filters with better FPS than web browsers.
+            
+            ### Downloads
+            
+            **macOS:**
+            - Intel Mac: `WesWorld FX-${{ steps.get_version.outputs.version }}.dmg`
+            - Apple Silicon (M1/M2): `WesWorld FX-${{ steps.get_version.outputs.version }}-arm64.dmg`
+            - Universal Zip: `WesWorld FX-${{ steps.get_version.outputs.version }}-mac.zip`
+            
+            **Windows:**
+            - Installer (64-bit): `WesWorld FX Setup ${{ steps.get_version.outputs.version }}.exe`
+            - Portable (64-bit): `WesWorld FX ${{ steps.get_version.outputs.version }}.exe`
+            - 32-bit: `WesWorld FX Setup ${{ steps.get_version.outputs.version }}-ia32.exe`
+            
+            ### Features
+            - ✅ Better FPS than Chrome browser (50-60+ FPS)
+            - ✅ Hardware-accelerated GPU rendering
+            - ✅ Direct camera access with lower latency
+            - ✅ All 95+ face filters included
+            - ✅ Offline capable - no internet required
+            
+            ### Installation
+            - **macOS**: Download .dmg, open it, drag app to Applications
+            - **Windows**: Download .exe installer and run it
+            
+            See [README](https://github.com/${{ github.repository }}/blob/main/DESKTOP_APP_GUIDE.md) for full documentation.
+          draft: false
+          prerelease: false
+
+  build-macos:
+    name: Build macOS
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build macOS app
+        run: npm run build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List build artifacts
+        run: ls -lh dist/
+
+      - name: Upload macOS Intel DMG
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/WesWorld FX-${{ needs.create-release.outputs.version }}.dmg
+          asset_name: WesWorld-FX-${{ needs.create-release.outputs.version }}-mac-intel.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Upload macOS ARM64 DMG
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/WesWorld FX-${{ needs.create-release.outputs.version }}-arm64.dmg
+          asset_name: WesWorld-FX-${{ needs.create-release.outputs.version }}-mac-arm64.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Upload macOS Intel ZIP
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/WesWorld FX-${{ needs.create-release.outputs.version }}-mac.zip
+          asset_name: WesWorld-FX-${{ needs.create-release.outputs.version }}-mac-intel.zip
+          asset_content_type: application/zip
+
+      - name: Upload macOS ARM64 ZIP
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/WesWorld FX-${{ needs.create-release.outputs.version }}-arm64-mac.zip
+          asset_name: WesWorld-FX-${{ needs.create-release.outputs.version }}-mac-arm64.zip
+          asset_content_type: application/zip
+
+  build-windows:
+    name: Build Windows
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Windows app
+        run: npm run build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List build artifacts
+        run: dir dist
+
+      - name: Upload Windows x64 Installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/WesWorld FX Setup ${{ needs.create-release.outputs.version }}.exe
+          asset_name: WesWorld-FX-Setup-${{ needs.create-release.outputs.version }}-win-x64.exe
+          asset_content_type: application/x-msdownload
+
+      - name: Upload Windows x64 Portable
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/WesWorld FX ${{ needs.create-release.outputs.version }}.exe
+          asset_name: WesWorld-FX-${{ needs.create-release.outputs.version }}-win-x64-portable.exe
+          asset_content_type: application/x-msdownload
+
+      - name: Upload Windows ia32 Installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/WesWorld FX Setup ${{ needs.create-release.outputs.version }}-ia32.exe
+          asset_name: WesWorld-FX-Setup-${{ needs.create-release.outputs.version }}-win-ia32.exe
+          asset_content_type: application/x-msdownload
+
+  build-linux:
+    name: Build Linux
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Linux app
+        run: npx electron-builder --linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List build artifacts
+        run: ls -lh dist/
+
+      - name: Upload Linux AppImage
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/WesWorld FX-${{ needs.create-release.outputs.version }}.AppImage
+          asset_name: WesWorld-FX-${{ needs.create-release.outputs.version }}-linux.AppImage
+          asset_content_type: application/x-executable
+
+      - name: Upload Linux DEB
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./dist/wesworld-fx-desktop_${{ needs.create-release.outputs.version }}_amd64.deb
+          asset_name: wesworld-fx-desktop-${{ needs.create-release.outputs.version }}-linux-amd64.deb
+          asset_content_type: application/vnd.debian.binary-package

@@ -28,6 +28,15 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
+    <!-- Desktop app optimizations (loaded only in Electron) -->
+    <script>
+        if (typeof process !== 'undefined' && process.versions && process.versions.electron) {
+            const script = document.createElement('script');
+            script.src = 'electron/renderer-optimizations.js';
+            document.head.appendChild(script);
+        }
+    </script>
+    
     <style>
         * {
             margin: 0;
