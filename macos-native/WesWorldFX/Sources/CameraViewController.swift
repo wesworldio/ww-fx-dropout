@@ -103,9 +103,16 @@ class CameraViewController: NSViewController {
         controlsView.isHidden = true
         view.addSubview(controlsView)
         
+        // Version Label
+        let versionLabel = NSTextField(labelWithString: "WesWorld FX v2.1.2 (Build 2126)")
+        versionLabel.frame = NSRect(x: 10, y: 165, width: 280, height: 15)
+        versionLabel.textColor = .white.withAlphaComponent(0.6)
+        versionLabel.font = .systemFont(ofSize: 11, weight: .regular)
+        controlsView.addSubview(versionLabel)
+        
         // FPS Label
         fpsLabel = NSTextField(labelWithString: "FPS: --")
-        fpsLabel.frame = NSRect(x: 10, y: 150, width: 280, height: 20)
+        fpsLabel.frame = NSRect(x: 10, y: 145, width: 280, height: 20)
         fpsLabel.textColor = .white
         fpsLabel.font = .monospacedSystemFont(ofSize: 14, weight: .medium)
         controlsView.addSubview(fpsLabel)

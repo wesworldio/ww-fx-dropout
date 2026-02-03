@@ -6,7 +6,7 @@ class UpdateChecker {
     
     private let repoOwner = "wesworldio"
     private let repoName = "ww-fx-dropout"
-    private let currentVersion = "2.1.0"
+    private let currentVersion = "2.1.2"
     
     private init() {}
     
