@@ -37,7 +37,7 @@ class CameraViewController: NSViewController {
     private var fps: Double = 0.0
     
     override func loadView() {
-        view = NSView(frame: NSRect(x: 0, y: 0, width: 1280, height: 720))
+        view = NSView(frame: NSRect(x: 0, y: 0, width: 1920, height: 1080))
         view.wantsLayer = true
         view.layer?.backgroundColor = NSColor.black.cgColor
     }
@@ -80,7 +80,7 @@ class CameraViewController: NSViewController {
         
         metalView = MTKView(frame: view.bounds, device: device)
         metalView.autoresizingMask = [.width, .height]
-        metalView.framebufferOnly = false
+        metalView.framebufferOnly = true
         metalView.preferredFramesPerSecond = 60
         metalView.enableSetNeedsDisplay = false
         metalView.isPaused = false
@@ -148,7 +148,7 @@ class CameraViewController: NSViewController {
     
     private func setupCamera() {
         captureSession = AVCaptureSession()
-        captureSession.sessionPreset = .hd1280x720 // 720p for good balance of quality/performance
+        captureSession.sessionPreset = .hd1920x1080 // 1080p for best quality with OBS
         
         guard let camera = AVCaptureDevice.default(for: .video) else {
             showError("No camera found")

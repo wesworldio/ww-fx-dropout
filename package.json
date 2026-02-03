@@ -1,6 +1,6 @@
 {
   "name": "wesworld-fx-desktop",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "WesWorld FX - High-performance desktop face filters app",
   "main": "electron/main.js",
   "scripts": {
