@@ -1,0 +1,488 @@
+//
+//  Shaders.metal
+//  WesWorld FX
+//
+//  Metal shaders for ultra-fast GPU-accelerated filters
+//  These are direct Metal translations of the C++ WASM filters
+//
+
+#include <metal_stdlib>
+using namespace metal;
+
+// MARK: - Vertex Shader
+
+struct VertexIn {
+    float2 position [[attribute(0)]];
+    float2 texCoord [[attribute(1)]];
+};
+
+struct VertexOut {
+    float4 position [[position]];
+    float2 texCoord;
+};
+
+vertex VertexOut vertexShader(uint vertexID [[vertex_id]],
+                               constant float4* vertices [[buffer(0)]]) {
+    VertexOut out;
+    float4 vtx = vertices[vertexID];
+    out.position = float4(vtx.xy, 0.0, 1.0);
+    out.texCoord = vtx.zw;
+    return out;
+}
+
+fragment float4 fragmentShader(VertexOut in [[stage_in]],
+                                texture2d<float> texture [[texture(0)]]) {
+    constexpr sampler textureSampler(filter::linear);
+    return texture.sample(textureSampler, in.texCoord);
+}
+
+// MARK: - Filter Kernels
+
+// Helper function: RGB to grayscale
+inline float rgbToGray(float3 color) {
+    return 0.299 * color.r + 0.587 * color.g + 0.114 * color.b;
+}
+
+// Black & White Filter
+kernel void blackWhiteFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    float gray = rgbToGray(color.rgb);
+    outTexture.write(float4(gray, gray, gray, color.a), gid);
+}
+
+// Sepia Filter
+kernel void sepiaFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                        texture2d<float, access::write> outTexture [[texture(1)]],
+                        uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    float3 sepia;
+    sepia.r = clamp(0.393 * color.r + 0.769 * color.g + 0.189 * color.b, 0.0, 1.0);
+    sepia.g = clamp(0.349 * color.r + 0.686 * color.g + 0.168 * color.b, 0.0, 1.0);
+    sepia.b = clamp(0.272 * color.r + 0.534 * color.g + 0.131 * color.b, 0.0, 1.0);
+    outTexture.write(float4(sepia, color.a), gid);
+}
+
+// Negative Filter
+kernel void negativeFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    outTexture.write(float4(1.0 - color.rgb, color.a), gid);
+}
+
+// Vintage Filter
+kernel void vintageFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    float3 vintage;
+    vintage.r = clamp(color.r * 0.9 + 0.078, 0.0, 1.0);
+    vintage.g = clamp(color.g * 0.85 + 0.059, 0.0, 1.0);
+    vintage.b = clamp(color.b * 0.8 + 0.039, 0.0, 1.0);
+    outTexture.write(float4(vintage, color.a), gid);
+}
+
+// Red Tint Filter
+kernel void redTintFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    color.r = clamp(color.r * 1.5, 0.0, 1.0);
+    outTexture.write(color, gid);
+}
+
+// Blue Tint Filter
+kernel void blueTintFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    color.b = clamp(color.b * 1.5, 0.0, 1.0);
+    outTexture.write(color, gid);
+}
+
+// Green Tint Filter
+kernel void greenTintFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    color.g = clamp(color.g * 1.5, 0.0, 1.0);
+    outTexture.write(color, gid);
+}
+
+// Posterize Filter
+kernel void posterizeFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    const int levels = 4;
+    const float step = 1.0 / float(levels);
+    
+    color.r = floor(color.r / step) * step;
+    color.g = floor(color.g / step) * step;
+    color.b = floor(color.b / step) * step;
+    
+    outTexture.write(color, gid);
+}
+
+// Thermal Filter
+kernel void thermalFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    float intensity = rgbToGray(color.rgb);
+    
+    float3 thermal;
+    if (intensity < 0.25) {
+        thermal = mix(float3(0.0, 0.0, 0.5), float3(0.0, 0.0, 1.0), intensity * 4.0);
+    } else if (intensity < 0.5) {
+        thermal = mix(float3(0.0, 0.0, 1.0), float3(0.0, 1.0, 1.0), (intensity - 0.25) * 4.0);
+    } else if (intensity < 0.75) {
+        thermal = mix(float3(0.0, 1.0, 1.0), float3(1.0, 1.0, 0.0), (intensity - 0.5) * 4.0);
+    } else {
+        thermal = mix(float3(1.0, 1.0, 0.0), float3(1.0, 0.0, 0.0), (intensity - 0.75) * 4.0);
+    }
+    
+    outTexture.write(float4(thermal, color.a), gid);
+}
+
+// Pixelate Filter
+kernel void pixelateFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    const int pixelSize = 8;
+    uint2 pixelatedPos = uint2(gid.x / pixelSize * pixelSize, gid.y / pixelSize * pixelSize);
+    float4 color = inTexture.read(pixelatedPos);
+    outTexture.write(color, gid);
+}
+
+// Blur Filter (Box blur)
+kernel void blurFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                       texture2d<float, access::write> outTexture [[texture(1)]],
+                       uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 sum = float4(0.0);
+    const int radius = 3;
+    int count = 0;
+    
+    for (int dy = -radius; dy <= radius; dy++) {
+        for (int dx = -radius; dx <= radius; dx++) {
+            uint2 samplePos = uint2(int(gid.x) + dx, int(gid.y) + dy);
+            if (samplePos.x < inTexture.get_width() && samplePos.y < inTexture.get_height()) {
+                sum += inTexture.read(samplePos);
+                count++;
+            }
+        }
+    }
+    
+    outTexture.write(sum / float(count), gid);
+}
+
+// Sharpen Filter
+kernel void sharpenFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 center = inTexture.read(gid);
+    float4 sum = float4(0.0);
+    
+    // 3x3 sharpen kernel
+    const float convKernel[9] = {
+         0.0, -1.0,  0.0,
+        -1.0,  5.0, -1.0,
+         0.0, -1.0,  0.0
+    };
+    
+    int idx = 0;
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            uint2 pos = uint2(int(gid.x) + dx, int(gid.y) + dy);
+            if (pos.x < inTexture.get_width() && pos.y < inTexture.get_height()) {
+                sum += inTexture.read(pos) * convKernel[idx];
+            }
+            idx++;
+        }
+    }
+    
+    outTexture.write(clamp(sum, 0.0, 1.0), gid);
+}
+
+// Emboss Filter
+kernel void embossFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    // 3x3 emboss kernel
+    const float convKernel[9] = {
+        -2.0, -1.0,  0.0,
+        -1.0,  1.0,  1.0,
+         0.0,  1.0,  2.0
+    };
+    
+    float4 sum = float4(0.0);
+    int idx = 0;
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            uint2 pos = uint2(int(gid.x) + dx, int(gid.y) + dy);
+            if (pos.x < inTexture.get_width() && pos.y < inTexture.get_height()) {
+                sum += inTexture.read(pos) * convKernel[idx];
+            }
+            idx++;
+        }
+    }
+    
+    sum = sum + 0.5;
+    outTexture.write(clamp(sum, 0.0, 1.0), gid);
+}
+
+// Sketch Filter
+kernel void sketchFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    float gray = rgbToGray(color.rgb);
+    
+    // Edge detection
+    float edgeH = 0.0, edgeV = 0.0;
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            uint2 pos = uint2(int(gid.x) + dx, int(gid.y) + dy);
+            if (pos.x < inTexture.get_width() && pos.y < inTexture.get_height()) {
+                float g = rgbToGray(inTexture.read(pos).rgb);
+                edgeH += g * float(dx);
+                edgeV += g * float(dy);
+            }
+        }
+    }
+    
+    float edge = sqrt(edgeH * edgeH + edgeV * edgeV);
+    edge = 1.0 - clamp(edge * 4.0, 0.0, 1.0);
+    
+    outTexture.write(float4(edge, edge, edge, color.a), gid);
+}
+
+// Cartoon Filter
+kernel void cartoonFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    
+    // Quantize colors
+    const int levels = 5;
+    const float step = 1.0 / float(levels);
+    color.r = floor(color.r / step) * step;
+    color.g = floor(color.g / step) * step;
+    color.b = floor(color.b / step) * step;
+    
+    // Edge detection for outlines
+    float edgeH = 0.0, edgeV = 0.0;
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            uint2 pos = uint2(int(gid.x) + dx, int(gid.y) + dy);
+            if (pos.x < inTexture.get_width() && pos.y < inTexture.get_height()) {
+                float g = rgbToGray(inTexture.read(pos).rgb);
+                edgeH += g * float(dx);
+                edgeV += g * float(dy);
+            }
+        }
+    }
+    
+    float edge = sqrt(edgeH * edgeH + edgeV * edgeV);
+    if (edge > 0.3) {
+        color.rgb *= 0.3;
+    }
+    
+    outTexture.write(color, gid);
+}
+
+// Rainbow Filter
+kernel void rainbowFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    float hue = float(gid.y) / float(outTexture.get_height());
+    
+    // HSV to RGB conversion
+    float s = 0.7;
+    float v = rgbToGray(color.rgb);
+    
+    float c = v * s;
+    float x = c * (1.0 - abs(fmod(hue * 6.0, 2.0) - 1.0));
+    float m = v - c;
+    
+    float3 rgb;
+    if (hue < 0.166) rgb = float3(c, x, 0);
+    else if (hue < 0.333) rgb = float3(x, c, 0);
+    else if (hue < 0.5) rgb = float3(0, c, x);
+    else if (hue < 0.666) rgb = float3(0, x, c);
+    else if (hue < 0.833) rgb = float3(x, 0, c);
+    else rgb = float3(c, 0, x);
+    
+    outTexture.write(float4(rgb + m, color.a), gid);
+}
+
+// Rainbow Shift Filter
+kernel void rainbowShiftFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                               texture2d<float, access::write> outTexture [[texture(1)]],
+                               uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    float shift = float(gid.x + gid.y) / float(outTexture.get_width() + outTexture.get_height());
+    
+    float3 shifted;
+    shifted.r = color.r * (1.0 + sin(shift * 6.28) * 0.5);
+    shifted.g = color.g * (1.0 + sin(shift * 6.28 + 2.09) * 0.5);
+    shifted.b = color.b * (1.0 + sin(shift * 6.28 + 4.19) * 0.5);
+    
+    outTexture.write(float4(clamp(shifted, 0.0, 1.0), color.a), gid);
+}
+
+// Acid Trip Filter
+kernel void acidTripFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    float2 uv = float2(gid) / float2(outTexture.get_width(), outTexture.get_height());
+    
+    float wave = sin(uv.x * 20.0) * 0.1 + sin(uv.y * 20.0) * 0.1;
+    color.r = clamp(color.r + wave, 0.0, 1.0);
+    color.g = clamp(color.g - wave * 0.5, 0.0, 1.0);
+    color.b = clamp(color.b + wave * 0.5, 0.0, 1.0);
+    
+    outTexture.write(color, gid);
+}
+
+// VHS Filter
+kernel void vhsFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                      texture2d<float, access::write> outTexture [[texture(1)]],
+                      uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    
+    // Add scanlines
+    float scanline = sin(float(gid.y) * 0.5) * 0.1;
+    color.rgb -= scanline;
+    
+    // Color shift
+    color.r *= 1.1;
+    color.b *= 0.9;
+    
+    // Reduce sharpness
+    color.rgb = mix(color.rgb, float3(0.5), 0.1);
+    
+    outTexture.write(clamp(color, 0.0, 1.0), gid);
+}
+
+// Retro Filter
+kernel void retroFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                        texture2d<float, access::write> outTexture [[texture(1)]],
+                        uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    
+    // Warm color grading
+    color.r *= 1.2;
+    color.g *= 1.05;
+    color.b *= 0.9;
+    
+    // Reduce saturation slightly
+    float gray = rgbToGray(color.rgb);
+    color.rgb = mix(float3(gray), color.rgb, 0.7);
+    
+    outTexture.write(clamp(color, 0.0, 1.0), gid);
+}
+
+// Cyberpunk Filter
+kernel void cyberpunkFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    
+    // Neon colors
+    color.r = pow(color.r, 0.8);
+    color.g *= 1.3;
+    color.b = pow(color.b, 1.2);
+    
+    // High contrast
+    color.rgb = (color.rgb - 0.5) * 1.5 + 0.5;
+    
+    outTexture.write(clamp(color, 0.0, 1.0), gid);
+}
+
+// Neon Glow Filter
+kernel void neonGlowFilter(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    float4 color = inTexture.read(gid);
+    
+    // Boost bright areas
+    float brightness = rgbToGray(color.rgb);
+    if (brightness > 0.5) {
+        color.rgb *= (1.0 + (brightness - 0.5) * 2.0);
+    }
+    
+    // Add glow effect
+    float4 glow = float4(0.0);
+    const int radius = 2;
+    int count = 0;
+    
+    for (int dy = -radius; dy <= radius; dy++) {
+        for (int dx = -radius; dx <= radius; dx++) {
+            uint2 pos = uint2(int(gid.x) + dx, int(gid.y) + dy);
+            if (pos.x < inTexture.get_width() && pos.y < inTexture.get_height()) {
+                float4 sample = inTexture.read(pos);
+                float sampleBrightness = rgbToGray(sample.rgb);
+                if (sampleBrightness > 0.6) {
+                    glow += sample;
+                    count++;
+                }
+            }
+        }
+    }
+    
+    if (count > 0) {
+        glow /= float(count);
+        color.rgb = mix(color.rgb, glow.rgb, 0.3);
+    }
+    
+    outTexture.write(clamp(color, 0.0, 1.0), gid);
+}
