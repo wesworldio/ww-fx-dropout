@@ -77,6 +77,12 @@ class FilterProcessor {
         // Log first frame
         if textureDescriptor == nil {
             print("FilterProcessor: First frame processing, texture size: \(sourceTexture.width)x\(sourceTexture.height)")
+            textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: sourceTexture.pixelFormat,
+                width: sourceTexture.width,
+                height: sourceTexture.height,
+                mipmapped: false
+            )
         }
         
         // If no filter, return source texture

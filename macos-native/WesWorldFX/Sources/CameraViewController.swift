@@ -80,7 +80,7 @@ class CameraViewController: NSViewController {
         
         metalView = MTKView(frame: view.bounds, device: device)
         metalView.autoresizingMask = [.width, .height]
-        metalView.framebufferOnly = true
+        metalView.framebufferOnly = false
         metalView.preferredFramesPerSecond = 60
         metalView.enableSetNeedsDisplay = false
         metalView.isPaused = false
