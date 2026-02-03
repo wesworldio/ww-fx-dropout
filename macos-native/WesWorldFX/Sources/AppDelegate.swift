@@ -16,6 +16,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("Application did finish launching")
         
+        // Check for updates on launch (after a short delay to let the app fully load)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            UpdateChecker.shared.checkForUpdates()
+        }
+        
         // Activate the app - CRITICAL for window visibility
         NSApp.setActivationPolicy(.regular)
         print("Activation policy set to .regular")
@@ -72,6 +77,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+    
+    @objc func showAbout(_ sender: Any?) {
+        let alert = NSAlert()
+        alert.messageText = "WesWorld FX"
+        alert.informativeText = "Version 2.1.0\n\nNative macOS camera filters with Metal GPU acceleration.\n\n© 2026 WesWorld"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Check for Updates...")
+        
+        let response = alert.runModal()
+        if response == .alertSecondButtonReturn {
+            UpdateChecker.shared.checkForUpdates(showNoUpdateAlert: true)
+        }
     }
     
     private func requestCameraAccess() {

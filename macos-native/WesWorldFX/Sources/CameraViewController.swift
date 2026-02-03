@@ -369,6 +369,10 @@ class CameraViewController: NSViewController {
         filterSelector.selectItem(at: nextIndex)
         filterChanged()
     }
+    
+    @objc private func checkForUpdatesMenu() {
+        UpdateChecker.shared.checkForUpdates(showNoUpdateAlert: true)
+    }
 }
 
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
