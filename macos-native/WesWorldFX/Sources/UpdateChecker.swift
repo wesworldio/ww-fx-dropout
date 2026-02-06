@@ -6,7 +6,22 @@ class UpdateChecker {
     
     private let repoOwner = "wesworldio"
     private let repoName = "ww-fx-dropout"
-    private let currentVersion = "2.1.2"
+    private var currentVersion: String {
+        // Try to get version from Info.plist first
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            return version
+        }
+        
+        // Fallback: read from build-info.json
+        if let buildInfoPath = Bundle.main.resourceURL?.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("build-info.json").path,
+           let data = try? Data(contentsOf: URL(fileURLWithPath: buildInfoPath)),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let version = json["version"] as? String {
+            return version
+        }
+        
+        return "2.1.3" // Hardcoded fallback
+    }
     
     private init() {}
     

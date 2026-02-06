@@ -199,9 +199,9 @@ relocations:
   - { offset: 0x16097B, size: 0x8, addend: 0x0, symName: '_$sSo17NSWindowStyleMaskVSYSCSY8rawValuexSg03RawE0Qz_tcfCTW', symObjAddr: 0x5B4C, symBinAddr: 0x1000072FC, symSize: 0x3C }
   - { offset: 0x16098F, size: 0x8, addend: 0x0, symName: '_$sSo17NSWindowStyleMaskVSYSCSY8rawValue03RawE0QzvgTW', symObjAddr: 0x5B88, symBinAddr: 0x100007338, symSize: 0x2C }
   - { offset: 0x1609A3, size: 0x8, addend: 0x0, symName: '_$sSo17NSWindowStyleMaskV8rawValueSuvg', symObjAddr: 0x5C48, symBinAddr: 0x1000073F8, symSize: 0x4 }
-  - { offset: 0x160BD3, size: 0x8, addend: 0x0, symName: _NSFloatingWindowLevel, symObjAddr: 0x6EB0, symBinAddr: 0x10003EC20, symSize: 0x0 }
-  - { offset: 0x160BE9, size: 0x8, addend: 0x0, symName: _NSNormalWindowLevel, symObjAddr: 0x6EB8, symBinAddr: 0x10003EC28, symSize: 0x0 }
-  - { offset: 0x160C09, size: 0x8, addend: 0x0, symName: _NSAlertSecondButtonReturn, symObjAddr: 0x6EC0, symBinAddr: 0x10003EC30, symSize: 0x0 }
+  - { offset: 0x160BD3, size: 0x8, addend: 0x0, symName: _NSFloatingWindowLevel, symObjAddr: 0x6EB0, symBinAddr: 0x10003EDE0, symSize: 0x0 }
+  - { offset: 0x160BE9, size: 0x8, addend: 0x0, symName: _NSNormalWindowLevel, symObjAddr: 0x6EB8, symBinAddr: 0x10003EDE8, symSize: 0x0 }
+  - { offset: 0x160C09, size: 0x8, addend: 0x0, symName: _NSAlertSecondButtonReturn, symObjAddr: 0x6EC0, symBinAddr: 0x10003EDF0, symSize: 0x0 }
   - { offset: 0x160C58, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX20CameraViewControllerC14captureSession33_5E16F36B4E885B1ABC335474AC304EEALLSo09AVCaptureH0CSgvpfi', symObjAddr: 0x0, symBinAddr: 0x100008654, symSize: 0x8 }
   - { offset: 0x160D25, size: 0x8, addend: 0x0, symName: '_$sSlsE3mapySayqd__Gqd__7ElementQzqd_0_YKXEqd_0_YKs5ErrorRd_0_r0_lF', symObjAddr: 0x5894, symBinAddr: 0x10000DA5C, symSize: 0x690 }
   - { offset: 0x160DCE, size: 0x8, addend: 0x0, symName: '_$sSo25NSAutoresizingMaskOptionsVs10SetAlgebraSCsACPxycfCTW', symObjAddr: 0xEA9C, symBinAddr: 0x10001674C, symSize: 0x40 }
@@ -468,7 +468,7 @@ relocations:
   - { offset: 0x163FCD, size: 0x8, addend: 0x0, symName: '_$sSo19AVCaptureDeviceTypeaSYSCSY8rawValue03RawE0QzvgTW', symObjAddr: 0xF314, symBinAddr: 0x100016E38, symSize: 0x30 }
   - { offset: 0x163FE1, size: 0x8, addend: 0x0, symName: '_$sSo19AVCaptureDeviceTypea8rawValueSSvg', symObjAddr: 0xF344, symBinAddr: 0x100016E68, symSize: 0x5C }
   - { offset: 0x1642D4, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX16DiagnosticLoggerC6shared_WZ', symObjAddr: 0x0, symBinAddr: 0x100017850, symSize: 0x30 }
-  - { offset: 0x1642F8, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX16DiagnosticLoggerC6sharedACvpZ', symObjAddr: 0x1BED0, symBinAddr: 0x10005AA00, symSize: 0x0 }
+  - { offset: 0x1642F8, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX16DiagnosticLoggerC6sharedACvpZ', symObjAddr: 0x1BED0, symBinAddr: 0x10005A9E0, symSize: 0x0 }
   - { offset: 0x1646E1, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX16DiagnosticLoggerC6shared_WZ', symObjAddr: 0x0, symBinAddr: 0x100017850, symSize: 0x30 }
   - { offset: 0x1646FB, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX16DiagnosticLoggerCMa', symObjAddr: 0x30, symBinAddr: 0x100017880, symSize: 0x60 }
   - { offset: 0x16470F, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX16DiagnosticLoggerC6sharedACvau', symObjAddr: 0xC8, symBinAddr: 0x100017918, symSize: 0x50 }
@@ -633,7 +633,7 @@ relocations:
   - { offset: 0x16674A, size: 0x8, addend: 0x0, symName: '_$sSo26NSISO8601DateFormatOptionsVSYSCSY8rawValue03RawF0QzvgTW', symObjAddr: 0xA9C0, symBinAddr: 0x100021CB4, symSize: 0x2C }
   - { offset: 0x16675E, size: 0x8, addend: 0x0, symName: '_$sSo26NSISO8601DateFormatOptionsV8rawValueSuvg', symObjAddr: 0xAC50, symBinAddr: 0x100021EE0, symSize: 0x4 }
   - { offset: 0x1669B2, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX25DiagnosticsMenuControllerC6shared_WZ', symObjAddr: 0x0, symBinAddr: 0x1000222B4, symSize: 0x30 }
-  - { offset: 0x1669D6, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX25DiagnosticsMenuControllerC6sharedACvpZ', symObjAddr: 0x12400, symBinAddr: 0x10005AA08, symSize: 0x0 }
+  - { offset: 0x1669D6, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX25DiagnosticsMenuControllerC6sharedACvpZ', symObjAddr: 0x12400, symBinAddr: 0x10005A9E8, symSize: 0x0 }
   - { offset: 0x166BF1, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX25DiagnosticsMenuControllerC6shared_WZ', symObjAddr: 0x0, symBinAddr: 0x1000222B4, symSize: 0x30 }
   - { offset: 0x166C0B, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX25DiagnosticsMenuControllerCMa', symObjAddr: 0x30, symBinAddr: 0x1000222E4, symSize: 0x24 }
   - { offset: 0x166C1F, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX25DiagnosticsMenuControllerC6sharedACvau', symObjAddr: 0x8C, symBinAddr: 0x100022340, symSize: 0x50 }
@@ -914,67 +914,66 @@ relocations:
   - { offset: 0x16ACB4, size: 0x8, addend: 0x0, symName: '_$sSo18MTLResourceOptionsVSYSCSY8rawValue03RawD0QzvgTW', symObjAddr: 0x4EAC, symBinAddr: 0x100036E98, symSize: 0x2C }
   - { offset: 0x16ACC8, size: 0x8, addend: 0x0, symName: '_$sSo18MTLResourceOptionsV8rawValueSuvg', symObjAddr: 0x4ED8, symBinAddr: 0x100036EC4, symSize: 0x4 }
   - { offset: 0x16AEA8, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6shared_WZ', symObjAddr: 0x0, symBinAddr: 0x1000383D4, symSize: 0x30 }
-  - { offset: 0x16AECC, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6sharedACvpZ', symObjAddr: 0x11690, symBinAddr: 0x10005AA10, symSize: 0x0 }
-  - { offset: 0x16B00A, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6shared_WZ', symObjAddr: 0x0, symBinAddr: 0x1000383D4, symSize: 0x30 }
-  - { offset: 0x16B024, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCMa', symObjAddr: 0x30, symBinAddr: 0x100038404, symSize: 0x24 }
-  - { offset: 0x16B038, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6sharedACvau', symObjAddr: 0x8C, symBinAddr: 0x100038460, symSize: 0x50 }
-  - { offset: 0x16B056, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC9repoOwner33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvpfi', symObjAddr: 0x108, symBinAddr: 0x1000384DC, symSize: 0x2C }
-  - { offset: 0x16B06E, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC8repoName33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvpfi', symObjAddr: 0x168, symBinAddr: 0x10003853C, symSize: 0x2C }
-  - { offset: 0x16B086, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14currentVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvpfi', symObjAddr: 0x1C8, symBinAddr: 0x10003859C, symSize: 0x2C }
-  - { offset: 0x16B09E, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFfA_', symObjAddr: 0x2C8, symBinAddr: 0x10003869C, symSize: 0xC }
-  - { offset: 0x16B0B8, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_TA', symObjAddr: 0x254C, symBinAddr: 0x10003A768, symSize: 0x10 }
-  - { offset: 0x16B0CC, size: 0x8, addend: 0x0, symName: '_$s10Foundation4DataVSgSo13NSURLResponseCSgs5Error_pSgIeghggg_So6NSDataCSgAGSo7NSErrorCSgIeyBhyyy_TR', symObjAddr: 0x2788, symBinAddr: 0x10003A8AC, symSize: 0x164 }
-  - { offset: 0x16B0E4, size: 0x8, addend: 0x0, symName: _block_copy_helper, symObjAddr: 0x28EC, symBinAddr: 0x10003AA10, symSize: 0x44 }
-  - { offset: 0x16B0F8, size: 0x8, addend: 0x0, symName: _block_destroy_helper, symObjAddr: 0x2930, symBinAddr: 0x10003AA54, symSize: 0x18 }
-  - { offset: 0x16B10C, size: 0x8, addend: 0x0, symName: '_$sSaySsGSayxGSTsWl', symObjAddr: 0x3074, symBinAddr: 0x10003B0E0, symSize: 0x74 }
-  - { offset: 0x16B120, size: 0x8, addend: 0x0, symName: '_$sSaySsGWOh', symObjAddr: 0x3158, symBinAddr: 0x10003B154, symSize: 0x28 }
-  - { offset: 0x16B134, size: 0x8, addend: 0x0, symName: '_$sSnySiGSnyxGSlsSxRzSZ6StrideRpzrlWl', symObjAddr: 0x3284, symBinAddr: 0x10003B280, symSize: 0x8C }
-  - { offset: 0x16B148, size: 0x8, addend: 0x0, symName: '_$sSsWOh', symObjAddr: 0x412C, symBinAddr: 0x10003C038, symSize: 0x28 }
-  - { offset: 0x16B15C, size: 0x8, addend: 0x0, symName: '_$sSo15NSModalResponseas20_SwiftNewtypeWrapperSCSYWb', symObjAddr: 0x4CA0, symBinAddr: 0x10003C374, symSize: 0x14 }
-  - { offset: 0x16B170, size: 0x8, addend: 0x0, symName: '_$sSo15NSModalResponseas20_SwiftNewtypeWrapperSCs35_HasCustomAnyHashableRepresentationPWb', symObjAddr: 0x4CB4, symBinAddr: 0x10003C388, symSize: 0x14 }
-  - { offset: 0x16B184, size: 0x8, addend: 0x0, symName: '_$sSo15NSModalResponseaSHSCSQWb', symObjAddr: 0x4D34, symBinAddr: 0x10003C39C, symSize: 0x14 }
-  - { offset: 0x16B198, size: 0x8, addend: 0x0, symName: '_$sS2is17FixedWidthIntegersWl', symObjAddr: 0x4F48, symBinAddr: 0x10003C3B0, symSize: 0x64 }
-  - { offset: 0x16B1AC, size: 0x8, addend: 0x0, symName: '_$s10Foundation4DataVSgWOe', symObjAddr: 0x5010, symBinAddr: 0x10003C414, symSize: 0x44 }
-  - { offset: 0x16B1C0, size: 0x8, addend: 0x0, symName: '_$s10Foundation4DataVSgWOy', symObjAddr: 0x50CC, symBinAddr: 0x10003C458, symSize: 0x44 }
-  - { offset: 0x16B1D4, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_yyScMYccfU0_TA', symObjAddr: 0x53E4, symBinAddr: 0x10003C49C, symSize: 0x8 }
-  - { offset: 0x16B1E8, size: 0x8, addend: 0x0, symName: _block_copy_helper.4, symObjAddr: 0x53EC, symBinAddr: 0x10003C4A4, symSize: 0x44 }
-  - { offset: 0x16B1FC, size: 0x8, addend: 0x0, symName: _block_destroy_helper.5, symObjAddr: 0x5430, symBinAddr: 0x10003C4E8, symSize: 0x18 }
-  - { offset: 0x16B210, size: 0x8, addend: 0x0, symName: '_$sSaySDySSypGGSayxGSlsWl', symObjAddr: 0x5448, symBinAddr: 0x10003C500, symSize: 0x74 }
-  - { offset: 0x16B224, size: 0x8, addend: 0x0, symName: '_$ss16IndexingIteratorVySaySDySSypGGGWOh', symObjAddr: 0x54BC, symBinAddr: 0x10003C574, symSize: 0x28 }
-  - { offset: 0x16B238, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_yyScMYccfU_Tf2nnnin_nTA', symObjAddr: 0x5540, symBinAddr: 0x10003C5F8, symSize: 0x48 }
-  - { offset: 0x16B24C, size: 0x8, addend: 0x0, symName: _block_copy_helper.10, symObjAddr: 0x5588, symBinAddr: 0x10003C640, symSize: 0x44 }
-  - { offset: 0x16B260, size: 0x8, addend: 0x0, symName: _block_destroy_helper.11, symObjAddr: 0x55CC, symBinAddr: 0x10003C684, symSize: 0x18 }
-  - { offset: 0x16B274, size: 0x8, addend: 0x0, symName: '_$sSa22_allocateUninitializedySayxG_SpyxGtSiFZSo22NSStringCompareOptionsV_Tt0gq5', symObjAddr: 0x5618, symBinAddr: 0x10003C69C, symSize: 0xD4 }
-  - { offset: 0x16B2A1, size: 0x8, addend: 0x0, symName: '_$sSo22NSStringCompareOptionsVMa', symObjAddr: 0x58BC, symBinAddr: 0x10003C770, symSize: 0x94 }
-  - { offset: 0x16B2B5, size: 0x8, addend: 0x0, symName: '_$sSo20NSJSONReadingOptionsVs9OptionSetSCSYWb', symObjAddr: 0x5950, symBinAddr: 0x10003C804, symSize: 0x14 }
-  - { offset: 0x16B2C9, size: 0x8, addend: 0x0, symName: '_$sSo20NSJSONReadingOptionsVs9OptionSetSCs0D7AlgebraPWb', symObjAddr: 0x59D0, symBinAddr: 0x10003C818, symSize: 0x14 }
-  - { offset: 0x16B2DD, size: 0x8, addend: 0x0, symName: '_$sSo20NSJSONReadingOptionsVs10SetAlgebraSCSQWb', symObjAddr: 0x59E4, symBinAddr: 0x10003C82C, symSize: 0x14 }
-  - { offset: 0x16B2F1, size: 0x8, addend: 0x0, symName: '_$sSo20NSJSONReadingOptionsVs10SetAlgebraSCs25ExpressibleByArrayLiteralPWb', symObjAddr: 0x5A64, symBinAddr: 0x10003C840, symSize: 0x14 }
-  - { offset: 0x16B315, size: 0x8, addend: 0x0, symName: '_$ss17FixedWidthIntegerPsE_5radixxSgqd___SitcSyRd__lufcfA0_', symObjAddr: 0x3180, symBinAddr: 0x10003B17C, symSize: 0x1C }
-  - { offset: 0x16B43F, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCACyc33_A7F3CE56B8EFF6A061464C15BF6783D3LlfC', symObjAddr: 0x54, symBinAddr: 0x100038428, symSize: 0x38 }
-  - { offset: 0x16B453, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6sharedACvgZ', symObjAddr: 0xDC, symBinAddr: 0x1000384B0, symSize: 0x2C }
-  - { offset: 0x16B467, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC9repoOwner33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvg', symObjAddr: 0x134, symBinAddr: 0x100038508, symSize: 0x34 }
-  - { offset: 0x16B47B, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC8repoName33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvg', symObjAddr: 0x194, symBinAddr: 0x100038568, symSize: 0x34 }
-  - { offset: 0x16B48F, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14currentVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvg', symObjAddr: 0x1F4, symBinAddr: 0x1000385C8, symSize: 0x34 }
-  - { offset: 0x16B4A3, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCACyc33_A7F3CE56B8EFF6A061464C15BF6783D3Llfc', symObjAddr: 0x228, symBinAddr: 0x1000385FC, symSize: 0xA0 }
-  - { offset: 0x16B4CE, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tF', symObjAddr: 0x2D4, symBinAddr: 0x1000386A8, symSize: 0x8B0 }
-  - { offset: 0x16B545, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_', symObjAddr: 0xD8C, symBinAddr: 0x100038FA8, symSize: 0x1784 }
-  - { offset: 0x16B70A, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_yyScMYccfU_Tf2nnnin_n', symObjAddr: 0x2594, symBinAddr: 0x10003A7B0, symSize: 0xC8 }
-  - { offset: 0x16B773, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_yyScMYccfU0_', symObjAddr: 0x2754, symBinAddr: 0x10003A878, symSize: 0x34 }
-  - { offset: 0x16B7CC, size: 0x8, addend: 0x0, symName: '_$sSy10FoundationE20replacingOccurrences2of4with7options5rangeSSqd___qd_0_So22NSStringCompareOptionsVSnySS5IndexVGSgtSyRd__SyRd_0_r0_lFfA1_', symObjAddr: 0x255C, symBinAddr: 0x10003A778, symSize: 0x38 }
-  - { offset: 0x16B84D, size: 0x8, addend: 0x0, symName: '_$s10Foundation10URLRequestV3url11cachePolicy15timeoutIntervalAcA3URLV_So017NSURLRequestCacheE0VSdtcfcfA0_', symObjAddr: 0xD3C, symBinAddr: 0x100038F58, symSize: 0x8 }
-  - { offset: 0x16B861, size: 0x8, addend: 0x0, symName: '_$s10Foundation10URLRequestV3url11cachePolicy15timeoutIntervalAcA3URLV_So017NSURLRequestCacheE0VSdtcfcfA1_', symObjAddr: 0xD44, symBinAddr: 0x100038F60, symSize: 0xC }
-  - { offset: 0x16B875, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14isNewerVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LL_4thanSbSS_SStF', symObjAddr: 0x2948, symBinAddr: 0x10003AA6C, symSize: 0x58C }
-  - { offset: 0x16B969, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14isNewerVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LL_4thanSbSS_SStFSiSgSsXEfU_', symObjAddr: 0x2F8C, symBinAddr: 0x10003AFF8, symSize: 0xE8 }
-  - { offset: 0x16B999, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14isNewerVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LL_4thanSbSS_SStFSiSgSsXEfU0_', symObjAddr: 0x319C, symBinAddr: 0x10003B198, symSize: 0xE8 }
-  - { offset: 0x16B9CA, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC04showD5Alert33_A7F3CE56B8EFF6A061464C15BF6783D3LL13latestVersion10releaseUrl08downloadT00S5NotesySS_S2SSgSStF', symObjAddr: 0x3374, symBinAddr: 0x10003B30C, symSize: 0xD2C }
-  - { offset: 0x16BB8E, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC06showNoD5Alert33_A7F3CE56B8EFF6A061464C15BF6783D3LLyyF', symObjAddr: 0x42C0, symBinAddr: 0x10003C060, symSize: 0x290 }
-  - { offset: 0x16BC00, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCfd', symObjAddr: 0x4550, symBinAddr: 0x10003C2F0, symSize: 0x48 }
-  - { offset: 0x16BC24, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCfD', symObjAddr: 0x4598, symBinAddr: 0x10003C338, symSize: 0x3C }
-  - { offset: 0x16BE29, size: 0x8, addend: 0x0, symName: _NSAlertFirstButtonReturn, symObjAddr: 0x5BC0, symBinAddr: 0x10003FFB0, symSize: 0x0 }
-  - { offset: 0x16BE3F, size: 0x8, addend: 0x0, symName: _NSAlertSecondButtonReturn, symObjAddr: 0x5BC8, symBinAddr: 0x10003FFB8, symSize: 0x0 }
-  - { offset: 0x16BE7E, size: 0x8, addend: 0x0, symName: _WesWorldFX_main, symObjAddr: 0x0, symBinAddr: 0x10003C854, symSize: 0xD4 }
-  - { offset: 0x16BEA2, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX3appSo13NSApplicationCvp', symObjAddr: 0x2050, symBinAddr: 0x10005AA18, symSize: 0x0 }
-  - { offset: 0x16BEBC, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX8delegateAA11AppDelegateCvp', symObjAddr: 0x2058, symBinAddr: 0x10005AA20, symSize: 0x0 }
-  - { offset: 0x16BECA, size: 0x8, addend: 0x0, symName: _WesWorldFX_main, symObjAddr: 0x0, symBinAddr: 0x10003C854, symSize: 0xD4 }
+  - { offset: 0x16AECC, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6sharedACvpZ', symObjAddr: 0x11840, symBinAddr: 0x10005A9F0, symSize: 0x0 }
+  - { offset: 0x16B00C, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6shared_WZ', symObjAddr: 0x0, symBinAddr: 0x1000383D4, symSize: 0x30 }
+  - { offset: 0x16B026, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCMa', symObjAddr: 0x30, symBinAddr: 0x100038404, symSize: 0x24 }
+  - { offset: 0x16B03A, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6sharedACvau', symObjAddr: 0x8C, symBinAddr: 0x100038460, symSize: 0x50 }
+  - { offset: 0x16B058, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC9repoOwner33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvpfi', symObjAddr: 0x108, symBinAddr: 0x1000384DC, symSize: 0x2C }
+  - { offset: 0x16B070, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC8repoName33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvpfi', symObjAddr: 0x168, symBinAddr: 0x10003853C, symSize: 0x2C }
+  - { offset: 0x16B088, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFfA_', symObjAddr: 0x5BC, symBinAddr: 0x1000388A8, symSize: 0xC }
+  - { offset: 0x16B0A2, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_TA', symObjAddr: 0x27FC, symBinAddr: 0x10003A958, symSize: 0x10 }
+  - { offset: 0x16B0B6, size: 0x8, addend: 0x0, symName: '_$s10Foundation4DataVSgSo13NSURLResponseCSgs5Error_pSgIeghggg_So6NSDataCSgAGSo7NSErrorCSgIeyBhyyy_TR', symObjAddr: 0x2A38, symBinAddr: 0x10003AA9C, symSize: 0x164 }
+  - { offset: 0x16B0CE, size: 0x8, addend: 0x0, symName: _block_copy_helper, symObjAddr: 0x2B9C, symBinAddr: 0x10003AC00, symSize: 0x44 }
+  - { offset: 0x16B0E2, size: 0x8, addend: 0x0, symName: _block_destroy_helper, symObjAddr: 0x2BE0, symBinAddr: 0x10003AC44, symSize: 0x18 }
+  - { offset: 0x16B0F6, size: 0x8, addend: 0x0, symName: '_$sSaySsGSayxGSTsWl', symObjAddr: 0x3324, symBinAddr: 0x10003B2D0, symSize: 0x74 }
+  - { offset: 0x16B10A, size: 0x8, addend: 0x0, symName: '_$sSaySsGWOh', symObjAddr: 0x3408, symBinAddr: 0x10003B344, symSize: 0x28 }
+  - { offset: 0x16B11E, size: 0x8, addend: 0x0, symName: '_$sSnySiGSnyxGSlsSxRzSZ6StrideRpzrlWl', symObjAddr: 0x3534, symBinAddr: 0x10003B470, symSize: 0x8C }
+  - { offset: 0x16B132, size: 0x8, addend: 0x0, symName: '_$sSsWOh', symObjAddr: 0x43CC, symBinAddr: 0x10003C218, symSize: 0x28 }
+  - { offset: 0x16B146, size: 0x8, addend: 0x0, symName: '_$sSo15NSModalResponseas20_SwiftNewtypeWrapperSCSYWb', symObjAddr: 0x4F20, symBinAddr: 0x10003C534, symSize: 0x14 }
+  - { offset: 0x16B15A, size: 0x8, addend: 0x0, symName: '_$sSo15NSModalResponseas20_SwiftNewtypeWrapperSCs35_HasCustomAnyHashableRepresentationPWb', symObjAddr: 0x4F34, symBinAddr: 0x10003C548, symSize: 0x14 }
+  - { offset: 0x16B16E, size: 0x8, addend: 0x0, symName: '_$sSo15NSModalResponseaSHSCSQWb', symObjAddr: 0x4FB4, symBinAddr: 0x10003C55C, symSize: 0x14 }
+  - { offset: 0x16B182, size: 0x8, addend: 0x0, symName: '_$sS2is17FixedWidthIntegersWl', symObjAddr: 0x51C8, symBinAddr: 0x10003C570, symSize: 0x64 }
+  - { offset: 0x16B196, size: 0x8, addend: 0x0, symName: '_$s10Foundation4DataVSgWOe', symObjAddr: 0x5290, symBinAddr: 0x10003C5D4, symSize: 0x44 }
+  - { offset: 0x16B1AA, size: 0x8, addend: 0x0, symName: '_$s10Foundation4DataVSgWOy', symObjAddr: 0x534C, symBinAddr: 0x10003C618, symSize: 0x44 }
+  - { offset: 0x16B1BE, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_yyScMYccfU0_TA', symObjAddr: 0x55CC, symBinAddr: 0x10003C65C, symSize: 0x8 }
+  - { offset: 0x16B1D2, size: 0x8, addend: 0x0, symName: _block_copy_helper.4, symObjAddr: 0x55D4, symBinAddr: 0x10003C664, symSize: 0x44 }
+  - { offset: 0x16B1E6, size: 0x8, addend: 0x0, symName: _block_destroy_helper.5, symObjAddr: 0x5618, symBinAddr: 0x10003C6A8, symSize: 0x18 }
+  - { offset: 0x16B1FA, size: 0x8, addend: 0x0, symName: '_$sSaySDySSypGGSayxGSlsWl', symObjAddr: 0x5630, symBinAddr: 0x10003C6C0, symSize: 0x74 }
+  - { offset: 0x16B20E, size: 0x8, addend: 0x0, symName: '_$ss16IndexingIteratorVySaySDySSypGGGWOh', symObjAddr: 0x56A4, symBinAddr: 0x10003C734, symSize: 0x28 }
+  - { offset: 0x16B222, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_yyScMYccfU_Tf2nnnin_nTA', symObjAddr: 0x5728, symBinAddr: 0x10003C7B8, symSize: 0x48 }
+  - { offset: 0x16B236, size: 0x8, addend: 0x0, symName: _block_copy_helper.10, symObjAddr: 0x5770, symBinAddr: 0x10003C800, symSize: 0x44 }
+  - { offset: 0x16B24A, size: 0x8, addend: 0x0, symName: _block_destroy_helper.11, symObjAddr: 0x57B4, symBinAddr: 0x10003C844, symSize: 0x18 }
+  - { offset: 0x16B25E, size: 0x8, addend: 0x0, symName: '_$sSa22_allocateUninitializedySayxG_SpyxGtSiFZSo22NSStringCompareOptionsV_Tt0gq5', symObjAddr: 0x57D8, symBinAddr: 0x10003C85C, symSize: 0xD4 }
+  - { offset: 0x16B28B, size: 0x8, addend: 0x0, symName: '_$sSo22NSStringCompareOptionsVMa', symObjAddr: 0x5A7C, symBinAddr: 0x10003C930, symSize: 0x94 }
+  - { offset: 0x16B29F, size: 0x8, addend: 0x0, symName: '_$sSo20NSJSONReadingOptionsVs9OptionSetSCSYWb', symObjAddr: 0x5B10, symBinAddr: 0x10003C9C4, symSize: 0x14 }
+  - { offset: 0x16B2B3, size: 0x8, addend: 0x0, symName: '_$sSo20NSJSONReadingOptionsVs9OptionSetSCs0D7AlgebraPWb', symObjAddr: 0x5B90, symBinAddr: 0x10003C9D8, symSize: 0x14 }
+  - { offset: 0x16B2C7, size: 0x8, addend: 0x0, symName: '_$sSo20NSJSONReadingOptionsVs10SetAlgebraSCSQWb', symObjAddr: 0x5BA4, symBinAddr: 0x10003C9EC, symSize: 0x14 }
+  - { offset: 0x16B2DB, size: 0x8, addend: 0x0, symName: '_$sSo20NSJSONReadingOptionsVs10SetAlgebraSCs25ExpressibleByArrayLiteralPWb', symObjAddr: 0x5C24, symBinAddr: 0x10003CA00, symSize: 0x14 }
+  - { offset: 0x16B2FF, size: 0x8, addend: 0x0, symName: '_$ss17FixedWidthIntegerPsE_5radixxSgqd___SitcSyRd__lufcfA0_', symObjAddr: 0x3430, symBinAddr: 0x10003B36C, symSize: 0x1C }
+  - { offset: 0x16B429, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCACyc33_A7F3CE56B8EFF6A061464C15BF6783D3LlfC', symObjAddr: 0x54, symBinAddr: 0x100038428, symSize: 0x38 }
+  - { offset: 0x16B43D, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC6sharedACvgZ', symObjAddr: 0xDC, symBinAddr: 0x1000384B0, symSize: 0x2C }
+  - { offset: 0x16B451, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC9repoOwner33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvg', symObjAddr: 0x134, symBinAddr: 0x100038508, symSize: 0x34 }
+  - { offset: 0x16B465, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC8repoName33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvg', symObjAddr: 0x194, symBinAddr: 0x100038568, symSize: 0x34 }
+  - { offset: 0x16B479, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14currentVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LLSSvg', symObjAddr: 0x1C8, symBinAddr: 0x10003859C, symSize: 0x290 }
+  - { offset: 0x16B49D, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCACyc33_A7F3CE56B8EFF6A061464C15BF6783D3Llfc', symObjAddr: 0x458, symBinAddr: 0x10003882C, symSize: 0x7C }
+  - { offset: 0x16B4C8, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tF', symObjAddr: 0x5C8, symBinAddr: 0x1000388B4, symSize: 0x8B0 }
+  - { offset: 0x16B53F, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_', symObjAddr: 0x1058, symBinAddr: 0x1000391B4, symSize: 0x1768 }
+  - { offset: 0x16B704, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_yyScMYccfU_Tf2nnnin_n', symObjAddr: 0x2844, symBinAddr: 0x10003A9A0, symSize: 0xC8 }
+  - { offset: 0x16B76D, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC15checkForUpdates06showNoD5AlertySb_tFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_yyScMYccfU0_', symObjAddr: 0x2A04, symBinAddr: 0x10003AA68, symSize: 0x34 }
+  - { offset: 0x16B7C6, size: 0x8, addend: 0x0, symName: '_$sSy10FoundationE20replacingOccurrences2of4with7options5rangeSSqd___qd_0_So22NSStringCompareOptionsVSnySS5IndexVGSgtSyRd__SyRd_0_r0_lFfA1_', symObjAddr: 0x280C, symBinAddr: 0x10003A968, symSize: 0x38 }
+  - { offset: 0x16B847, size: 0x8, addend: 0x0, symName: '_$s10Foundation10URLRequestV3url11cachePolicy15timeoutIntervalAcA3URLV_So017NSURLRequestCacheE0VSdtcfcfA0_', symObjAddr: 0x1008, symBinAddr: 0x100039164, symSize: 0x8 }
+  - { offset: 0x16B85B, size: 0x8, addend: 0x0, symName: '_$s10Foundation10URLRequestV3url11cachePolicy15timeoutIntervalAcA3URLV_So017NSURLRequestCacheE0VSdtcfcfA1_', symObjAddr: 0x1010, symBinAddr: 0x10003916C, symSize: 0xC }
+  - { offset: 0x16B86F, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14isNewerVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LL_4thanSbSS_SStF', symObjAddr: 0x2BF8, symBinAddr: 0x10003AC5C, symSize: 0x58C }
+  - { offset: 0x16B963, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14isNewerVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LL_4thanSbSS_SStFSiSgSsXEfU_', symObjAddr: 0x323C, symBinAddr: 0x10003B1E8, symSize: 0xE8 }
+  - { offset: 0x16B993, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC14isNewerVersion33_A7F3CE56B8EFF6A061464C15BF6783D3LL_4thanSbSS_SStFSiSgSsXEfU0_', symObjAddr: 0x344C, symBinAddr: 0x10003B388, symSize: 0xE8 }
+  - { offset: 0x16B9C4, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC04showD5Alert33_A7F3CE56B8EFF6A061464C15BF6783D3LL13latestVersion10releaseUrl08downloadT00S5NotesySS_S2SSgSStF', symObjAddr: 0x3624, symBinAddr: 0x10003B4FC, symSize: 0xD1C }
+  - { offset: 0x16BB88, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerC06showNoD5Alert33_A7F3CE56B8EFF6A061464C15BF6783D3LLyyF', symObjAddr: 0x4560, symBinAddr: 0x10003C240, symSize: 0x27C }
+  - { offset: 0x16BBFA, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCfd', symObjAddr: 0x47DC, symBinAddr: 0x10003C4BC, symSize: 0x3C }
+  - { offset: 0x16BC1E, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX13UpdateCheckerCfD', symObjAddr: 0x4818, symBinAddr: 0x10003C4F8, symSize: 0x3C }
+  - { offset: 0x16BE23, size: 0x8, addend: 0x0, symName: _NSAlertFirstButtonReturn, symObjAddr: 0x5D80, symBinAddr: 0x100040170, symSize: 0x0 }
+  - { offset: 0x16BE39, size: 0x8, addend: 0x0, symName: _NSAlertSecondButtonReturn, symObjAddr: 0x5D88, symBinAddr: 0x100040178, symSize: 0x0 }
+  - { offset: 0x16BE78, size: 0x8, addend: 0x0, symName: _WesWorldFX_main, symObjAddr: 0x0, symBinAddr: 0x10003CA14, symSize: 0xD4 }
+  - { offset: 0x16BE9C, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX3appSo13NSApplicationCvp', symObjAddr: 0x2050, symBinAddr: 0x10005A9F8, symSize: 0x0 }
+  - { offset: 0x16BEB6, size: 0x8, addend: 0x0, symName: '_$s10WesWorldFX8delegateAA11AppDelegateCvp', symObjAddr: 0x2058, symBinAddr: 0x10005AA00, symSize: 0x0 }
+  - { offset: 0x16BEC4, size: 0x8, addend: 0x0, symName: _WesWorldFX_main, symObjAddr: 0x0, symBinAddr: 0x10003CA14, symSize: 0xD4 }
 ...
