@@ -54,11 +54,12 @@ class CameraViewController: NSViewController {
             setupUI()
             print("UI setup complete")
             
-            setupCamera()
-            print("Camera setup complete")
-            
+            // CRITICAL: Setup filter processor BEFORE camera to avoid race condition
             setupFilterProcessor()
             print("Filter processor setup complete")
+            
+            setupCamera()
+            print("Camera setup complete")
         } catch {
             print("Error during setup: \(error)")
         }
@@ -104,7 +105,7 @@ class CameraViewController: NSViewController {
         view.addSubview(controlsView)
         
         // Version Label
-        let versionLabel = NSTextField(labelWithString: "WesWorld FX v2.1.2 (Build 2126)")
+        let versionLabel = NSTextField(labelWithString: "WesWorld FX v2.1.2 (Build 2128)")
         versionLabel.frame = NSRect(x: 10, y: 165, width: 280, height: 15)
         versionLabel.textColor = .white.withAlphaComponent(0.6)
         versionLabel.font = .systemFont(ofSize: 11, weight: .regular)
@@ -140,13 +141,20 @@ class CameraViewController: NSViewController {
         
         // Filter Selector
         filterSelector = NSPopUpButton(frame: NSRect(x: 10, y: 30, width: 280, height: 25))
-        filterSelector.addItems(withTitles: FilterType.allCases.map { $0.displayName })
         filterSelector.target = self
         filterSelector.action = #selector(filterChanged)
+        updateFilterList()
         controlsView.addSubview(filterSelector)
         
+        // Select Bulge Eyes by default (index 1, after None)
+        let allFilters = FilterType.allAvailableFilters()
+        if allFilters.count > 1 {
+            filterSelector.selectItem(at: 1) // Bulge Eyes
+            updateFilterLabel(allFilters[1].displayName)
+        }
+        
         // Instructions
-        let instructions = NSTextField(labelWithString: "TAB=Menu SPACE=Random ↑↓=Browse")
+        let instructions = NSTextField(labelWithString: "TAB=Menu SPACE=Random ↑↓=Browse B=Editor N=Manage")
         instructions.frame = NSRect(x: 10, y: 5, width: 280, height: 20)
         instructions.textColor = .white.withAlphaComponent(0.7)
         instructions.font = .systemFont(ofSize: 11)
@@ -155,43 +163,116 @@ class CameraViewController: NSViewController {
     
     private func setupCamera() {
         captureSession = AVCaptureSession()
-        captureSession.sessionPreset = .hd1920x1080 // 1080p for best quality with OBS
         
-        guard let camera = AVCaptureDevice.default(for: .video) else {
-            showError("No camera found")
+        // Try different presets for compatibility
+        let presets: [AVCaptureSession.Preset] = [.hd1920x1080, .hd1280x720, .high]
+        var presetSelected = false
+        
+        for preset in presets {
+            if captureSession.canSetSessionPreset(preset) {
+                captureSession.sessionPreset = preset
+                print("📷 Camera preset set to: \(preset.rawValue)")
+                presetSelected = true
+                break
+            }
+        }
+        
+        if !presetSelected {
+            print("⚠️  No camera preset could be set, using default")
+        }
+        
+        // Get all available cameras and **strongly prefer** built-in
+        let allCameras = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera, .externalUnknown],
+            mediaType: .video,
+            position: .unspecified
+        ).devices
+        
+        print("📷 Found \(allCameras.count) camera(s):")
+        for (index, cam) in allCameras.enumerated() {
+            print("   [\(index)] \(cam.localizedName) - \(cam.deviceType.rawValue)")
+        }
+        
+        // STRONGLY prefer built-in camera - don't fall back easily
+        let camera: AVCaptureDevice?
+        if let builtIn = allCameras.first(where: { $0.deviceType == .builtInWideAngleCamera }) {
+            camera = builtIn
+            print("📷 🎯 Using BUILT-IN camera: \(builtIn.localizedName)")
+        } else if let external = allCameras.first {
+            camera = external
+            print("⚠️  No built-in camera found, using: \(external.localizedName)")
+        } else {
+            camera = nil
+            print("❌ NO CAMERAS FOUND!")
+        }
+        
+        guard let camera = camera else {
+            showError("No camera found. Please check System Preferences > Security & Privacy > Camera")
             return
         }
         
+        print("📷 Selected camera: \(camera.localizedName)")
         currentCamera = camera
         
         do {
             let input = try AVCaptureDeviceInput(device: camera)
             if captureSession.canAddInput(input) {
                 captureSession.addInput(input)
+                print("✓ Camera input added")
+            } else {
+                print("❌ Cannot add camera input")
+                return
             }
             
             videoOutput = AVCaptureVideoDataOutput()
             videoOutput.setSampleBufferDelegate(self, queue: sessionQueue)
             videoOutput.alwaysDiscardsLateVideoFrames = true
             
-            // Use BGRA format for best Metal compatibility
+            // Try different pixel formats for compatibility
+            let preferredFormats: [NSNumber] = [
+                NSNumber(value: kCVPixelFormatType_32BGRA),
+                NSNumber(value: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange),
+                NSNumber(value: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange)
+            ]
+            
             videoOutput.videoSettings = [
-                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
+                kCVPixelBufferPixelFormatTypeKey as String: preferredFormats
             ]
             
             if captureSession.canAddOutput(videoOutput) {
                 captureSession.addOutput(videoOutput)
+                print("✓ Video output added")
+                
+                // Configure connection for proper orientation
+                if let connection = videoOutput.connection(with: .video) {
+                    if connection.isVideoOrientationSupported {
+                        connection.videoOrientation = .portrait
+                        print("✓ Video orientation set to portrait")
+                    }
+                    if connection.isVideoMirroringSupported {
+                        connection.isVideoMirrored = false
+                        print("✓ Video mirroring disabled")
+                    }
+                }
+            } else {
+                print("❌ Cannot add video output")
+                return
             }
             
-            // Start session
+            // Start session on background queue
             sessionQueue.async { [weak self] in
-                print("Starting camera capture session...")
-                self?.captureSession.startRunning()
-                print("Camera capture session started: \(self?.captureSession.isRunning ?? false)")
+                guard let self = self else { return }
+                print("📹 Starting camera capture session...")
+                self.captureSession.startRunning()
+                let isRunning = self.captureSession.isRunning
+                print("📹 Capture session running: \(isRunning)")
+                if !isRunning {
+                    print("❌ Failed to start capture session!")
+                }
             }
             
         } catch {
-            print("Camera setup error: \(error)")
+            print("❌ Camera setup error: \(error)")
             showError("Camera setup failed: \(error.localizedDescription)")
         }
     }
@@ -205,10 +286,72 @@ class CameraViewController: NSViewController {
     
     @objc private func filterChanged() {
         let selectedIndex = filterSelector.indexOfSelectedItem
-        if selectedIndex >= 0 && selectedIndex < FilterType.allCases.count {
-            let filterType = FilterType.allCases[selectedIndex]
+        let allFilters = FilterType.allAvailableFilters()
+        if selectedIndex >= 0 && selectedIndex < allFilters.count {
+            let filterType = allFilters[selectedIndex]
             filterProcessor.currentFilter = filterType
             updateFilterLabel(filterType.displayName)
+        }
+    }
+    
+    func updateFilterList() {
+        filterSelector.removeAllItems()
+        let allFilters = FilterType.allAvailableFilters()
+        filterSelector.addItems(withTitles: allFilters.map { $0.displayName })
+    }
+    
+    @objc func openBulgeEditor() {
+        let editorVC = BulgeEditorViewController()
+        editorVC.onSave = { [weak self] filter in
+            BulgeFilterManager.shared.addFilter(filter)
+            self?.updateFilterList()
+            
+            // Select the newly created filter
+            let allFilters = FilterType.allAvailableFilters()
+            if let index = allFilters.firstIndex(where: { 
+                if case .custom(let id) = $0 {
+                    return id == filter.id
+                }
+                return false
+            }) {
+                self?.filterSelector.selectItem(at: index)
+                self?.filterChanged()
+            }
+        }
+        
+        presentAsSheet(editorVC)
+    }
+    
+    @objc func manageBulgeFilters() {
+        let alert = NSAlert()
+        alert.messageText = "Manage Custom Bulge Filters"
+        alert.informativeText = "You have \(BulgeFilterManager.shared.getAllFilters().count) custom bulge filters saved."
+        alert.addButton(withTitle: "Export All")
+        alert.addButton(withTitle: "Import")
+        alert.addButton(withTitle: "Delete All")
+        alert.addButton(withTitle: "Cancel")
+        
+        let response = alert.runModal()
+        switch response {
+        case .alertFirstButtonReturn: // Export All
+            BulgeFilterManager.shared.exportAllFilters()
+        case .alertSecondButtonReturn: // Import
+            BulgeFilterManager.shared.importFiltersDialog()
+            updateFilterList()
+        case .alertThirdButtonReturn: // Delete All
+            let confirmAlert = NSAlert()
+            confirmAlert.messageText = "Delete All Custom Bulge Filters?"
+            confirmAlert.informativeText = "This action cannot be undone."
+            confirmAlert.alertStyle = .critical
+            confirmAlert.addButton(withTitle: "Delete All")
+            confirmAlert.addButton(withTitle: "Cancel")
+            
+            if confirmAlert.runModal() == .alertFirstButtonReturn {
+                BulgeFilterManager.shared.deleteAllFilters()
+                updateFilterList()
+            }
+        default:
+            break
         }
     }
     
@@ -299,6 +442,10 @@ class CameraViewController: NSViewController {
         controlsView.isHidden = !uiVisible
     }
     
+    private func toggleGrid() {
+        filterProcessor.showGrid.toggle()
+    }
+    
     private func updateFilterLabel(_ filterName: String) {
         DispatchQueue.main.async { [weak self] in
             self?.filterLabel.stringValue = "Current Filter: \(filterName)"
@@ -341,11 +488,17 @@ class CameraViewController: NSViewController {
         switch event.keyCode {
         case 48: // Tab
             toggleUI()
+        case 13: // W key - toggle grid overlay
+            toggleGrid()
         case 49: // Spacebar
             // Random filter selection
-            let allFiltersExceptNone = FilterType.allCases.filter { $0 != .none }
+            let allFilters = FilterType.allAvailableFilters()
+            let allFiltersExceptNone = allFilters.filter { 
+                if case .none = $0 { return false }
+                return true
+            }
             if let randomFilter = allFiltersExceptNone.randomElement() {
-                let randomIndex = FilterType.allCases.firstIndex(of: randomFilter) ?? 0
+                let randomIndex = allFilters.firstIndex(of: randomFilter) ?? 0
                 filterSelector.selectItem(at: randomIndex)
                 filterChanged()
             }
@@ -363,6 +516,12 @@ class CameraViewController: NSViewController {
             }
         case 34: // i/I key - cycle cameras
             cycleCamera()
+        case 15: // r/R key - reload custom filters
+            updateFilterList()
+        case 11: // b/B key - open bulge editor
+            openBulgeEditor()
+        case 45: // n/N key - manage custom filters
+            manageBulgeFilters()
         default:
             // Don't call super to prevent system beep
             break
@@ -397,22 +556,40 @@ extension CameraViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
                 updateFPS(fps)
             }
         } else {
-            print("First frame received from camera!")
+            print("✅ First frame received from camera!")
+            print("   Format: BGRA8Unorm")
+            print("   Timestamp: \(currentTime)")
         }
         lastFrameTime = currentTime
         
         // Get pixel buffer from sample buffer
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            print("Failed to get pixel buffer from sample buffer")
+            print("❌ Failed to get pixel buffer from sample buffer")
+            return
+        }
+        
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+        
+        // Safety check: ensure filter processor is initialized before processing
+        guard filterProcessor != nil else {
+            print("⚠️  Filter processor not yet initialized, skipping frame")
             return
         }
         
         // Process frame with filter
         if let filteredTexture = filterProcessor.processFrame(pixelBuffer: pixelBuffer) {
+            // Debug first processed frame
+            if lastFrameTime <= 0.1 {
+                print("✅ Texture received by renderer: \(filteredTexture.width)x\(filteredTexture.height)")
+                print("   Pixel format: \(filteredTexture.pixelFormat.rawValue)")
+            }
+            
             // Send to renderer
             metalRenderer.updateTexture(filteredTexture)
         } else {
-            print("Filter processing failed")
+            print("⚠️  Filter processing returned nil (this shouldn't happen)")
         }
     }
 }

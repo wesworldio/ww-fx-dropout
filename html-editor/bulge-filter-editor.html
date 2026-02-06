@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WesWorld FX - Custom Bulge Filter Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #64b5f6 0%, #81c784 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: #2a2a3e;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #444;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #64b5f6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 1.3em;
+        }
+
+        /* Canvas Preview */
+        #preview {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 8px;
+            border: 2px solid #444;
+            cursor: crosshair;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="range"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-family: inherit;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="range"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #64b5f6;
+            box-shadow: 0 0 8px rgba(100, 181, 246, 0.3);
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 6px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            margin: 0;
+        }
+
+        .slider-value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: 500;
+            color: #64b5f6;
+            font-size: 0.9em;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(100, 181, 246, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #444;
+            color: #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        .btn-danger {
+            background: #ef5350;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53935;
+        }
+
+        .btn-success {
+            background: #81c784;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #66bb6a;
+        }
+
+        .btn-full {
+            grid-column: 1 / -1;
+        }
+
+        /* Points Table */
+        .points-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .points-table th {
+            background: #1a1a2e;
+            padding: 12px;
+            text-align: left;
+            color: #64b5f6;
+            border-bottom: 2px solid #444;
+            font-weight: 600;
+        }
+
+        .points-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        .points-table tr:hover {
+            background: #333;
+        }
+
+        .points-table tr.selected {
+            background: #3a3a52;
+        }
+
+        .points-table button {
+            padding: 4px 8px;
+            font-size: 0.8em;
+        }
+
+        /* Point Indicator */
+        .point-indicator {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .point-bulge {
+            background: #ffd54f;
+            box-shadow: 0 0 8px #ffd54f;
+        }
+
+        .point-pinch {
+            background: #ef5350;
+            box-shadow: 0 0 8px #ef5350;
+        }
+
+        /* Grid */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .grid-3col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(100, 181, 246, 0.1);
+            border-left: 4px solid #64b5f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #64b5f6;
+        }
+
+        /* Export/Import Section */
+        .export-section {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .export-json {
+            background: #0a0a1a;
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #81c784;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #64b5f6;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        /* Messages */
+        .message {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: rgba(129, 199, 132, 0.2);
+            border-left: 4px solid #81c784;
+            color: #a5d6a7;
+        }
+
+        .message.error {
+            background: rgba(239, 83, 80, 0.2);
+            border-left: 4px solid #ef5350;
+            color: #ef9a9a;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding-top: 20px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #444;
+            margin-top: 40px;
+        }
+
+        /* Keyboard hints */
+        .kbd {
+            background: #444;
+            border: 1px solid #555;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.8em;
+            display: inline-block;
+        }
+
+        .instructions {
+            background: rgba(100, 181, 246, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+
+        .instructions h3 {
+            color: #64b5f6;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .instructions p {
+            margin: 8px 0;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .instructions code {
+            background: #1a1a2e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #81c784;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💎 WesWorld FX - Custom Bulge Filter Editor</h1>
+            <p class="subtitle">Create custom distortion effects like Photoshop Liquify</p>
+        </header>
+
+        <div id="message" class="message"></div>
+
+        <div class="main-content">
+            <!-- Canvas Preview -->
+            <div class="panel">
+                <h2><span class="icon">🎨</span> Preview</h2>
+                <canvas id="preview"></canvas>
+                <div style="margin-top: 20px;">
+                    <div class="info-box">
+                        <strong>Canvas Tips:</strong><br>
+                        • Click to add bulge points<br>
+                        • Shift+Click for pinch points<br>
+                        • Drag points to move them<br>
+                        • Select a point to edit
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="panel">
+                <h2><span class="icon">⚙️</span> Controls</h2>
+
+                <div class="instructions">
+                    <h3>Quick Start</h3>
+                    <p>1. Enter a filter name</p>
+                    <p>2. Click preview to add points</p>
+                    <p>3. Adjust properties below</p>
+                    <p>4. Save and export</p>
+                </div>
+
+                <!-- Filter Name -->
+                <div class="control-group">
+                    <label>Filter Name</label>
+                    <input type="text" id="filterName" placeholder="e.g., Big Eyes Effect" value="My Custom Bulge">
+                </div>
+
+                <!-- Stats -->
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="pointCount">0</div>
+                        <div class="stat-label">Bulge Points</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="filterID" style="font-size: 0.9em; overflow-wrap: break-word;">--</div>
+                        <div class="stat-label">Filter ID</div>
+                    </div>
+                </div>
+
+                <!-- Points List -->
+                <h3 style="margin-top: 20px; margin-bottom: 10px; color: #64b5f6;">Bulge Points</h3>
+                <table class="points-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Position</th>
+                            <th>Radius</th>
+                            <th>Strength</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pointsList">
+                    </tbody>
+                </table>
+
+                <!-- Selected Point Properties -->
+                <div id="pointProperties" style="display: none; margin-top: 20px; padding: 20px; background: #1a1a2e; border-radius: 8px; border: 1px solid #444;">
+                    <h3 style="margin-bottom: 15px; color: #64b5f6;">Selected Point Properties</h3>
+
+                    <div class="control-group">
+                        <label>Position X</label>
+                        <input type="range" id="pointX" min="0" max="1" step="0.01">
+                        <div class="slider-value" id="pointXValue">0.50</div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Position Y</label>
+                        <input type="range" id="pointY" min="0" max="1" step="0.01">
+                        <div class="slider-value" id="pointYValue">0.50</div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Radius</label>
+                        <div class="slider-container">
+                            <input type="range" id="pointRadius" min="0.05" max="0.5" step="0.01">
+                            <span class="slider-value" id="pointRadiusValue">0.15</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Strength (-1 = Pinch, +1 = Bulge)</label>
+                        <div class="slider-container">
+                            <input type="range" id="pointStrength" min="-1" max="1" step="0.05">
+                            <span class="slider-value" id="pointStrengthValue">0.65</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-danger btn-full" onclick="deleteSelectedPoint()">Delete Point</button>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group" style="margin-top: 20px;">
+                    <button class="btn-primary" onclick="saveFilter()">💾 Save Filter</button>
+                    <button class="btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-success btn-full" onclick="exportFilter()">📤 Export JSON</button>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-secondary btn-full" onclick="copyJSON()">📋 Copy JSON</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="panel">
+            <h2><span class="icon">📋</span> JSON Output</h2>
+            <div class="export-json" id="jsonOutput">
+{
+  "name": "My Custom Bulge",
+  "points": []
+}
+            </div>
+        </div>
+
+        <footer>
+            <p>WesWorld FX v2.1.2 • Custom Bulge Filter Editor • © 2026 WesWorld</p>
+            <p style="margin-top: 10px; color: #555;">This editor creates filters compatible with the native macOS app</p>
+        </footer>
+    </div>
+
+    <script>
+        class BulgeFilterEditor {
+            constructor() {
+                this.filter = {
+                    name: 'My Custom Bulge',
+                    points: [],
+                    id: this.generateUUID()
+                };
+                this.selectedPointIndex = null;
+                this.isDragging = false;
+                this.draggedPointIndex = null;
+
+                this.canvas = document.getElementById('preview');
+                this.ctx = this.canvas.getContext('2d');
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.draw();
+            }
+
+            setupCanvas() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width;
+                this.canvas.height = rect.height;
+            }
+
+            setupEventListeners() {
+                this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.handleCanvasMouseUp(e));
+                this.canvas.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
+
+                document.getElementById('filterName').addEventListener('change', (e) => {
+                    this.filter.name = e.target.value;
+                    this.updateUI();
+                });
+
+                document.getElementById('pointX').addEventListener('input', (e) => {
+                    if (this.selectedPointIndex !== null) {
+                        this.filter.points[this.selectedPointIndex].x = parseFloat(e.target.value);
+                        document.getElementById('pointXValue').textContent = parseFloat(e.target.value).toFixed(2);
+                        this.updateUI();
+                    }
+                });
+
+                document.getElementById('pointY').addEventListener('input', (e) => {
+                    if (this.selectedPointIndex !== null) {
+                        this.filter.points[this.selectedPointIndex].y = parseFloat(e.target.value);
+                        document.getElementById('pointYValue').textContent = parseFloat(e.target.value).toFixed(2);
+                        this.updateUI();
+                    }
+                });
+
+                document.getElementById('pointRadius').addEventListener('input', (e) => {
+                    if (this.selectedPointIndex !== null) {
+                        this.filter.points[this.selectedPointIndex].radius = parseFloat(e.target.value);
+                        document.getElementById('pointRadiusValue').textContent = parseFloat(e.target.value).toFixed(2);
+                        this.updateUI();
+                    }
+                });
+
+                document.getElementById('pointStrength').addEventListener('input', (e) => {
+                    if (this.selectedPointIndex !== null) {
+                        this.filter.points[this.selectedPointIndex].strength = parseFloat(e.target.value);
+                        document.getElementById('pointStrengthValue').textContent = parseFloat(e.target.value).toFixed(2);
+                        this.updateUI();
+                    }
+                });
+            }
+
+            handleCanvasClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width;
+                const y = 1 - ((e.clientY - rect.top) / rect.height);
+
+                // Check if clicking on existing point
+                const clickedIndex = this.getPointAtPosition(e.clientX - rect.left, e.clientY - rect.top);
+                if (clickedIndex !== null) {
+                    this.selectPoint(clickedIndex);
+                    return;
+                }
+
+                // Add new point
+                const strength = e.shiftKey ? -0.65 : 0.65;
+                const point = {
+                    x: Math.max(0, Math.min(1, x)),
+                    y: Math.max(0, Math.min(1, y)),
+                    radius: 0.15,
+                    strength: strength
+                };
+
+                this.filter.points.push(point);
+                this.selectPoint(this.filter.points.length - 1);
+                this.updateUI();
+                this.showMessage(`Point added${e.shiftKey ? ' (pinch)' : ' (bulge)'}`, 'success');
+            }
+
+            handleCanvasMouseDown(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const clickedIndex = this.getPointAtPosition(e.clientX - rect.left, e.clientY - rect.top);
+                if (clickedIndex !== null) {
+                    this.isDragging = true;
+                    this.draggedPointIndex = clickedIndex;
+                }
+            }
+
+            handleCanvasMouseMove(e) {
+                if (!this.isDragging || this.draggedPointIndex === null) return;
+
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width;
+                const y = 1 - ((e.clientY - rect.top) / rect.height);
+
+                const point = this.filter.points[this.draggedPointIndex];
+                point.x = Math.max(0, Math.min(1, x));
+                point.y = Math.max(0, Math.min(1, y));
+
+                this.updateUI();
+            }
+
+            handleCanvasMouseUp(e) {
+                this.isDragging = false;
+                this.draggedPointIndex = null;
+            }
+
+            getPointAtPosition(canvasX, canvasY) {
+                for (let i = 0; i < this.filter.points.length; i++) {
+                    const point = this.filter.points[i];
+                    const px = point.x * this.canvas.width;
+                    const py = (1 - point.y) * this.canvas.height;
+                    const radius = point.radius * Math.min(this.canvas.width, this.canvas.height);
+
+                    const dx = canvasX - px;
+                    const dy = canvasY - py;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= radius) {
+                        return i;
+                    }
+                }
+                return null;
+            }
+
+            selectPoint(index) {
+                this.selectedPointIndex = index;
+                const point = this.filter.points[index];
+
+                document.getElementById('pointX').value = point.x;
+                document.getElementById('pointXValue').textContent = point.x.toFixed(2);
+
+                document.getElementById('pointY').value = point.y;
+                document.getElementById('pointYValue').textContent = point.y.toFixed(2);
+
+                document.getElementById('pointRadius').value = point.radius;
+                document.getElementById('pointRadiusValue').textContent = point.radius.toFixed(2);
+
+                document.getElementById('pointStrength').value = point.strength;
+                document.getElementById('pointStrengthValue').textContent = point.strength.toFixed(2);
+
+                document.getElementById('pointProperties').style.display = 'block';
+                this.updateUI();
+            }
+
+            draw() {
+                // Clear canvas
+                this.ctx.fillStyle = '#16213e';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw grid
+                this.drawGrid();
+
+                // Draw points
+                for (let i = 0; i < this.filter.points.length; i++) {
+                    this.drawPoint(i);
+                }
+
+                requestAnimationFrame(() => this.draw());
+            }
+
+            drawGrid() {
+                const spacing = 40;
+                this.ctx.strokeStyle = 'rgba(100, 100, 100, 0.2)';
+                this.ctx.lineWidth = 1;
+
+                for (let i = spacing; i < this.canvas.width; i += spacing) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(i, 0);
+                    this.ctx.lineTo(i, this.canvas.height);
+                    this.ctx.stroke();
+                }
+
+                for (let i = spacing; i < this.canvas.height; i += spacing) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, i);
+                    this.ctx.lineTo(this.canvas.width, i);
+                    this.ctx.stroke();
+                }
+            }
+
+            drawPoint(index) {
+                const point = this.filter.points[index];
+                const px = point.x * this.canvas.width;
+                const py = (1 - point.y) * this.canvas.height;
+                const radius = point.radius * Math.min(this.canvas.width, this.canvas.height);
+
+                const isSelected = index === this.selectedPointIndex;
+
+                // Draw radius circle
+                this.ctx.strokeStyle = isSelected ? '#64b5f6' : '#81c784';
+                this.ctx.lineWidth = isSelected ? 3 : 2;
+                this.ctx.globalAlpha = isSelected ? 0.8 : 0.6;
+                this.ctx.beginPath();
+                this.ctx.arc(px, py, radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+
+                // Fill circle
+                this.ctx.globalAlpha = 0.1;
+                this.ctx.fillStyle = isSelected ? '#64b5f6' : '#81c784';
+                this.ctx.fill();
+
+                // Draw center point
+                this.ctx.globalAlpha = 1;
+                this.ctx.fillStyle = point.strength >= 0 ? '#ffd54f' : '#ef5350';
+                this.ctx.beginPath();
+                this.ctx.arc(px, py, 6, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // Draw border
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+
+                // Draw index
+                this.ctx.globalAlpha = 1;
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = 'bold 12px sans-serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(String(index + 1), px, py);
+            }
+
+            updateUI() {
+                document.getElementById('pointCount').textContent = this.filter.points.length;
+                document.getElementById('filterID').textContent = this.filter.id.substring(0, 8) + '...';
+                document.getElementById('filterName').value = this.filter.name;
+
+                this.updatePointsList();
+                this.updateJSON();
+            }
+
+            updatePointsList() {
+                const tbody = document.getElementById('pointsList');
+                tbody.innerHTML = '';
+
+                for (let i = 0; i < this.filter.points.length; i++) {
+                    const point = this.filter.points[i];
+                    const row = document.createElement('tr');
+                    
+                    if (i === this.selectedPointIndex) {
+                        row.classList.add('selected');
+                    }
+
+                    const typeIcon = point.strength >= 0 ? '🟡' : '🔴';
+                    const typeLabel = point.strength >= 0 ? 'Bulge' : 'Pinch';
+
+                    row.innerHTML = `
+                        <td>${i + 1}</td>
+                        <td onclick="editor.selectPoint(${i})" style="cursor: pointer;">
+                            (${point.x.toFixed(2)}, ${point.y.toFixed(2)})
+                        </td>
+                        <td>${point.radius.toFixed(2)}</td>
+                        <td>${point.strength.toFixed(2)} ${typeIcon}</td>
+                        <td><button class="btn-danger" onclick="editor.deletePoint(${i})">Del</button></td>
+                    `;
+
+                    tbody.appendChild(row);
+                }
+            }
+
+            updateJSON() {
+                const json = {
+                    name: this.filter.name,
+                    id: this.filter.id,
+                    points: this.filter.points,
+                    createdDate: new Date().toISOString(),
+                    modifiedDate: new Date().toISOString()
+                };
+
+                document.getElementById('jsonOutput').textContent = JSON.stringify(json, null, 2);
+            }
+
+            deletePoint(index) {
+                this.filter.points.splice(index, 1);
+                if (this.selectedPointIndex === index) {
+                    this.selectedPointIndex = null;
+                    document.getElementById('pointProperties').style.display = 'none';
+                }
+                this.updateUI();
+                this.showMessage('Point deleted', 'success');
+            }
+
+            generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            showMessage(text, type) {
+                const msg = document.getElementById('message');
+                msg.textContent = text;
+                msg.className = `message ${type} show`;
+                setTimeout(() => msg.classList.remove('show'), 3000);
+            }
+        }
+
+        // Initialize editor
+        let editor;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            editor = new BulgeFilterEditor();
+        });
+
+        // Global functions for HTML buttons
+        function saveFilter() {
+            if (editor.filter.name.trim() === '') {
+                editor.showMessage('Please enter a filter name', 'error');
+                return;
+            }
+            if (editor.filter.points.length === 0) {
+                editor.showMessage('Please add at least one bulge point', 'error');
+                return;
+            }
+
+            const json = JSON.stringify({
+                name: editor.filter.name,
+                id: editor.filter.id,
+                points: editor.filter.points,
+                createdDate: new Date().toISOString()
+            }, null, 2);
+
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${editor.filter.name.replace(/\s+/g, '-')}.wwfxfilter.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            editor.showMessage('Filter exported!', 'success');
+        }
+
+        function exportFilter() {
+            const json = document.getElementById('jsonOutput').textContent;
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${editor.filter.name.replace(/\s+/g, '-')}.wwfxfilter.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            editor.showMessage('JSON exported!', 'success');
+        }
+
+        function copyJSON() {
+            const json = document.getElementById('jsonOutput').textContent;
+            navigator.clipboard.writeText(json).then(() => {
+                editor.showMessage('JSON copied to clipboard!', 'success');
+            }).catch(() => {
+                editor.showMessage('Failed to copy JSON', 'error');
+            });
+        }
+
+        function deleteSelectedPoint() {
+            if (editor.selectedPointIndex !== null) {
+                editor.deletePoint(editor.selectedPointIndex);
+            }
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all points?')) {
+                editor.filter.points = [];
+                editor.selectedPointIndex = null;
+                document.getElementById('pointProperties').style.display = 'none';
+                editor.updateUI();
+                editor.showMessage('All points cleared', 'success');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Preview Feature Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #64b5f6 0%, #81c784 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 1em;
+        }
+        .section {
+            background: #2a2a3e;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #444;
+        }
+        .section h2 {
+            color: #64b5f6;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .feature-item {
+            background: #1a1a2e;
+            padding: 15px;
+            border-left: 4px solid #81c784;
+            margin-bottom: 15px;
+            border-radius: 6px;
+        }
+        .feature-item strong { color: #81c784; }
+        .code-block {
+            background: #0d0d1a;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid #333;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e0e0e0;
+        }
+        .highlight-yellow { color: #ffd700; }
+        .highlight-green { color: #81c784; }
+        .highlight-blue { color: #64b5f6; }
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+        }
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding-left: 50px;
+            position: relative;
+        }
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #64b5f6;
+            color: #0d0d1a;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .note {
+            background: rgba(100, 181, 246, 0.1);
+            border-left: 4px solid #64b5f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-badge {
+            display: inline-block;
+            background: rgba(129, 199, 132, 0.2);
+            color: #81c784;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        footer {
+            text-align: center;
+            color: #666;
+            margin-top: 40px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Live Preview Feature</h1>
+        <p class="subtitle">Real-time filter editing in the WesWorld FX app</p>
+
+        <div class="section">
+            <h2>✨ What's New</h2>
+            <div class="feature-item">
+                <strong>Auto-Updating Preview</strong>
+                <p style="color: #bbb; margin-top: 8px;">The filter editor now continuously updates the preview as you adjust parameters. No need to click a refresh button!</p>
+                <span class="success-badge">IMPLEMENTED</span>
+            </div>
+            <div class="feature-item">
+                <strong>Real-Time Slider Updates</strong>
+                <p style="color: #bbb; margin-top: 8px;">Move the Radius and Strength sliders and see the effect instantly on the preview.</p>
+                <span class="success-badge">IMPLEMENTED</span>
+            </div>
+            <div class="feature-item">
+                <strong>Interactive Point Editing</strong>
+                <p style="color: #bbb; margin-top: 8px;">Add points by clicking, drag to reposition, and the preview updates 60 FPS as you work.</p>
+                <span class="success-badge">IMPLEMENTED</span>
+            </div>
+            <div class="feature-item">
+                <strong>GPU-Accelerated Rendering</strong>
+                <p style="color: #bbb; margin-top: 8px;">Metal compute shaders process the filter effects with up to 16 bulge points simultaneously.</p>
+                <span class="success-badge">GPU OPTIMIZED</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🏗️ Technical Implementation</h2>
+            
+            <h3 style="color: #64b5f6; margin: 20px 0 15px 0; font-size: 1.1em;">Architecture</h3>
+            <p style="color: #bbb; line-height: 1.6; margin-bottom: 15px;">
+                The live preview system consists of three main components working together:
+            </p>
+            
+            <div class="code-block">
+<span class="highlight-blue">// 1. Timer-Based Update Loop</span>
+<span class="highlight-green">private var previewUpdateTimer: Timer?</span>
+
+<span class="highlight-blue">// Runs every 33ms (≈30 FPS)</span>
+previewUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.033, repeats: true) { [weak self] _ in
+    self?.applyFilter()
+}
+
+<span class="highlight-blue">// 2. Filter Application</span>
+<span class="highlight-green">private func applyFilter()</span> {
+    // Checks if filter changed, then processes
+    <span class="highlight-yellow">filterProcessor.setCurrentFilter(.custom(filter.id))</span>
+    
+    if let filteredTexture = filterProcessor.processCustomBulge(testTexture, with: filter) {
+        <span class="highlight-yellow">metalRenderer.updateTexture(filteredTexture)</span>
+    }
+}
+
+<span class="highlight-blue">// 3. GPU Processing</span>
+<span class="highlight-green">public func processCustomBulge(_ texture: MTLTexture, with filter: CustomBulgeFilter)</span> {
+    // Passes filter points to Metal compute shader
+    // Returns processed texture to renderer
+}
+            </div>
+
+            <h3 style="color: #64b5f6; margin: 20px 0 15px 0; font-size: 1.1em;">Key Components</h3>
+            
+            <div class="feature-item">
+                <strong>BulgeEditorViewController</strong><br>
+                <span style="color: #888; font-size: 0.9em;">
+                    • Manages the editor UI and canvas<br>
+                    • Runs preview timer at 30 FPS<br>
+                    • Creates test gradient texture (853×720)<br>
+                    • Detects point changes and triggers updates
+                </span>
+            </div>
+
+            <div class="feature-item">
+                <strong>FilterProcessor</strong><br>
+                <span style="color: #888; font-size: 0.9em;">
+                    • New public method: <code style="color: #81c784;">processCustomBulge()</code><br>
+                    • Accepts CustomBulgeFilter with up to 16 points<br>
+                    • Uses Metal compute shader: <code style="color: #81c784;">custom_bulge</code><br>
+                    • Returns processed MTLTexture for rendering
+                </span>
+            </div>
+
+            <div class="feature-item">
+                <strong>MetalRenderer</strong><br>
+                <span style="color: #888; font-size: 0.9em;">
+                    • Displays the filtered texture in MTKView<br>
+                    • Automatically rerenders when texture updates<br>
+                    • Runs at 60 FPS display refresh rate
+                </span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎮 How to Use Live Preview</h2>
+            
+            <ol class="steps">
+                <li>
+                    <strong>Open the Bulge Editor</strong><br>
+                    <span style="color: #888;">Press <code style="color: #ffd700;">B</code> in the main camera view or use the Filters menu → Create Custom Filter</span>
+                </li>
+                
+                <li>
+                    <strong>Add Bulge Points</strong><br>
+                    <span style="color: #888;">Click on the preview to add points. The preview updates immediately with the new bulge effect.</span>
+                </li>
+                
+                <li>
+                    <strong>Adjust Parameters</strong><br>
+                    <span style="color: #888;">Move the <span style="color: #81c784;">Radius</span> and <span style="color: #81c784;">Strength</span> sliders. Watch the preview update in real-time as you drag.</span>
+                </li>
+                
+                <li>
+                    <strong>Reposition Points</strong><br>
+                    <span style="color: #888;">Click and drag points on the preview to move them. The effect updates continuously as you drag.</span>
+                </li>
+                
+                <li>
+                    <strong>Select Points</strong><br>
+                    <span style="color: #888;">Click a point or select from the table to edit its properties. Blue outline = selected, Green = unselected.</span>
+                </li>
+                
+                <li>
+                    <strong>Create Pinch Effects</strong><br>
+                    <span style="color: #888;">Hold Shift while clicking to add a pinch point (negative strength). Adjust strength slider from -1.0 to 0 to control pinch intensity.</span>
+                </li>
+                
+                <li>
+                    <strong>Save Your Filter</strong><br>
+                    <span style="color: #888;">When satisfied with the preview, click "Save Filter" to persist it to the app's filter library.</span>
+                </li>
+            </ol>
+
+            <div class="note">
+                💡 <strong>Tip:</strong> The preview uses a gradient texture to show the distortion clearly. Points render as circles: <span style="color: #ffd700;">Yellow center</span> = bulge, <span style="color: #ff6b6b;">Red center</span> = pinch
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Performance</h2>
+            
+            <div class="feature-item">
+                <strong>Update Frequency</strong><br>
+                <span style="color: #888;">Timer updates at 30 FPS (33ms interval). Display renders at 60 FPS for smooth interaction.</span>
+            </div>
+
+            <div class="feature-item">
+                <strong>Change Detection</strong><br>
+                <span style="color: #888;">Smart comparison skips GPU processing if no filter points changed, reducing CPU/GPU load.</span>
+            </div>
+
+            <div class="feature-item">
+                <strong>GPU Processing</strong><br>
+                <span style="color: #888;">Metal compute shader handles distortion. Max 16 points per frame for optimal performance.</span>
+            </div>
+
+            <div class="feature-item">
+                <strong>Memory Management</strong><br>
+                <span style="color: #888;">Test texture (853×720 BGRA8) reused. Timer cancelled in deinit to prevent memory leaks.</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 For Developers</h2>
+            
+            <h3 style="color: #64b5f6; margin: 20px 0 15px 0; font-size: 1.1em;">Modified Files</h3>
+            <ul style="color: #bbb; line-height: 1.8; list-style: none;">
+                <li>✓ <strong>BulgeEditorViewController.swift</strong> - Added timer, live preview, test texture</li>
+                <li>✓ <strong>FilterProcessor.swift</strong> - Added <code style="color: #81c784;">processCustomBulge()</code>, setCurrentFilter()</li>
+                <li>✓ <strong>MetalRenderer.swift</strong> - Texture update ready (no changes needed)</li>
+            </ul>
+
+            <h3 style="color: #64b5f6; margin: 20px 0 15px 0; font-size: 1.1em;">Adding More Points</h3>
+            <div class="code-block">
+<span class="highlight-blue">// Increase max points in FilterProcessor.processCustomBulge():</span>
+let maxPoints = min(bulgeData.count, <span class="highlight-yellow">32</span>)  <span class="highlight-blue">// Was 16</span>
+
+<span class="highlight-blue">// Update Metal shader to handle more points</span>
+<span class="highlight-blue">// (Shaders.metal: custom_bulge kernel)</span>
+            </div>
+
+            <h3 style="color: #64b5f6; margin: 20px 0 15px 0; font-size: 1.1em;">Adjusting Preview Frequency</h3>
+            <div class="code-block">
+<span class="highlight-blue">// In BulgeEditorViewController.startLivePreview():</span>
+previewUpdateTimer = Timer.scheduledTimer(
+    withTimeInterval: <span class="highlight-yellow">0.033</span>,  <span class="highlight-blue">// 30 FPS - increase for faster, decrease for slower</span>
+    repeats: true
+) { [weak self] _ in
+    self?.applyFilter()
+}
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Next Steps</h2>
+            <ul style="color: #bbb; line-height: 1.8;">
+                <li>✓ Test with multiple points (3-5 different bulges)</li>
+                <li>✓ Try bulge + pinch combinations</li>
+                <li>✓ Save a custom filter and verify it persists</li>
+                <li>✓ Load the filter in the gallery viewer</li>
+                <li>✓ Export and import filters between machines</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p><strong>Live Preview Feature v1.0</strong> • WesWorld FX v2.1.2 • February 5, 2026</p>
+            <p>Real-time filter editing with Metal GPU acceleration</p>
+        </footer>
+    </div>
+</body>
+</html>

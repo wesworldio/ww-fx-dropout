@@ -1,14 +1,46 @@
 import Foundation
 import AppKit
 
-class UpdateChecker {
+class UpdateChecker: NSObject, NSUserNotificationCenterDelegate {
     static let shared = UpdateChecker()
     
     private let repoOwner = "wesworldio"
     private let repoName = "ww-fx-dropout"
-    private let currentVersion = "2.1.2"
+    private let currentVersion = "2.1.0"
     
-    private init() {}
+    override private init() {
+        super.init()
+        // Set up notification delegate to handle notification interactions
+        NSUserNotificationCenter.default.delegate = self
+    }
+    
+    // MARK: - NSUserNotificationCenterDelegate
+    
+    func userNotificationCenter(_ center: NSUserNotificationCenter, didActivate notification: NSUserNotification) {
+        guard let userInfo = notification.userInfo else { return }
+        
+        if notification.activationType == .actionButtonClicked {
+            // Action button clicked (Download or View Release)
+            if let downloadUrl = userInfo["downloadUrl"] as? String,
+               let url = URL(string: downloadUrl) {
+                NSWorkspace.shared.open(url)
+            } else if let releaseUrl = userInfo["releaseUrl"] as? String,
+                      let url = URL(string: releaseUrl) {
+                NSWorkspace.shared.open(url)
+            }
+        } else if notification.activationType == .contentsClicked {
+            // Notification body clicked - open release page
+            if let releaseUrl = userInfo["releaseUrl"] as? String,
+               let url = URL(string: releaseUrl) {
+                NSWorkspace.shared.open(url)
+            }
+        }
+    }
+    
+    func userNotificationCenter(_ center: NSUserNotificationCenter, shouldPresent notification: NSUserNotification) -> Bool {
+        // Always present notifications, even if the app is in focus
+        return true
+    }
     
     func checkForUpdates(showNoUpdateAlert: Bool = false) {
         let urlString = "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest"
@@ -96,50 +128,34 @@ class UpdateChecker {
     }
     
     private func showUpdateAlert(latestVersion: String, releaseUrl: String, downloadUrl: String?, releaseNotes: String) {
-        let alert = NSAlert()
-        alert.messageText = "Update Available"
-        alert.informativeText = "Version \(latestVersion) is now available. You have version \(currentVersion).\n\nWhat's New:\n\(releaseNotes.prefix(200))\(releaseNotes.count > 200 ? "..." : "")"
-        alert.alertStyle = .informational
+        // Use macOS notification instead of modal alert - subtle and non-intrusive
+        let notification = NSUserNotification()
+        notification.title = "Update Available"
+        notification.subtitle = "WesWorld FX v\(latestVersion)"
+        notification.informativeText = "A new version is available. Click to download or visit the release page."
+        notification.soundName = nil // Silent notification
         
+        // Set action buttons for the notification
         if let downloadUrl = downloadUrl {
-            alert.addButton(withTitle: "Download Update")
-            alert.addButton(withTitle: "View Release Notes")
-            alert.addButton(withTitle: "Later")
-            
-            let response = alert.runModal()
-            
-            switch response {
-            case .alertFirstButtonReturn: // Download
-                if let url = URL(string: downloadUrl) {
-                    NSWorkspace.shared.open(url)
-                }
-            case .alertSecondButtonReturn: // Release Notes
-                if let url = URL(string: releaseUrl) {
-                    NSWorkspace.shared.open(url)
-                }
-            default:
-                break
-            }
+            notification.actionButtonTitle = "Download"
+            notification.otherButtonTitle = "Later"
+            notification.userInfo = ["downloadUrl": downloadUrl, "releaseUrl": releaseUrl]
         } else {
-            alert.addButton(withTitle: "View Release")
-            alert.addButton(withTitle: "Later")
-            
-            let response = alert.runModal()
-            
-            if response == .alertFirstButtonReturn {
-                if let url = URL(string: releaseUrl) {
-                    NSWorkspace.shared.open(url)
-                }
-            }
+            notification.actionButtonTitle = "View Release"
+            notification.otherButtonTitle = "Later"
+            notification.userInfo = ["releaseUrl": releaseUrl]
         }
+        
+        NSUserNotificationCenter.default.deliver(notification)
     }
     
     private func showNoUpdateAlert() {
-        let alert = NSAlert()
-        alert.messageText = "No Updates Available"
-        alert.informativeText = "You are running the latest version (\(currentVersion))."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        // Subtle notification for "no update available" - only shown if user explicitly checked
+        let notification = NSUserNotification()
+        notification.title = "App is Up to Date"
+        notification.informativeText = "You're running the latest version (\(currentVersion))."
+        notification.soundName = nil // Silent notification
+        
+        NSUserNotificationCenter.default.deliver(notification)
     }
 }

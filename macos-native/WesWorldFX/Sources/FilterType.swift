@@ -7,9 +7,78 @@
 
 import Foundation
 
-enum FilterType: String, CaseIterable {
-    case none = "None (Original)"
+public enum FilterType: Equatable, Hashable {
+    case none
+    case preset(PresetFilter)
+    case custom(UUID) // Custom bulge filter by ID
     
+    var displayName: String {
+        switch self {
+        case .none:
+            return "None (Original)"
+        case .preset(let preset):
+            return preset.rawValue
+        case .custom(let id):
+            if let filter = BulgeFilterManager.shared.getFilter(byId: id) {
+                return "💎 \(filter.name)"
+            }
+            return "Custom Filter"
+        }
+    }
+    
+    var metalFunctionName: String {
+        switch self {
+        case .none:
+            return ""
+        case .preset(let preset):
+            return preset.metalFunctionName
+        case .custom:
+            return "custom_bulge"
+        }
+    }
+    
+    var isCustom: Bool {
+        if case .custom = self { return true }
+        return false
+    }
+    
+    // Helper to get all available filters (presets + custom)
+    public static func allAvailableFilters() -> [FilterType] {
+        var filters: [FilterType] = [.none]
+        filters.append(contentsOf: PresetFilter.allCases.map { .preset($0) })
+        filters.append(contentsOf: BulgeFilterManager.shared.getAllFilters().map { .custom($0.id) })
+        return filters
+    }
+    
+    // Hashable conformance
+    public func hash(into hasher: inout Hasher) {
+        switch self {
+        case .none:
+            hasher.combine(0)
+        case .preset(let preset):
+            hasher.combine(1)
+            hasher.combine(preset)
+        case .custom(let id):
+            hasher.combine(2)
+            hasher.combine(id)
+        }
+    }
+    
+    public static func == (lhs: FilterType, rhs: FilterType) -> Bool {
+        switch (lhs, rhs) {
+        case (.none, .none):
+            return true
+        case (.preset(let lhsPreset), .preset(let rhsPreset)):
+            return lhsPreset == rhsPreset
+        case (.custom(let lhsId), .custom(let rhsId)):
+            return lhsId == rhsId
+        default:
+            return false
+        }
+    }
+}
+
+public enum PresetFilter: String, CaseIterable {
     // Favorites
     case bulgeEyes = "Bulge Eyes"
     case funhouseMirror = "Funhouse Mirror"
@@ -52,17 +121,8 @@ enum FilterType: String, CaseIterable {
     case waveDistortion = "Wave Distortion"
     case waveDistortionV1 = "Wave Distortion V1"
     
-    var displayName: String {
-        return rawValue
-    }
-    
-    var filterId: Int {
-        return FilterType.allCases.firstIndex(of: self) ?? 0
-    }
-    
     var metalFunctionName: String {
         switch self {
-        case .none: return ""
         case .bulgeEyes: return "bulge_eyes"
         case .funhouseMirror: return "funhouse_mirror"
         case .funnySquash: return "funny_squash"

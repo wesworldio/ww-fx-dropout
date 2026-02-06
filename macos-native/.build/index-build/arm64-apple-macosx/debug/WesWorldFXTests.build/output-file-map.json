@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFXTests.build/master.swiftdeps"
+  },
+  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/Tests/WesWorldFXTests/CustomBulgeFilterTests.swift": {
+    "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFXTests.build/CustomBulgeFilterTests.d",
+    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFXTests.build/CustomBulgeFilterTests.swift.o",
+    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFXTests.build/CustomBulgeFilterTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFXTests.build/CustomBulgeFilterTests.swiftdeps",
+    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFXTests.build/CustomBulgeFilterTests.dia"
+  }
+}
