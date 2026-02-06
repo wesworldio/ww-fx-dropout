@@ -8,6 +8,7 @@
 import Metal
 import CoreVideo
 import Accelerate
+import simd
 
 class FilterProcessor {
     
@@ -17,9 +18,16 @@ class FilterProcessor {
     
     // Compute pipeline states for each filter
     private var filterPipelines: [FilterType: MTLComputePipelineState] = [:]
+    // Grid overlay pipelines (filter-specific)
+    private var gridPipelines: [FilterType: MTLComputePipelineState] = [:]
+    private var defaultGridPipeline: MTLComputePipelineState?
+    private var simpleGridPipeline: MTLComputePipelineState?
     
     // Current filter
     var currentFilter: FilterType = .none
+    
+    // Grid overlay toggle
+    var showGrid: Bool = false
     
     // Texture pool for reuse
     private var textureDescriptor: MTLTextureDescriptor?
@@ -44,25 +52,125 @@ class FilterProcessor {
     }
     
     private func setupFilterPipelines() {
-        // Load shader source from bundle
-        guard let shaderURL = Bundle.main.url(forResource: "Shaders", withExtension: "metal"),
-              let shaderSource = try? String(contentsOf: shaderURL, encoding: .utf8),
+        // Load shader source from file system
+        let fileManager = FileManager.default
+        let currentDir = fileManager.currentDirectoryPath
+        let possiblePaths = [
+            "\(currentDir)/WesWorldFX/Metal/Shaders.metal",
+            "\(currentDir)/macos-native/WesWorldFX/Metal/Shaders.metal",
+            "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Metal/Shaders.metal"
+        ]
+        
+        var shaderSource: String?
+        for path in possiblePaths {
+            if fileManager.fileExists(atPath: path) {
+                if let source = try? String(contentsOfFile: path, encoding: .utf8) {
+                    shaderSource = source
+                    print("✓ FilterProcessor loaded shaders from: \(path)")
+                    break
+                }
+            }
+        }
+        
+        guard let shaderSource = shaderSource,
               let library = try? device.makeLibrary(source: shaderSource, options: nil) else {
             fatalError("Failed to create shader library")
         }
         
         // Create compute pipeline for each filter
-        for filterType in FilterType.allCases {
-            if filterType == .none { continue }
-            
-            let functionName = filterType.metalFunctionName
+        for filter in FilterType.allCases {
+            let functionName = filter.metalFunctionName
+            guard !functionName.isEmpty else {
+                continue
+            }
             if let function = library.makeFunction(name: functionName) {
                 do {
                     let pipeline = try device.makeComputePipelineState(function: function)
-                    filterPipelines[filterType] = pipeline
+                    filterPipelines[filter] = pipeline
                 } catch {
-                    print("Failed to create pipeline for \(filterType): \(error)")
+                    print("Failed to create pipeline for \(filter): \(error)")
                 }
+            }
+        }
+
+        // Create grid overlay pipelines (filter-specific)
+        let gridPipelineMappings: [FilterType: String] = [
+            // Ripple effects
+            .complexRipple: "draw_grid_overlay_complex_ripple",
+            .complexRippleV1: "draw_grid_overlay_complex_ripple_v1",
+            .waterRipple: "draw_grid_overlay_water_ripple",
+            .multiRipple: "draw_grid_overlay_multi_ripple",
+            .multiRippleV1: "draw_grid_overlay_multi_ripple_v1",
+            .gentleRipple: "draw_grid_overlay_gentle_ripple",
+
+            // Eye & face effects
+            .bulgeEyes: "draw_grid_overlay_bulge_eyes",
+            .pinchCheeks: "draw_grid_overlay_pinch_cheeks",
+            .elasticFace: "draw_grid_overlay_elastic_face",
+            .smushFace: "draw_grid_overlay_smush_face",
+            .squishFace: "draw_grid_overlay_squish_face",
+            .squishFaceV1: "draw_grid_overlay_squish_face_v1",
+            .stretchFace: "draw_grid_overlay_stretch_face",
+            .stretchFaceV1: "draw_grid_overlay_stretch_face_v1",
+            .warpFace: "draw_grid_overlay_warp_face",
+            .warpFaceV1: "draw_grid_overlay_warp_face_v1",
+            .wobbleFace: "draw_grid_overlay_wobble_face",
+
+            // Distortion effects
+            .funhouseMirror: "draw_grid_overlay_funhouse_mirror",
+            .pincushion: "draw_grid_overlay_pincushion",
+            .radialWobble: "draw_grid_overlay_radial_wobble",
+            .ultimateDistortion: "draw_grid_overlay_ultimate_distortion",
+            .lensDistortion: "draw_grid_overlay_lens_distortion",
+            .lensDistortionV1: "draw_grid_overlay_lens_distortion_v1",
+            .radialSqueeze: "draw_grid_overlay_radial_squeeze",
+            .radialSqueezeV1: "draw_grid_overlay_radial_squeeze_v1",
+
+            // Squeeze & stretch
+            .squeezeHorizontal: "draw_grid_overlay_squeeze_horizontal",
+            .squeezeHorizontalV1: "draw_grid_overlay_squeeze_horizontal_v1",
+            .squeezeVertical: "draw_grid_overlay_squeeze_vertical",
+            .squeezeVerticalV1: "draw_grid_overlay_squeeze_vertical_v1",
+            .elasticStretch: "draw_grid_overlay_elastic_stretch",
+            .elasticStretchV1: "draw_grid_overlay_elastic_stretch_v1",
+            .funnySquash: "draw_grid_overlay_funny_squash",
+            .funnyStretch: "draw_grid_overlay_funny_stretch",
+            .funnyStretchV1: "draw_grid_overlay_funny_stretch_v1",
+
+            // Other
+            .upsideDown: "draw_grid_overlay_upside_down",
+            .upsideDownV1: "draw_grid_overlay_upside_down_v1",
+            .waveDistortion: "draw_grid_overlay_wave_distortion",
+            .waveDistortionV1: "draw_grid_overlay_wave_distortion_v1"
+        ]
+        
+        for (presetFilter, functionName) in gridPipelineMappings {
+            if let gridFunction = library.makeFunction(name: functionName) {
+                do {
+                    gridPipelines[presetFilter] = try device.makeComputePipelineState(function: gridFunction)
+                } catch {
+                    print("Failed to create grid pipeline for \(presetFilter): \(error)")
+                }
+            }
+        }
+        
+        // Default grid pipeline for other filters (bulge_eyes style)
+        if let defaultGridFunction = library.makeFunction(name: "draw_grid_overlay") {
+            do {
+                defaultGridPipeline = try device.makeComputePipelineState(function: defaultGridFunction)
+                print("✓ Default grid pipeline created successfully")
+            } catch {
+                print("Failed to create default grid pipeline: \(error)")
+            }
+        }
+        
+        // Simple universal grid overlay for any filter that doesn't have a specific grid overlay
+        if let simpleGridFunction = library.makeFunction(name: "draw_simple_grid_overlay") {
+            do {
+                simpleGridPipeline = try device.makeComputePipelineState(function: simpleGridFunction)
+                print("✓ Simple grid overlay pipeline created successfully")
+            } catch {
+                print("Failed to create simple grid overlay pipeline: \(error)")
             }
         }
     }
@@ -85,54 +193,151 @@ class FilterProcessor {
             )
         }
         
-        // If no filter, return source texture
-        if currentFilter == .none {
-            return sourceTexture
+        // Use source as starting point
+        var processingTexture = sourceTexture
+        
+        // Apply filter using Metal compute shader (if not none)
+        if currentFilter != .none {
+            // Create output texture
+            guard let outputTexture = createOutputTexture(matching: sourceTexture) else {
+                print("FilterProcessor: Failed to create output texture")
+                return sourceTexture
+            }
+            
+            processingTexture = outputTexture
+        } else {
+            // For none filter, create a copy texture to apply grid on
+            guard let copyTexture = createOutputTexture(matching: sourceTexture) else {
+                return sourceTexture
+            }
+            
+            // Copy source to output
+            guard let commandBuffer = commandQueue.makeCommandBuffer(),
+                  let blitEncoder = commandBuffer.makeBlitCommandEncoder() else {
+                return sourceTexture
+            }
+            
+            blitEncoder.copy(from: sourceTexture, to: copyTexture)
+            blitEncoder.endEncoding()
+            commandBuffer.commit()
+            commandBuffer.waitUntilCompleted()
+            
+            processingTexture = copyTexture
         }
         
-        // Apply filter using Metal compute shader
-        guard let pipeline = filterPipelines[currentFilter] else {
-            print("FilterProcessor: No pipeline for filter \(currentFilter)")
-            return sourceTexture
+        // Execute compute shader for filter (if not none)
+        if currentFilter != .none {
+            guard let commandBuffer = commandQueue.makeCommandBuffer(),
+                  let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
+                print("FilterProcessor: Failed to create command buffer or encoder")
+                return sourceTexture
+            }
+            
+            // Get pipeline based on filter type
+            let pipeline = filterPipelines[currentFilter]
+            
+            guard let pipeline = pipeline else {
+                computeEncoder.endEncoding()
+                print("FilterProcessor: Pipeline not found for filter")
+                return sourceTexture
+            }
+            
+            computeEncoder.setComputePipelineState(pipeline)
+            computeEncoder.setTexture(sourceTexture, index: 0)
+            computeEncoder.setTexture(processingTexture, index: 1)
+            
+            // No custom bulge points in native app build
+        
+            // Calculate thread groups
+            let threadGroupSize = MTLSize(width: 16, height: 16, depth: 1)
+            let threadGroups = MTLSize(
+                width: (sourceTexture.width + threadGroupSize.width - 1) / threadGroupSize.width,
+                height: (sourceTexture.height + threadGroupSize.height - 1) / threadGroupSize.height,
+                depth: 1
+            )
+            
+            computeEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+            computeEncoder.endEncoding()
+            
+            commandBuffer.commit()
+            commandBuffer.waitUntilCompleted()
         }
         
-        // Create output texture
-        guard let outputTexture = createOutputTexture(matching: sourceTexture) else {
-            print("FilterProcessor: Failed to create output texture")
-            return sourceTexture
+        // Apply grid overlay to show filter deformation (when enabled)
+        if showGrid {
+            // Select the appropriate grid pipeline based on current filter
+            let gridPipeline = gridPipelines[currentFilter] ?? defaultGridPipeline ?? simpleGridPipeline
+            
+            guard let gridPipeline = gridPipeline else {
+                print("FilterProcessor: No grid pipeline available for filter")
+                return processingTexture
+            }
+            
+            guard let gridTexture = createOutputTexture(matching: processingTexture) else {
+                return processingTexture
+            }
+
+            // Prefill gridTexture with the processed image
+            if let blitCommandBuffer = commandQueue.makeCommandBuffer(),
+               let blitEncoder = blitCommandBuffer.makeBlitCommandEncoder() {
+                blitEncoder.copy(from: processingTexture, to: gridTexture)
+                blitEncoder.endEncoding()
+                blitCommandBuffer.commit()
+                blitCommandBuffer.waitUntilCompleted()
+            }
+
+            guard let gridCommandBuffer = commandQueue.makeCommandBuffer(),
+                  let gridEncoder = gridCommandBuffer.makeComputeCommandEncoder() else {
+                print("FilterProcessor: Failed to create grid command buffer or encoder")
+                return processingTexture
+            }
+
+            let threadGroupSize = MTLSize(width: 16, height: 16, depth: 1)
+            let threadGroups = MTLSize(
+                width: (sourceTexture.width + threadGroupSize.width - 1) / threadGroupSize.width,
+                height: (sourceTexture.height + threadGroupSize.height - 1) / threadGroupSize.height,
+                depth: 1
+            )
+
+            gridEncoder.setComputePipelineState(gridPipeline)
+            gridEncoder.setTexture(processingTexture, index: 0)
+            gridEncoder.setTexture(gridTexture, index: 1)
+            
+            // No custom bulge points in native app build
+            
+            gridEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+            gridEncoder.endEncoding()
+
+            gridCommandBuffer.commit()
+            gridCommandBuffer.waitUntilCompleted()
+
+            return gridTexture
         }
         
-        // Execute compute shader
-        guard let commandBuffer = commandQueue.makeCommandBuffer(),
-              let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            print("FilterProcessor: Failed to create command buffer or encoder")
-            return sourceTexture
-        }
-        
-        computeEncoder.setComputePipelineState(pipeline)
-        computeEncoder.setTexture(sourceTexture, index: 0)
-        computeEncoder.setTexture(outputTexture, index: 1)
-        
-        // Calculate thread groups
-        let threadGroupSize = MTLSize(width: 16, height: 16, depth: 1)
-        let threadGroups = MTLSize(
-            width: (sourceTexture.width + threadGroupSize.width - 1) / threadGroupSize.width,
-            height: (sourceTexture.height + threadGroupSize.height - 1) / threadGroupSize.height,
-            depth: 1
-        )
-        
-        computeEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
-        computeEncoder.endEncoding()
-        
-        commandBuffer.commit()
-        commandBuffer.waitUntilCompleted()
-        
-        return outputTexture
+        return processingTexture
     }
     
     private func createTexture(from pixelBuffer: CVPixelBuffer) -> MTLTexture? {
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
+        let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+        
+        // Try to get the best matching Metal pixel format
+        var metalFormat: MTLPixelFormat = .bgra8Unorm
+        
+        switch pixelFormat {
+        case kCVPixelFormatType_32BGRA:
+            metalFormat = .bgra8Unorm
+        case kCVPixelFormatType_32ARGB:
+            metalFormat = .rgba8Unorm
+        case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
+             kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+            // For YUV, we need a separate conversion - for now use BGRA fallback
+            metalFormat = .bgra8Unorm
+        default:
+            print("⚠️  Unknown pixel format: \(pixelFormat), trying BGRA")
+            metalFormat = .bgra8Unorm
+        }
         
         var textureRef: CVMetalTexture?
         let status = CVMetalTextureCacheCreateTextureFromImage(
@@ -140,7 +345,7 @@ class FilterProcessor {
             textureCache,
             pixelBuffer,
             nil,
-            .bgra8Unorm,
+            metalFormat,
             width,
             height,
             0,
@@ -148,10 +353,16 @@ class FilterProcessor {
         )
         
         guard status == kCVReturnSuccess, let cvTexture = textureRef else {
+            print("❌ Failed to create Metal texture from pixel buffer. Status: \(status), Format: \(pixelFormat)")
             return nil
         }
         
-        return CVMetalTextureGetTexture(cvTexture)
+        guard let texture = CVMetalTextureGetTexture(cvTexture) else {
+            print("❌ Failed to get texture from CVMetalTexture")
+            return nil
+        }
+        
+        return texture
     }
     
     private func createOutputTexture(matching sourceTexture: MTLTexture) -> MTLTexture? {
@@ -165,5 +376,11 @@ class FilterProcessor {
         
         return device.makeTexture(descriptor: descriptor)
     }
-}
+    
+    // MARK: - Filter Processing
 
+    /// Set the current filter type for processing
+    public func setCurrentFilter(_ filter: FilterType) {
+        currentFilter = filter
+    }
+}

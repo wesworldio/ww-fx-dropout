@@ -18,7 +18,7 @@
   ],
   "swiftCommands" : {
     "C.WesWorldFX-arm64-apple-macosx26.0-debug.module" : {
-      "executable" : "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/bin/swiftc",
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/sources",
       "importPath" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/Modules",
       "inputs" : [
@@ -44,11 +44,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/UpdateChecker.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift"
         },
         {
           "kind" : "file",
-          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/swift-version--778A5D228F651CA7.txt"
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
         },
         {
           "kind" : "file",
@@ -64,6 +68,7 @@
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/FilterProcessor.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/FilterType.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/MetalRenderer.swift.o",
+        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/main.swift.o"
       ],
       "otherArguments" : [
@@ -87,16 +92,13 @@
         "-entry-point-function-name",
         "-Xfrontend",
         "WesWorldFX_main",
+        "-color-diagnostics",
         "-swift-version",
         "5",
-        "-I",
-        "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/lib/swift/macosx/testing",
-        "-L",
-        "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/lib/swift/macosx/testing",
         "-plugin-path",
-        "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
         "-F",
         "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
         "-F",
@@ -109,7 +111,7 @@
         "-Xcc",
         "-isysroot",
         "-Xcc",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
         "-Xcc",
         "-F",
         "-Xcc",
@@ -149,6 +151,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/main.swift.o"
         },
         {
@@ -163,6 +169,7 @@
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterProcessor.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterType.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/MetalRenderer.swift",
+        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/UpdateChecker.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift"
       ],
       "tempsPath" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build",
@@ -174,7 +181,7 @@
   },
   "swiftTargetScanArgs" : {
     "WesWorldFX" : [
-      "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/bin/swiftc",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "-module-name",
       "WesWorldFX",
       "-package-name",
@@ -185,6 +192,7 @@
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterProcessor.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterType.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/MetalRenderer.swift",
+      "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/UpdateChecker.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift",
       "-I",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/Modules",
@@ -208,16 +216,13 @@
       "-entry-point-function-name",
       "-Xfrontend",
       "WesWorldFX_main",
+      "-color-diagnostics",
       "-swift-version",
       "5",
-      "-I",
-      "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/lib/swift/macosx/testing",
-      "-L",
-      "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/lib/swift/macosx/testing",
       "-plugin-path",
-      "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
       "-F",
       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
       "-F",
@@ -230,7 +235,7 @@
       "-Xcc",
       "-isysroot",
       "-Xcc",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
       "-Xcc",
       "-F",
       "-Xcc",
@@ -246,7 +251,7 @@
       "-package-name",
       "macos_native",
       "-driver-use-frontend-path",
-      "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/bin/swiftc"
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
     ]
   },
   "targetDependencyMap" : {
@@ -309,6 +314,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/UpdateChecker.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift"
         }
       ],
@@ -343,12 +352,16 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/main.swift.o"
         }
       ],
       "outputFilePath" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.product/Objects.LinkFileList"
     },
-    "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/swift-version--778A5D228F651CA7.txt" : {
+    "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
       "alwaysOutOfDate" : true,
       "inputs" : [
         {
@@ -357,10 +370,10 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/wes/Library/Developer/Toolchains/swift-6.2.3-RELEASE.xctoolchain/usr/bin/swiftc"
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
         }
       ],
-      "outputFilePath" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/swift-version--778A5D228F651CA7.txt"
+      "outputFilePath" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
     }
   }
 }

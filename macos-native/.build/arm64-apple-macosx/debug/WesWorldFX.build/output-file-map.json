@@ -37,6 +37,13 @@
     "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/MetalRenderer.swiftdeps",
     "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/MetalRenderer.dia"
   },
+  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/UpdateChecker.swift": {
+    "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.d",
+    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.swift.o",
+    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker~partial.swiftmodule",
+    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.swiftdeps",
+    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.dia"
+  },
   "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift": {
     "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/main.d",
     "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/main.swift.o",

@@ -1,41 +1,20 @@
 # Documentation Index
 
-This folder contains all project documentation organized by topic.
+WesWorld FX - macOS Native Edition documentation.
 
-## Getting Started
-- **[README.md](../README.md)** - Main project README with installation and quick start
-- **[WASM_README.md](./WASM_README.md)** - WebAssembly implementation guide
-
-## Architecture & Implementation
-- **[WASM_MIGRATION.md](./WASM_MIGRATION.md)** - Migration guide to WASM architecture
-- **[implementation.md](./implementation.md)** - Technical implementation details
-- **[project-summary.md](./project-summary.md)** - Project overview and summary
-
-## Features & UI
-- **[UI_MATCHING_FEATURES.md](./UI_MATCHING_FEATURES.md)** - UI feature matching documentation
-- **[UI_OVERHAUL.md](./UI_OVERHAUL.md)** - UI overhaul documentation
-- **[filters.md](./filters.md)** - Filter documentation
-- **[filter_validation.md](./filter_validation.md)** - Filter validation guide
-
-## Testing & Verification
-- **[testing.md](./testing.md)** - Testing documentation
-- **[VERIFICATION_REPORT.md](./VERIFICATION_REPORT.md)** - Verification report
-
-## Operations
-- **[DAEMON_README.md](./DAEMON_README.md)** - Daemon service documentation
+## Quick Links
+- **[../README.md](../README.md)** - Main project README with setup and quick start
+- **[../macos-native/README.md](../macos-native/README.md)** - Native macOS app documentation
 - **[CHANGELOG.md](./CHANGELOG.md)** - Project changelog
 
-## Project Structure
+## Filter Documentation
+- **[filter_examples/](./filter_examples/)** - Filter comparison images
+- **[PERFORMANCE_TIPS.md](./PERFORMANCE_TIPS.md)** - Performance optimization tips
 
-```
-ww-fx-1/
-├── docs/              # All documentation (this folder)
-├── wasm/              # WebAssembly source code
-├── static/            # Static web assets
-├── assets/            # Media assets (images, etc.)
-├── scripts/           # Utility scripts
-├── tests/             # Test files
-├── themes/            # Theme definitions
-└── README.md          # Main project README
-```
+## Archived Documentation
+For documentation about legacy implementations (WASM, Electron, Web, Python versions), see the `archive/` folder:
+- `archive/docs_archived/` - Archived implementation guides
+- `archive/WASM_README.md` - WebAssembly documentation
+- `archive/DESKTOP_APP_GUIDE.md` - Electron desktop app guide
+- `archive/MACOS_NATIVE_REFACTOR.md` - Performance comparison notes
 
