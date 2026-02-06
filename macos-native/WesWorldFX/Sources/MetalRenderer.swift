@@ -13,6 +13,7 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     private let commandQueue: MTLCommandQueue
     private var currentTexture: MTLTexture?
     private let textureCache: CVMetalTextureCache
+    private let textureLock = NSLock()
     
     // Render pipeline
     private var pipelineState: MTLRenderPipelineState!
@@ -114,6 +115,9 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     }
     
     func updateTexture(_ texture: MTLTexture) {
+        textureLock.lock()
+        defer { textureLock.unlock() }
+        
         if currentTexture == nil {
             print("MetalRenderer: First texture received! Size: \(texture.width)x\(texture.height)")
         }
@@ -132,7 +136,11 @@ class MetalRenderer: NSObject, MTKViewDelegate {
             return
         }
         
-        guard let texture = currentTexture else {
+        textureLock.lock()
+        let textureToRender = currentTexture
+        textureLock.unlock()
+        
+        guard let texture = textureToRender else {
             // No texture yet, just clear the screen
             if let commandBuffer = commandQueue.makeCommandBuffer(),
                let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
