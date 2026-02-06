@@ -1001,3 +1001,883 @@ kernel void wave_distortion_v1(texture2d<float, access::read> inTexture [[textur
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
+
+// MARK: - Elastic Warp Filters (14 variants)
+
+kernel void elastic_warp_1(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    float normalized = dist / maxDist;
+    
+    float factor = 1.0 + 0.3 * sin(normalized * 6.28) * (1.0 - normalized);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_2(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    float normalized = dist / maxDist;
+    
+    float factor = 1.0 + 0.4 * cos(normalized * 3.14) * (1.0 - normalized);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_3(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float factor = 1.0 + 0.25 * sin(dist * 0.01) * exp(-dist * 0.002);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_4(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float factor = 1.0 + 0.35 * sin(normalized * 8.0) * (1.0 - pow(normalized, 2.0));
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_5(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float factor = 1.0 + 0.2 * pow(sin(dist * 0.015), 2.0) * exp(-dist * 0.0015);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_6(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float wave = sin(normalized * 4.0 + atan2(delta.y, delta.x)) * 0.3;
+    float factor = 1.0 + wave * (1.0 - normalized);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_7(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float factor = 1.0 + 0.28 * sin(dist * 0.008) * cos(atan2(delta.y, delta.x) * 2.0);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_8(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    
+    float factor = pow(1.0 - (dist / maxDist), 1.5) * 0.4 + (1.0 - sin(dist * 0.01) * 0.2);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_9(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float factor = 1.0 + 0.32 * cos(dist * 0.012) * sin(atan2(delta.y, delta.x) * 3.0);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_10(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float factor = 1.0 + 0.3 * sin(normalized * 5.0) * cos(normalized * 3.0) * (1.0 - normalized);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_11(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float angle = atan2(delta.y, delta.x);
+    float factor = 1.0 + 0.25 * sin(dist * 0.009 + angle * 4.0) * exp(-dist * 0.002);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_12(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float factor = 1.0 + 0.38 * sin(dist * 0.007) * pow(cos(atan2(delta.y, delta.x)), 2.0);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_13(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float factor = 1.0 + 0.35 * cos(normalized * 6.28) * sin(normalized * 3.14);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void elastic_warp_14(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float angle = atan2(delta.y, delta.x);
+    float factor = 1.0 + 0.3 * sin(dist * 0.011 + angle * 2.0) * cos(angle * 2.0);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// MARK: - Stretch Distortion Filters (14 variants)
+
+kernel void stretch_distort_1(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float stretchX = 1.0 + 0.4 * abs(sin(delta.y * 0.01));
+    float stretchY = 1.0 + 0.3 * abs(cos(delta.x * 0.01));
+    
+    float2 newPos = center + float2(delta.x * stretchX, delta.y * stretchY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_2(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float dist = length(delta);
+    float stretch = 1.0 + 0.5 * sin(dist * 0.01);
+    
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_3(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float stretch = 1.0 + 0.45 * pow(sin(normalized * 3.14), 2.0);
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_4(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float stretch = 1.0 + 0.4 * sin(angle * 4.0);
+    
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_5(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float stretchX = 1.0 + 0.35 * sin(delta.x * 0.008);
+    float stretchY = 1.0 + 0.35 * cos(delta.y * 0.008);
+    
+    float2 newPos = center + float2(delta.x * stretchX, delta.y * stretchY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_6(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float stretch = 1.0 + 0.48 * sin(dist * 0.009) * cos(dist * 0.005);
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_7(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float stretch = 1.0 + 0.5 * cos(normalized * 6.28) * (1.0 - normalized);
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_8(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float stretch = 1.0 + 0.42 * sin(angle * 3.0) * cos(angle * 2.0);
+    
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_9(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float stretch = 1.0 + 0.38 * pow(sin(dist * 0.012), 2.0);
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_10(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float stretchX = 1.0 + 0.45 * sin(delta.y * 0.012);
+    float stretchY = 1.0 + 0.45 * cos(delta.x * 0.012);
+    
+    float2 newPos = center + float2(delta.x * stretchX, delta.y * stretchY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_11(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float stretch = 1.0 + 0.4 * sin(dist * 0.008) * exp(-dist * 0.001);
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_12(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float stretch = 1.0 + 0.44 * sin(angle * 6.0);
+    
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_13(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    
+    float stretch = 1.0 + 0.48 * sin((dist / maxDist) * 4.0);
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void stretch_distort_14(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float stretchX = 1.0 + 0.4 * cos(delta.y * 0.01);
+    float stretchY = 1.0 + 0.4 * sin(delta.x * 0.01);
+    
+    float2 newPos = center + float2(delta.x * stretchX, delta.y * stretchY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// MARK: - Bulge Funhouse Filters (14 variants)
+
+kernel void bulge_funhouse_1(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float bulge = 1.0 - 0.5 * pow(1.0 - normalized, 2.0);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_2(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float bulge = 1.0 - 0.45 * sin(dist * 0.01) * (1.0 - dist / (length(float2(width, height)) / 2.0));
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_3(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float bulge = 1.0 - 0.4 * abs(sin(delta.x * 0.01)) * abs(cos(delta.y * 0.01));
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_4(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float bulge = 1.0 - 0.55 * pow(normalized, 1.5);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_5(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float bulge = 1.0 - 0.48 * cos(dist * 0.012) * (1.0 - dist / (length(float2(width, height)) / 2.0));
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_6(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float bulge = 1.0 - 0.42 * sin(angle * 4.0);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_7(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    
+    float bulge = 1.0 - 0.5 * pow(sin((dist / maxDist) * 3.14), 2.0);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_8(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float bulge = 1.0 - 0.38 * abs(sin(delta.x * 0.012)) * abs(sin(delta.y * 0.012));
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_9(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float bulge = 1.0 - 0.45 * sin(dist * 0.008) * cos(atan2(delta.y, delta.x));
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_10(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float bulge = 1.0 - 0.52 * normalized * (1.0 - normalized);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_11(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float bulge = 1.0 - 0.44 * cos(angle * 3.0);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_12(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float bulge = 1.0 - 0.46 * pow(sin(dist * 0.011), 2.0);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_13(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float bulge = 1.0 - 0.4 * sin(delta.y * 0.008) * cos(delta.x * 0.008);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_funhouse_14(texture2d<float, access::read> inTexture [[texture(0)]],
+                             texture2d<float, access::write> outTexture [[texture(1)]],
+                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    
+    float bulge = 1.0 - 0.5 * (dist / maxDist) * (1.0 - sin(atan2(delta.y, delta.x) * 2.0) * 0.3);
+    float2 newPos = center + delta / bulge;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
