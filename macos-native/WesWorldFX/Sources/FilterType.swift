@@ -100,6 +100,52 @@ enum FilterType: String, CaseIterable {
     case bulgeFunhouse13 = "Bulge Funhouse 13"
     case bulgeFunhouse14 = "Bulge Funhouse 14"
     
+    // Favorite Filter Variations
+    case bulgeEyesV2 = "Bulge Eyes V2"
+    case bulgeEyesV3 = "Bulge Eyes V3"
+    case bulgeEyesV4 = "Bulge Eyes V4"
+    case bulgeEyesV5 = "Bulge Eyes V5"
+    
+    case funhouseMirrorV2 = "Funhouse Mirror V2"
+    case funhouseMirrorV3 = "Funhouse Mirror V3"
+    case funhouseMirrorV4 = "Funhouse Mirror V4"
+    case funhouseMirrorV5 = "Funhouse Mirror V5"
+    
+    case funnySquashV2 = "Funny Squash V2"
+    case funnySquashV3 = "Funny Squash V3"
+    case funnySquashV4 = "Funny Squash V4"
+    case funnySquashV5 = "Funny Squash V5"
+    
+    case pinchCheeksV2 = "Pinch Cheeks V2"
+    case pinchCheeksV3 = "Pinch Cheeks V3"
+    case pinchCheeksV4 = "Pinch Cheeks V4"
+    case pinchCheeksV5 = "Pinch Cheeks V5"
+    
+    case pincushionV2 = "Pincushion V2"
+    case pincushionV3 = "Pincushion V3"
+    case pincushionV4 = "Pincushion V4"
+    case pincushionV5 = "Pincushion V5"
+    
+    case radialWobbleV2 = "Radial Wobble V2"
+    case radialWobbleV3 = "Radial Wobble V3"
+    case radialWobbleV4 = "Radial Wobble V4"
+    case radialWobbleV5 = "Radial Wobble V5"
+    
+    case ultimateDistortionV2 = "Ultimate Distortion V2"
+    case ultimateDistortionV3 = "Ultimate Distortion V3"
+    case ultimateDistortionV4 = "Ultimate Distortion V4"
+    case ultimateDistortionV5 = "Ultimate Distortion V5"
+    
+    case waterRippleV2 = "Water Ripple V2"
+    case waterRippleV3 = "Water Ripple V3"
+    case waterRippleV4 = "Water Ripple V4"
+    case waterRippleV5 = "Water Ripple V5"
+    
+    case wobbleFaceV2 = "Wobble Face V2"
+    case wobbleFaceV3 = "Wobble Face V3"
+    case wobbleFaceV4 = "Wobble Face V4"
+    case wobbleFaceV5 = "Wobble Face V5"
+    
     var displayName: String {
         return rawValue
     }
@@ -191,6 +237,42 @@ enum FilterType: String, CaseIterable {
         case .bulgeFunhouse12: return "bulge_funhouse_12"
         case .bulgeFunhouse13: return "bulge_funhouse_13"
         case .bulgeFunhouse14: return "bulge_funhouse_14"
+        case .bulgeEyesV2: return "bulge_eyes_v2"
+        case .bulgeEyesV3: return "bulge_eyes_v3"
+        case .bulgeEyesV4: return "bulge_eyes_v4"
+        case .bulgeEyesV5: return "bulge_eyes_v5"
+        case .funhouseMirrorV2: return "funhouse_mirror_v2"
+        case .funhouseMirrorV3: return "funhouse_mirror_v3"
+        case .funhouseMirrorV4: return "funhouse_mirror_v4"
+        case .funhouseMirrorV5: return "funhouse_mirror_v5"
+        case .funnySquashV2: return "funny_squash_v2"
+        case .funnySquashV3: return "funny_squash_v3"
+        case .funnySquashV4: return "funny_squash_v4"
+        case .funnySquashV5: return "funny_squash_v5"
+        case .pinchCheeksV2: return "pinch_cheeks_v2"
+        case .pinchCheeksV3: return "pinch_cheeks_v3"
+        case .pinchCheeksV4: return "pinch_cheeks_v4"
+        case .pinchCheeksV5: return "pinch_cheeks_v5"
+        case .pincushionV2: return "pincushion_v2"
+        case .pincushionV3: return "pincushion_v3"
+        case .pincushionV4: return "pincushion_v4"
+        case .pincushionV5: return "pincushion_v5"
+        case .radialWobbleV2: return "radial_wobble_v2"
+        case .radialWobbleV3: return "radial_wobble_v3"
+        case .radialWobbleV4: return "radial_wobble_v4"
+        case .radialWobbleV5: return "radial_wobble_v5"
+        case .ultimateDistortionV2: return "ultimate_distortion_v2"
+        case .ultimateDistortionV3: return "ultimate_distortion_v3"
+        case .ultimateDistortionV4: return "ultimate_distortion_v4"
+        case .ultimateDistortionV5: return "ultimate_distortion_v5"
+        case .waterRippleV2: return "water_ripple_v2"
+        case .waterRippleV3: return "water_ripple_v3"
+        case .waterRippleV4: return "water_ripple_v4"
+        case .waterRippleV5: return "water_ripple_v5"
+        case .wobbleFaceV2: return "wobble_face_v2"
+        case .wobbleFaceV3: return "wobble_face_v3"
+        case .wobbleFaceV4: return "wobble_face_v4"
+        case .wobbleFaceV5: return "wobble_face_v5"
         }
     }
 }

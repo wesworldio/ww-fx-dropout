@@ -1881,3 +1881,789 @@ kernel void bulge_funhouse_14(texture2d<float, access::read> inTexture [[texture
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
+
+// MARK: - Favorite Filter Variations (36 new variations)
+
+// Bulge Eyes Variations
+kernel void bulge_eyes_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float radius = min(width, height) / 2.8;
+    
+    float strength = 0.75;
+    float effectRadius = radius * 0.7;
+    float factor = 1.0 - (dist / effectRadius) * strength * 0.8;
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_eyes_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float radius = min(width, height) / 2.2;
+    
+    float effectRadius = radius * 0.5;
+    float factor = 1.0 - pow(dist / effectRadius, 1.2) * 0.5;
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_eyes_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float factor = 1.0 - 0.55 * sin(dist * 0.008) * (1.0 - dist / (length(float2(width, height)) / 2.0));
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void bulge_eyes_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float factor = 1.0 - 0.65 * pow(1.0 - normalized, 1.5);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// Funhouse Mirror Variations
+kernel void funhouse_mirror_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float dy = pos.y - center.y;
+    
+    float strength = 0.5;
+    float normalizedY = dy / (height / 2.0);
+    float stretch = 1.0 + strength * cos(normalizedY * M_PI_F);
+    
+    float2 newPos = float2(pos.x, center.y + dy * stretch);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void funhouse_mirror_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float strength = 0.35;
+    float normalizedX = delta.x / (width / 2.0);
+    float stretch = 1.0 + strength * sin(normalizedX * M_PI_F * 2.0);
+    
+    float2 newPos = float2(center.x + delta.x * stretch, pos.y);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void funhouse_mirror_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float strength = 0.32;
+    float stretch = 1.0 + strength * sin(dist * 0.01);
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void funhouse_mirror_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float stretch = 1.0 + 0.28 * sin(angle * 3.0);
+    float2 newPos = center + delta * stretch;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// Funny Squash Variations
+kernel void funny_squash_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float squash = 1.0 - 0.4 * pow(normalized, 1.3);
+    float2 newPos = center + delta * squash;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void funny_squash_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float squashX = 1.0 - 0.35 * abs(sin(delta.y * 0.008));
+    float squashY = 1.0 - 0.35 * abs(cos(delta.x * 0.008));
+    float2 newPos = center + float2(delta.x * squashX, delta.y * squashY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void funny_squash_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float squash = 1.0 - 0.48 * cos(dist * 0.009);
+    float2 newPos = center + delta * squash;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void funny_squash_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float squash = 1.0 - 0.42 * sin(angle * 4.0);
+    float2 newPos = center + delta * squash;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// Pinch Cheeks Variations
+kernel void pinch_cheeks_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float radius = min(width, height) / 2.8;
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float strength = 0.5;
+    float2 newPos = pos;
+    if (dist < radius) {
+        float normalizedDist = dist / radius;
+        float factor = pow(normalizedDist, strength * 1.2);
+        newPos = center + delta * factor;
+    }
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void pinch_cheeks_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float radius = min(width, height) / 3.5;
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float2 newPos = pos;
+    if (dist < radius) {
+        float normalizedDist = dist / radius;
+        float factor = normalizedDist * normalizedDist;
+        newPos = center + delta * factor;
+    }
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void pinch_cheeks_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float radius = min(width, height) / 2.5;
+    
+    float strength = 0.35;
+    float2 newPos = pos;
+    if (dist < radius) {
+        float normalizedDist = dist / radius;
+        float factor = 1.0 - sin(normalizedDist * 1.57) * strength;
+        newPos = center + delta * factor;
+    }
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void pinch_cheeks_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float radius = min(width, height) / 3.0;
+    
+    float2 newPos = pos;
+    if (dist < radius) {
+        float normalizedDist = dist / radius;
+        float factor = pow(1.0 - normalizedDist, 1.8);
+        newPos = center + delta * factor;
+    }
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// Pincushion Variations
+kernel void pincushion_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    
+    float factor = 1.0 + 0.35 * pow(dist / maxDist, 2.0);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void pincushion_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float factor = 1.0 + 0.28 * sin(dist * 0.011);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void pincushion_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = min(width, height) / 2.0;
+    
+    float normalized = dist / maxDist;
+    float factor = 1.0 + 0.32 * pow(normalized, 1.8);
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void pincushion_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float dist = length(delta);
+    float factor = 1.0 + 0.25 * sin(angle * 2.0) * (dist / (length(float2(width, height)) / 2.0));
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// Radial Wobble Variations
+kernel void radial_wobble_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float wobble = sin(angle * 4.0) * 0.08;
+    float2 newPos = center + delta * (1.0 + wobble);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void radial_wobble_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float angle = atan2(delta.y, delta.x);
+    float wobble = cos(angle * 6.0) * 0.06 * (1.0 - dist / (length(float2(width, height)) / 2.0));
+    float2 newPos = center + delta * (1.0 + wobble);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(sourcePos);
+}
+
+kernel void radial_wobble_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float angle = atan2(delta.y, delta.x);
+    float wobble = sin(angle * 3.0) * cos(angle * 2.0) * 0.07;
+    float2 newPos = center + delta * (1.0 + wobble);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void radial_wobble_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                            texture2d<float, access::write> outTexture [[texture(1)]],
+                            uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float angle = atan2(delta.y, delta.x);
+    float wobble = sin(angle * 8.0) * 0.05 * exp(-dist * 0.002);
+    float2 newPos = center + delta * (1.0 + wobble);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// Ultimate Distortion Variations
+kernel void ultimate_distortion_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                                  texture2d<float, access::write> outTexture [[texture(1)]],
+                                  uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float angle = atan2(delta.y, delta.x);
+    float complex = sin(dist * 0.012) * cos(angle * 5.0) * 0.35;
+    float2 newPos = center + delta * (1.0 + complex);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void ultimate_distortion_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                                  texture2d<float, access::write> outTexture [[texture(1)]],
+                                  uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float maxDist = length(float2(width, height)) / 2.0;
+    
+    float factor = pow(dist / maxDist, 1.2) * 0.4 + sin(atan2(delta.y, delta.x) * 4.0) * 0.2;
+    float2 newPos = center + delta * (1.0 + factor);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void ultimate_distortion_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                                  texture2d<float, access::write> outTexture [[texture(1)]],
+                                  uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float complex = sin(delta.x * 0.009) * cos(delta.y * 0.009) * 0.38;
+    float2 newPos = center + delta * (1.0 + complex);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void ultimate_distortion_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                                  texture2d<float, access::write> outTexture [[texture(1)]],
+                                  uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float angle = atan2(delta.y, delta.x);
+    float complex = sin(dist * 0.01) * sin(angle * 3.0) * 0.32;
+    float2 newPos = center + delta * (1.0 + complex);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// Water Ripple Variations
+kernel void water_ripple_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 pos = float2(gid);
+    
+    float amplitude = 12.0;
+    float frequency = 0.04;
+    
+    float offsetX = sin(pos.y * frequency) * amplitude;
+    float offsetY = cos(pos.x * frequency) * amplitude;
+    
+    float2 newPos = pos + float2(offsetX, offsetY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void water_ripple_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 pos = float2(gid);
+    
+    float amplitude = 18.0;
+    float frequency = 0.07;
+    
+    float offsetX = sin(pos.y * frequency + pos.x * 0.03) * amplitude;
+    float offsetY = cos(pos.x * frequency - pos.y * 0.03) * amplitude;
+    
+    float2 newPos = pos + float2(offsetX, offsetY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void water_ripple_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 pos = float2(gid);
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float amplitude = 10.0 * (1.0 - dist / (length(float2(width, height)) / 2.0));
+    float frequency = 0.05;
+    
+    float offsetX = sin(pos.y * frequency) * amplitude;
+    float offsetY = cos(pos.x * frequency) * amplitude;
+    
+    float2 newPos = pos + float2(offsetX, offsetY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void water_ripple_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                           texture2d<float, access::write> outTexture [[texture(1)]],
+                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 pos = float2(gid);
+    
+    float amplitude = 14.0;
+    float frequency = 0.06;
+    float phase = sin(pos.x * 0.01);
+    
+    float offsetX = sin(pos.y * frequency + phase) * amplitude;
+    float offsetY = cos(pos.x * frequency + phase) * amplitude;
+    
+    float2 newPos = pos + float2(offsetX, offsetY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+// Wobble Face Variations
+kernel void wobble_face_v2(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float wobble = sin(delta.y * 0.008) * 0.12;
+    float2 newPos = center + delta * (1.0 + wobble);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void wobble_face_v3(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float wobble = sin(dist * 0.009) * cos(atan2(delta.y, delta.x)) * 0.11;
+    float2 newPos = center + delta * (1.0 + wobble);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void wobble_face_v4(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    
+    float wobble = cos(delta.x * 0.008) * 0.1;
+    float2 newPos = center + delta * (1.0 + wobble);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
+
+kernel void wobble_face_v5(texture2d<float, access::read> inTexture [[texture(0)]],
+                          texture2d<float, access::write> outTexture [[texture(1)]],
+                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float2 center = float2(width / 2.0, height / 2.0);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    
+    float angle = atan2(delta.y, delta.x);
+    float wobble = sin(angle * 4.0) * 0.09 * (1.0 - dist / (length(float2(width, height)) / 2.0));
+    float2 newPos = center + delta * (1.0 + wobble);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
+    float4 color = inTexture.read(sourcePos);
+    outTexture.write(color, gid);
+}
