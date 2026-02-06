@@ -13,10 +13,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     var cameraViewController: CameraViewController!
     
-    // UserDefaults keys for camera permission persistence
-    private let cameraPermissionLastAskedKey = "WesWorldFX_CameraPermissionLastAsked"
-    private let cameraPermissionGrantedKey = "WesWorldFX_CameraPermissionGranted"
-    
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("Application did finish launching")
         
@@ -97,106 +93,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    @objc func openBulgeEditor(_ sender: Any?) {
-        cameraViewController?.openBulgeEditor()
-    }
-    
-    @objc func manageBulgeFilters(_ sender: Any?) {
-        cameraViewController?.manageBulgeFilters()
-    }
-    
-    @objc func importBulgeFilters(_ sender: Any?) {
-        BulgeFilterManager.shared.importFiltersDialog()
-        cameraViewController?.updateFilterList()
-    }
-    
-    @objc func exportBulgeFilters(_ sender: Any?) {
-        BulgeFilterManager.shared.exportAllFilters()
-    }
-    
     private func requestCameraAccess() {
-        // Check current authorization status
-        let currentStatus = AVCaptureDevice.authorizationStatus(for: .video)
-        
-        // Log current state
-        let statusString = {
-            switch currentStatus {
-            case .authorized: return "authorized"
-            case .denied: return "denied"
-            case .restricted: return "restricted"
-            case .notDetermined: return "notDetermined"
-            @unknown default: return "unknown"
-            }
-        }()
-        
-        print("Camera permission status: \(statusString)")
-        
-        // Load previously saved permission state
-        let defaults = UserDefaults.standard
-        let wasAskedBefore = defaults.bool(forKey: cameraPermissionLastAskedKey)
-        let wasGrantedBefore = defaults.bool(forKey: cameraPermissionGrantedKey)
-        
-        switch currentStatus {
-        case .authorized:
-            // Permission already granted by user
-            print("Camera access already authorized by system")
-            defaults.set(true, forKey: cameraPermissionGrantedKey)
-            defaults.set(Date(), forKey: cameraPermissionLastAskedKey)
-            
-        case .denied:
-            // User previously denied camera access
-            print("Camera access was denied")
-            showCameraDeniedAlert()
-            
-        case .restricted:
-            // Camera access is restricted (parental controls, MDM, etc.)
-            print("Camera access is restricted")
-            showCameraRestrictedAlert()
-            
-        case .notDetermined:
-            // First time asking for permission
-            print("Requesting camera access from user")
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+        AVCaptureDevice.requestAccess(for: .video) { granted in
+            if !granted {
                 DispatchQueue.main.async {
-                    let defaults = UserDefaults.standard
-                    defaults.set(granted, forKey: self?.cameraPermissionGrantedKey ?? "WesWorldFX_CameraPermissionGranted")
-                    defaults.set(Date(), forKey: self?.cameraPermissionLastAskedKey ?? "WesWorldFX_CameraPermissionLastAsked")
-                    
-                    print("Camera access request result: \(granted ? "granted" : "denied")")
-                    
-                    if !granted {
-                        self?.showCameraDeniedAlert()
-                    }
+                    let alert = NSAlert()
+                    alert.messageText = "Camera Access Required"
+                    alert.informativeText = "WesWorld FX needs camera access to work. Please enable it in System Settings > Privacy & Security > Camera."
+                    alert.alertStyle = .warning
+                    alert.addButton(withTitle: "OK")
+                    alert.runModal()
                 }
             }
-        @unknown default:
-            print("Unknown camera permission status")
         }
-    }
-    
-    private func showCameraDeniedAlert() {
-        let alert = NSAlert()
-        alert.messageText = "Camera Access Required"
-        alert.informativeText = "WesWorld FX needs camera access to work.\n\nTo enable camera access:\n1. Open System Settings\n2. Go to Privacy & Security > Camera\n3. Find and enable WesWorld FX"
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Open System Settings")
-        alert.addButton(withTitle: "Continue Without Camera")
-        
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            // Open System Settings to Privacy & Security > Camera
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera") {
-                NSWorkspace.shared.open(url)
-            }
-        }
-    }
-    
-    private func showCameraRestrictedAlert() {
-        let alert = NSAlert()
-        alert.messageText = "Camera Access Restricted"
-        alert.informativeText = "Camera access is restricted on this system, possibly due to parental controls or device management policies. Please contact your system administrator."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
     }
 }

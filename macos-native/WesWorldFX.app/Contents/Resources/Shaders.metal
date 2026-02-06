@@ -65,7 +65,7 @@ kernel void upside_down_v1(texture2d<float, access::read> inTexture [[texture(0)
     outTexture.write(color, gid);
 }
 
-// Bulge Eyes - Matches web implementation with dual eye positions
+// Bulge Eyes
 kernel void bulge_eyes(texture2d<float, access::read> inTexture [[texture(0)]],
                       texture2d<float, access::write> outTexture [[texture(1)]],
                       uint2 gid [[thread_position_in_grid]]) {
@@ -73,55 +73,28 @@ kernel void bulge_eyes(texture2d<float, access::read> inTexture [[texture(0)]],
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    
-    // Eye positions (approximate - left and right of center)
-    float eyeOffsetX = float(width) * 0.15; // Eyes are about 15% of width from center
-    float eyeOffsetY = -float(height) * 0.05; // Slightly above center
-    float leftEyeX = centerX - eyeOffsetX;
-    float leftEyeY = centerY + eyeOffsetY;
-    float rightEyeX = centerX + eyeOffsetX;
-    float rightEyeY = centerY + eyeOffsetY;
-    
-    // Eye bulge parameters
-    float eyeRadius = min(float(width), float(height)) * 0.12; // Size of each eye bulge
-    const float strength = 0.65; // Bulge strength
+    float2 center = float2(width / 2.0, height / 2.0);
+    float radius = min(width, height) / 2.5;
     
     float2 pos = float2(gid);
-    float newX = pos.x;
-    float newY = pos.y;
+    float2 delta = pos - center;
+    float dist = length(delta);
     
-    // Calculate distance to left eye
-    float dxLeft = pos.x - leftEyeX;
-    float dyLeft = pos.y - leftEyeY;
-    float distLeft = sqrt(dxLeft * dxLeft + dyLeft * dyLeft);
+    const float strength = 0.6;
+    const float effectRadius = radius * 0.6;
     
-    // Calculate distance to right eye
-    float dxRight = pos.x - rightEyeX;
-    float dyRight = pos.y - rightEyeY;
-    float distRight = sqrt(dxRight * dxRight + dyRight * dyRight);
-    
-    // Apply bulge for left eye
-    if (distLeft < eyeRadius) {
-        float factor = 1.0 - (distLeft / eyeRadius) * strength;
-        newX = leftEyeX + dxLeft * factor;
-        newY = leftEyeY + dyLeft * factor;
+    float2 newPos = pos;
+    if (dist < effectRadius) {
+        float factor = 1.0 - (dist / effectRadius) * strength;
+        newPos = center + delta * factor;
     }
-    // Apply bulge for right eye (only if not already affected by left)
-    else if (distRight < eyeRadius) {
-        float factor = 1.0 - (distRight / eyeRadius) * strength;
-        newX = rightEyeX + dxRight * factor;
-        newY = rightEyeY + dyRight * factor;
-    }
-
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)),
-                           clamp(newY, 0.0, float(height - 1)));
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
 
-// Funhouse Mirror - Matches web implementation with asymmetric distortion
+// Funhouse Mirror
 kernel void funhouse_mirror(texture2d<float, access::read> inTexture [[texture(0)]],
                            texture2d<float, access::write> outTexture [[texture(1)]],
                            uint2 gid [[thread_position_in_grid]]) {
@@ -129,29 +102,23 @@ kernel void funhouse_mirror(texture2d<float, access::read> inTexture [[texture(0
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    float invHalfHeight = 1.0 / halfHeight;
-    const float strength = 0.25;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dx = (pos.x - centerX) * invHalfWidth;
+    float dx = pos.x - center.x;
     
-    // Web version: horizontal stretch based on X position only
-    float funhouseStretch = 1.0 + strength * sin(dx * M_PI_F);
-    float newX = centerX + (pos.x - centerX) * funhouseStretch;
-    float newY = pos.y;
+    const float strength = 0.4;
+    float normalizedX = dx / (width / 2.0);
+    float stretch = 1.0 + strength * sin(normalizedX * M_PI_F);
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = float2(center.x + dx * stretch, pos.y);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
 
-// Pinch Cheeks - Matches web implementation with angular pinching
+// Pinch Cheeks
 kernel void pinch_cheeks(texture2d<float, access::read> inTexture [[texture(0)]],
                         texture2d<float, access::write> outTexture [[texture(1)]],
                         uint2 gid [[thread_position_in_grid]]) {
@@ -159,29 +126,23 @@ kernel void pinch_cheeks(texture2d<float, access::read> inTexture [[texture(0)]]
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-    const float strength = 0.35;
+    float2 center = float2(width / 2.0, height / 2.0);
+    float radius = min(width, height) / 3.0;
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float normalizedDist = min(dist * invRadius, 1.0);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
+    float2 delta = pos - center;
+    float dist = length(delta);
     
-    // Pinch sides inward - creates funny cheek effect
-    float pinchFactor = 1.0 - strength * abs(cosAngle) * normalizedDist;
-    float newDist = dist * pinchFactor;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
+    const float strength = 0.4;
+    float2 newPos = pos;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    if (dist < radius) {
+        float normalizedDist = dist / radius;
+        float factor = pow(normalizedDist, strength);
+        newPos = center + delta * factor;
+    }
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -212,7 +173,7 @@ kernel void pincushion(texture2d<float, access::read> inTexture [[texture(0)]],
     outTexture.write(color, gid);
 }
 
-// Radial Wobble - Matches web implementation with correct wobble amplitude
+// Radial Wobble
 kernel void radial_wobble(texture2d<float, access::read> inTexture [[texture(0)]],
                          texture2d<float, access::write> outTexture [[texture(1)]],
                          uint2 gid [[thread_position_in_grid]]) {
@@ -220,33 +181,27 @@ kernel void radial_wobble(texture2d<float, access::read> inTexture [[texture(0)]
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
+    float2 center = float2(width / 2.0, height / 2.0);
+    float radius = min(width, height) / 2.0;
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-    float normalizedDist = min(dist * invRadius, 1.0);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float angle = atan2(delta.y, delta.x);
     
-    // Wobbling radial distortion
-    float wobble = sin(angle * 6.0) * 15.0 * normalizedDist;
-    float newDist = dist + wobble;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
+    const float strength = 0.3;
+    float normalizedDist = dist / radius;
+    float wobble = sin(angle * 6.0) * strength * (1.0 - normalizedDist);
+    float factor = 1.0 + wobble;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
 
-// Water Ripple - Matches web implementation
+// Water Ripple
 kernel void water_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
                         texture2d<float, access::write> outTexture [[texture(1)]],
                         uint2 gid [[thread_position_in_grid]]) {
@@ -254,26 +209,19 @@ kernel void water_ripple(texture2d<float, access::read> inTexture [[texture(0)]]
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    const float frequency = 0.05;
-    const float amplitude = 15.0;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
+    float2 delta = pos - center;
+    float dist = length(delta);
     
-    // Web version: simple ripple without decay
-    float ripple = sin(dist * frequency) * amplitude;
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-    float newX = pos.x + ripple * cosAngle;
-    float newY = pos.y + ripple * sinAngle;
+    const float strength = 15.0;
+    const float ripples = 6.0;
+    float offset = sin(dist / strength) * ripples;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = pos + normalize(delta) * offset;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -286,53 +234,25 @@ kernel void ultimate_distortion(texture2d<float, access::read> inTexture [[textu
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    float invHalfHeight = 1.0 / halfHeight;
+    float2 center = float2(width / 2.0, height / 2.0);
     
-    float x = float(gid.x);
-    float y = float(gid.y);
+    float2 pos = float2(gid);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float angle = atan2(delta.y, delta.x);
     
-    // Normalize coordinates
-    float dx = (x - centerX) * invHalfWidth;
-    float dy = (y - centerY) * invHalfHeight;
-    float dx2 = dx * dx;
-    float dy2 = dy * dy;
+    const float strength = 0.5;
+    float warpX = sin(angle * 4.0 + dist * 0.02) * strength * 20.0;
+    float warpY = cos(angle * 4.0 + dist * 0.02) * strength * 20.0;
     
-    // Pre-calculate sin/cos for dy
-    float sinDyPI2 = sin(dy * M_PI_F * 2.0);
-    float cosDyPI2 = cos(dy * M_PI_F * 2.0);
+    float2 newPos = pos + float2(warpX, warpY);
     
-    // Funhouse mirror horizontal stretching
-    float horizontalStretch = 0.3 * sinDyPI2 * dx;
-    
-    // Multiple ripple effects at different frequencies
-    float distNorm = sqrt(dx2 + dy2);
-    float ripple1 = sin(distNorm * 8.0) * 0.02;
-    float ripple2 = sin(distNorm * 15.0) * 0.01;
-    
-    // Wobbling distortion
-    float wobble = 0.1 * sin(dx * M_PI_F * 3.0) * cosDyPI2;
-    
-    // Combine all distortions
-    float distortX = horizontalStretch + ripple1 + ripple2 + wobble;
-    float distortY = ripple1 * 1.5 + ripple2 * 0.8;
-    
-    // Apply distortion to get source coordinates
-    float newX = centerX + (x - centerX) * (1.0 + distortX);
-    float newY = centerY + (y - centerY) * (1.0 + distortY);
-    
-    // Sample from source position
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
 
-// Wobble Face - Matches web implementation with radial wobble
+// Wobble Face
 kernel void wobble_face(texture2d<float, access::read> inTexture [[texture(0)]],
                        texture2d<float, access::write> outTexture [[texture(1)]],
                        uint2 gid [[thread_position_in_grid]]) {
@@ -340,34 +260,22 @@ kernel void wobble_face(texture2d<float, access::read> inTexture [[texture(0)]],
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-    const float strength = 12.0;
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-    float normalizedDist = min(dist * invRadius, 1.0);
     
-    // Gentle wobbling distortion
-    float wobble = strength * sin(angle * 6.0) * normalizedDist;
-    float newDist = dist + wobble;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
+    const float strength = 10.0;
+    const float frequency = 0.05;
+    float offsetX = sin(pos.y * frequency) * strength;
+    float offsetY = cos(pos.x * frequency) * strength;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = pos + float2(offsetX, offsetY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
 
-// Complex Ripple - Matches web implementation with radial and angular ripples
+// Complex Ripple
 kernel void complex_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
                           texture2d<float, access::write> outTexture [[texture(1)]],
                           uint2 gid [[thread_position_in_grid]]) {
@@ -375,26 +283,20 @@ kernel void complex_ripple(texture2d<float, access::read> inTexture [[texture(0)
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
+    float2 delta = pos - center;
+    float dist = length(delta);
+    float angle = atan2(delta.y, delta.x);
     
-    // Complex ripple with angular variation - reduced for subtlety
-    float radialRipple = sin(dist * 0.06) * 6.0;
-    float angularRipple = sin(angle * 4.0) * 3.0;
-    float totalRipple = radialRipple + angularRipple;
-    float newX = pos.x + totalRipple * cosAngle;
-    float newY = pos.y + totalRipple * sinAngle;
+    const float strength = 20.0;
+    float ripple1 = sin(dist * 0.1) * strength;
+    float ripple2 = cos(angle * 5.0) * strength * 0.5;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = pos + normalize(delta) * (ripple1 + ripple2);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -423,7 +325,7 @@ kernel void complex_ripple_v1(texture2d<float, access::read> inTexture [[texture
     outTexture.write(color, gid);
 }
 
-// Elastic Face - Matches web implementation with bouncy elastic-like distortion
+// Elastic Face
 kernel void elastic_face(texture2d<float, access::read> inTexture [[texture(0)]],
                         texture2d<float, access::write> outTexture [[texture(1)]],
                         uint2 gid [[thread_position_in_grid]]) {
@@ -431,29 +333,20 @@ kernel void elastic_face(texture2d<float, access::read> inTexture [[texture(0)]]
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-    const float strength = 0.5;
+    float2 center = float2(width / 2.0, height / 2.0);
+    float radius = min(width, height) / 2.0;
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float normalizedDist = min(dist * invRadius, 1.0);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
+    float2 delta = pos - center;
+    float dist = length(delta);
     
-    // Bouncy elastic-like distortion
-    float elasticFactor = 1.0 + strength * sin(normalizedDist * M_PI_F * 2.0) * 0.3;
-    float newDist = normalizedDist * elasticFactor * radius;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
+    const float strength = 0.5;
+    float normalizedDist = dist / radius;
+    float factor = 1.0 + strength * sin(normalizedDist * M_PI_F * 3.0) * 0.3;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -506,7 +399,7 @@ kernel void elastic_stretch_v1(texture2d<float, access::read> inTexture [[textur
     outTexture.write(color, gid);
 }
 
-// Funny Squash - Matches web implementation with vertical squashing
+// Funny Squash
 kernel void funny_squash(texture2d<float, access::read> inTexture [[texture(0)]],
                         texture2d<float, access::write> outTexture [[texture(1)]],
                         uint2 gid [[thread_position_in_grid]]) {
@@ -514,25 +407,24 @@ kernel void funny_squash(texture2d<float, access::read> inTexture [[texture(0)]]
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfHeight = 1.0 / halfHeight;
-    const float strength = 0.4;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dy = (pos.y - centerY) * invHalfHeight;
-    float squashFactor = 1.0 - strength * dy * dy;
-    float newX = centerX + (pos.x - centerX) / squashFactor;
-    float newY = pos.y;
+    float dx = pos.x - center.x;
+    float dy = pos.y - center.y;
     
-    uint2 sourcePos = uint2(clamp(pos.x, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    const float strength = 0.4;
+    float normalizedY = dy / (height / 2.0);
+    float factor = 1.0 - strength * normalizedY * normalizedY;
+    
+    float2 newPos = float2(center.x + dx / factor, pos.y);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
 
-// Funny Stretch - Matches web implementation with horizontal stretch
+// Funny Stretch
 kernel void funny_stretch(texture2d<float, access::read> inTexture [[texture(0)]],
                          texture2d<float, access::write> outTexture [[texture(1)]],
                          uint2 gid [[thread_position_in_grid]]) {
@@ -540,22 +432,19 @@ kernel void funny_stretch(texture2d<float, access::read> inTexture [[texture(0)]
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    const float strength = 1.2;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dx = (pos.x - centerX) * invHalfWidth;
+    float dx = pos.x - center.x;
+    float dy = pos.y - center.y;
     
-    // Web version: vertical compression based on X position
-    float stretchFactor = 1.0 + strength * dx * dx;
-    float newX = pos.x;
-    float newY = centerY + (pos.y - centerY) / stretchFactor;
+    const float strength = 1.2;
+    float normalizedX = dx / (width / 2.0);
+    float factor = 1.0 + strength * normalizedX * normalizedX;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(pos.y, 0.0, float(height - 1)));
+    float2 newPos = float2(pos.x, center.y + dy / factor);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -585,7 +474,7 @@ kernel void funny_stretch_v1(texture2d<float, access::read> inTexture [[texture(
     outTexture.write(color, gid);
 }
 
-// Gentle Ripple - Matches web implementation with correct frequency and amplitude
+// Gentle Ripple
 kernel void gentle_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
                          texture2d<float, access::write> outTexture [[texture(1)]],
                          uint2 gid [[thread_position_in_grid]]) {
@@ -593,26 +482,18 @@ kernel void gentle_ripple(texture2d<float, access::read> inTexture [[texture(0)]
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    const float frequency = 0.04;
-    const float amplitude = 12.0;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
+    float2 delta = pos - center;
+    float dist = length(delta);
     
-    // Gentler ripple for subtle funny effect
-    float ripple = sin(dist * frequency) * amplitude;
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-    float newX = pos.x + ripple * cosAngle;
-    float newY = pos.y + ripple * sinAngle;
+    const float strength = 8.0;
+    float offset = sin(dist * 0.1) * strength;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = pos + normalize(delta) * offset;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -787,7 +668,7 @@ kernel void radial_squeeze_v1(texture2d<float, access::read> inTexture [[texture
     outTexture.write(color, gid);
 }
 
-// Smush Face - Matches web implementation with radial compression
+// Smush Face
 kernel void smush_face(texture2d<float, access::read> inTexture [[texture(0)]],
                       texture2d<float, access::write> outTexture [[texture(1)]],
                       uint2 gid [[thread_position_in_grid]]) {
@@ -795,29 +676,20 @@ kernel void smush_face(texture2d<float, access::read> inTexture [[texture(0)]],
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-    const float strength = 0.3;
+    float2 center = float2(width / 2.0, height / 2.0);
+    float radius = min(width, height) / 2.0;
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float normalizedDist = min(dist * invRadius, 1.0);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
+    float2 delta = pos - center;
+    float dist = length(delta);
     
-    // Smushes face from all sides
-    float smushFactor = 1.0 - strength * normalizedDist * normalizedDist;
-    float newDist = normalizedDist * smushFactor * radius;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
+    const float strength = 0.5;
+    float normalizedDist = dist / radius;
+    float factor = 1.0 - strength * normalizedDist;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = center + delta * factor;
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -830,19 +702,18 @@ kernel void squeeze_horizontal(texture2d<float, access::read> inTexture [[textur
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float normalizedX = dx * invHalfWidth;
-    float squeezeFactor = 1.0 - 1.4 * normalizedX * normalizedX;
-    float newX = centerX + dx * squeezeFactor;
-    float newY = pos.y;
+    float dx = pos.x - center.x;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)),
-                           clamp(newY, 0.0, float(height - 1)));
+    const float strength = 0.5;
+    float normalizedX = dx / (width / 2.0);
+    float factor = 1.0 - strength * abs(normalizedX);
+    
+    float2 newPos = float2(center.x + dx * factor, pos.y);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -879,19 +750,18 @@ kernel void squeeze_vertical(texture2d<float, access::read> inTexture [[texture(
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerY = float(height) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfHeight = 1.0 / halfHeight;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dy = pos.y - centerY;
-    float normalizedY = dy * invHalfHeight;
-    float squeezeFactor = 1.0 - 1.4 * normalizedY * normalizedY;
-    float newX = pos.x;
-    float newY = centerY + dy * squeezeFactor;
+    float dy = pos.y - center.y;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)),
-                           clamp(newY, 0.0, float(height - 1)));
+    const float strength = 0.5;
+    float normalizedY = dy / (height / 2.0);
+    float factor = 1.0 - strength * abs(normalizedY);
+    
+    float2 newPos = float2(pos.x, center.y + dy * factor);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -920,7 +790,7 @@ kernel void squeeze_vertical_v1(texture2d<float, access::read> inTexture [[textu
     outTexture.write(color, gid);
 }
 
-// Squish Face - Matches web implementation with horizontal compression
+// Squish Face
 kernel void squish_face(texture2d<float, access::read> inTexture [[texture(0)]],
                        texture2d<float, access::write> outTexture [[texture(1)]],
                        uint2 gid [[thread_position_in_grid]]) {
@@ -928,21 +798,24 @@ kernel void squish_face(texture2d<float, access::read> inTexture [[texture(0)]],
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfHeight = 1.0 / halfHeight;
-    const float strength = 1.1;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dy = (pos.y - centerY) * invHalfHeight;
-    float squishFactor = 1.0 - strength * dy * dy;
+    float dx = pos.x - center.x;
+    float dy = pos.y - center.y;
     
-    // Horizontal compression - makes face wider and funnier
-    float newX = centerX + (pos.x - centerX) / squishFactor;
+    const float xStrength = 0.4;
+    const float yStrength = 0.2;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)), 
-                           clamp(pos.y, 0.0, float(height - 1)));
+    float normalizedX = dx / (width / 2.0);
+    float normalizedY = dy / (height / 2.0);
+    
+    float xFactor = 1.0 - xStrength * abs(normalizedX);
+    float yFactor = 1.0 + yStrength * abs(normalizedY);
+    
+    float2 newPos = float2(center.x + dx * xFactor, center.y + dy * yFactor);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -977,7 +850,7 @@ kernel void squish_face_v1(texture2d<float, access::read> inTexture [[texture(0)
     outTexture.write(color, gid);
 }
 
-// Stretch Face - Matches web implementation with vertical stretch
+// Stretch Face
 kernel void stretch_face(texture2d<float, access::read> inTexture [[texture(0)]],
                         texture2d<float, access::write> outTexture [[texture(1)]],
                         uint2 gid [[thread_position_in_grid]]) {
@@ -985,21 +858,18 @@ kernel void stretch_face(texture2d<float, access::read> inTexture [[texture(0)]]
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    const float strength = 1.4;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dx = (pos.x - centerX) * invHalfWidth;
+    float dy = pos.y - center.y;
     
-    // Vertical stretch - makes face taller and funnier
-    float stretchFactor = 1.0 + strength * dx * dx;
-    float newY = centerY + (pos.y - centerY) / stretchFactor;
+    const float strength = 0.9;
+    float normalizedY = dy / (height / 2.0);
+    float factor = 1.0 + strength * abs(normalizedY);
     
-    uint2 sourcePos = uint2(clamp(pos.x, 0.0, float(width - 1)), 
-                           clamp(newY, 0.0, float(height - 1)));
+    float2 newPos = float2(pos.x, center.y + dy / factor);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -1028,7 +898,7 @@ kernel void stretch_face_v1(texture2d<float, access::read> inTexture [[texture(0
     outTexture.write(color, gid);
 }
 
-// Warp Face - Matches web implementation with funny expressions
+// Warp Face
 kernel void warp_face(texture2d<float, access::read> inTexture [[texture(0)]],
                      texture2d<float, access::write> outTexture [[texture(1)]],
                      uint2 gid [[thread_position_in_grid]]) {
@@ -1036,28 +906,22 @@ kernel void warp_face(texture2d<float, access::read> inTexture [[texture(0)]],
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    float invHalfHeight = 1.0 / halfHeight;
-    const float strength = 0.8;
+    float2 center = float2(width / 2.0, height / 2.0);
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float warpDx = dx * invHalfWidth;
-    float warpDy = dy * invHalfHeight;
+    float dx = pos.x - center.x;
+    float dy = pos.y - center.y;
     
-    // Web version: multiply normalized coords by wave factors
-    float warpX = warpDx * (1.0 + strength * sin(warpDy * M_PI_F * 2.0));
-    float warpY = warpDy * (1.0 + strength * cos(warpDx * M_PI_F * 2.0));
-    float newX = centerX + warpX * halfWidth;
-    float newY = centerY + warpY * halfHeight;
+    const float strength = 0.8;
+    float normalizedX = dx / (width / 2.0);
+    float normalizedY = dy / (height / 2.0);
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)),
-                           clamp(newY, 0.0, float(height - 1)));
+    float warpX = normalizedX * (1.0 + strength * sin(normalizedY * M_PI_F * 2.0));
+    float warpY = normalizedY * (1.0 + strength * cos(normalizedX * M_PI_F * 2.0));
+    
+    float2 newPos = float2(center.x + warpX * (width / 2.0), center.y + warpY * (height / 2.0));
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -1098,23 +962,18 @@ kernel void wave_distortion(texture2d<float, access::read> inTexture [[texture(0
     
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
     
     float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float angle = atan2(dy, dx);
     
-    // Web version: combined radial and angular wave
-    float waveX = sin(dist * 0.08 + angle * 2.0) * 6.0;
-    float waveY = cos(dist * 0.06 - angle * 2.0) * 6.0;
-    float newX = pos.x + waveX;
-    float newY = pos.y + waveY;
+    const float amplitude = 20.0;
+    const float frequency = 0.05;
     
-    uint2 sourcePos = uint2(clamp(newX, 0.0, float(width - 1)),
-                           clamp(newY, 0.0, float(height - 1)));
+    float offsetX = sin(pos.y * frequency) * amplitude;
+    float offsetY = cos(pos.x * frequency) * amplitude;
+    
+    float2 newPos = pos + float2(offsetX, offsetY);
+    
+    uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
 }
@@ -1141,1194 +1000,4 @@ kernel void wave_distortion_v1(texture2d<float, access::read> inTexture [[textur
     uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
     outTexture.write(color, gid);
-}
-
-// Grid Overlay with Bulge Eyes Distortion - Forward-maps grid lines like the web version
-// Grid overlay for complex_ripple filter
-kernel void draw_grid_overlay_complex_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
-                                             texture2d<float, access::write> outTexture [[texture(1)]],
-                                             uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-
-    // Grid parameters (match web)
-    const uint gridSize = 30;
-    const uint gridOffset = 5;
-
-    // Only draw for source grid points
-    bool isGridPoint = false;
-    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
-        isGridPoint = true;
-    }
-    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
-        isGridPoint = true;
-    }
-    if (!isGridPoint) {
-        return;
-    }
-
-    float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-    
-    // Complex ripple with angular variation - same as complex_ripple filter
-    float radialRipple = sin(dist * 0.06) * 6.0;
-    float angularRipple = sin(angle * 4.0) * 3.0;
-    float totalRipple = radialRipple + angularRipple;
-    float newX = pos.x + totalRipple * cosAngle;
-    float newY = pos.y + totalRipple * sinAngle;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for water_ripple filter
-kernel void draw_grid_overlay_water_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
-                                           texture2d<float, access::write> outTexture [[texture(1)]],
-                                           uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-
-    // Grid parameters (match web)
-    const uint gridSize = 30;
-    const uint gridOffset = 5;
-
-    // Only draw for source grid points
-    bool isGridPoint = false;
-    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
-        isGridPoint = true;
-    }
-    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
-        isGridPoint = true;
-    }
-    if (!isGridPoint) {
-        return;
-    }
-
-    float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float angle = atan2(dy, dx);
-    
-    // Water-like ripple with distance-based decay (matches filter)
-    const float frequency = 0.02;
-    const float amplitude = 20.0;
-    const float decay = 0.015;
-    float ripple = sin(dist * frequency) * amplitude * exp(-dist * decay);
-    float newX = pos.x + ripple * cos(angle);
-    float newY = pos.y + ripple * sin(angle);
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for multi_ripple filter
-kernel void draw_grid_overlay_multi_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
-                                           texture2d<float, access::write> outTexture [[texture(1)]],
-                                           uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-
-    // Grid parameters (match web)
-    const uint gridSize = 30;
-    const uint gridOffset = 5;
-
-    // Only draw for source grid points
-    bool isGridPoint = false;
-    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
-        isGridPoint = true;
-    }
-    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
-        isGridPoint = true;
-    }
-    if (!isGridPoint) {
-        return;
-    }
-
-    float2 pos = float2(gid);
-    float2 center1 = float2(width * 0.3, height * 0.3);
-    float2 center2 = float2(width * 0.7, height * 0.7);
-
-    float dist1 = length(pos - center1);
-    float dist2 = length(pos - center2);
-
-    const float strength = 10.0;
-    float ripple1 = sin(dist1 * 0.1) * strength;
-    float ripple2 = sin(dist2 * 0.1) * strength;
-
-    float2 offset1 = normalize(pos - center1) * ripple1;
-    float2 offset2 = normalize(pos - center2) * ripple2;
-
-    float2 newPos = pos + offset1 + offset2;
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for swirl filter
-
-// Generic grid overlay for bulge_eyes filter (legacy)
-kernel void draw_grid_overlay(texture2d<float, access::read> inTexture [[texture(0)]],
-                              texture2d<float, access::write> outTexture [[texture(1)]],
-                              uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-
-    // Grid parameters (match web)
-    const uint gridSize = 30;
-    const uint gridOffset = 5;
-
-    // Only draw for source grid points
-    bool isGridPoint = false;
-    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
-        isGridPoint = true;
-    }
-    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
-        isGridPoint = true;
-    }
-    if (!isGridPoint) {
-        return;
-    }
-
-    // Eye positions (same as bulge_eyes filter)
-    float eyeOffsetX = float(width) * 0.15;
-    float eyeOffsetY = -float(height) * 0.05;
-    float leftEyeX = centerX - eyeOffsetX;
-    float leftEyeY = centerY + eyeOffsetY;
-    float rightEyeX = centerX + eyeOffsetX;
-    float rightEyeY = centerY + eyeOffsetY;
-
-    // Eye bulge parameters (same as bulge_eyes filter)
-    float eyeRadius = min(float(width), float(height)) * 0.12;
-    const float strength = 0.65;
-
-    float2 pos = float2(gid);
-    float2 distorted = pos;
-
-    // Calculate distance to left eye
-    float dxLeft = pos.x - leftEyeX;
-    float dyLeft = pos.y - leftEyeY;
-    float distLeft = sqrt(dxLeft * dxLeft + dyLeft * dyLeft);
-
-    // Calculate distance to right eye
-    float dxRight = pos.x - rightEyeX;
-    float dyRight = pos.y - rightEyeY;
-    float distRight = sqrt(dxRight * dxRight + dyRight * dyRight);
-
-    // Apply bulge transformation to grid point (forward mapping)
-    if (distLeft < eyeRadius) {
-        float factor = 1.0 - (distLeft / eyeRadius) * strength;
-        distorted.x = leftEyeX + dxLeft * factor;
-        distorted.y = leftEyeY + dyLeft * factor;
-    } else if (distRight < eyeRadius) {
-        float factor = 1.0 - (distRight / eyeRadius) * strength;
-        distorted.x = rightEyeX + dxRight * factor;
-        distorted.y = rightEyeY + dyRight * factor;
-    }
-
-    uint2 outPos = uint2(clamp(distorted.x, 0.0, float(width - 1)),
-                         clamp(distorted.y, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-
-// ============================================================================
-// COMPREHENSIVE GRID OVERLAY SHADERS FOR ALL FILTERS
-// Each grid shader matches its corresponding filter's distortion exactly
-// ============================================================================
-
-inline bool isGridPoint(uint2 gid) {
-    const uint gridSize = 30;
-    const uint gridOffset = 5;
-    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
-        return true;
-    }
-    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
-        return true;
-    }
-    return false;
-}
-
-// Grid overlay for upside_down
-kernel void draw_grid_overlay_upside_down(texture2d<float, access::read> inTexture [[texture(0)]],
-                                          texture2d<float, access::write> outTexture [[texture(1)]],
-                                          uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint height = inTexture.get_height();
-    float newX = float(gid.x);
-    float newY = float(height - 1 - gid.y);
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(outTexture.get_width() - 1)),
-                         clamp(newY, 0.0, float(outTexture.get_height() - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for upside_down_v1 (rotation)
-kernel void draw_grid_overlay_upside_down_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                             texture2d<float, access::write> outTexture [[texture(1)]],
-                                             uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float newX = float(width - 1 - gid.x);
-    float newY = float(height - 1 - gid.y);
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for bulge_eyes
-kernel void draw_grid_overlay_bulge_eyes(texture2d<float, access::read> inTexture [[texture(0)]],
-                                         texture2d<float, access::write> outTexture [[texture(1)]],
-                                         uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-
-    float eyeOffsetX = float(width) * 0.15;
-    float eyeOffsetY = -float(height) * 0.05;
-    float leftEyeX = centerX - eyeOffsetX;
-    float leftEyeY = centerY + eyeOffsetY;
-    float rightEyeX = centerX + eyeOffsetX;
-    float rightEyeY = centerY + eyeOffsetY;
-
-    float eyeRadius = min(float(width), float(height)) * 0.12;
-    const float strength = 0.65;
-
-    float2 pos = float2(gid);
-    float newX = pos.x;
-    float newY = pos.y;
-
-    float dxLeft = pos.x - leftEyeX;
-    float dyLeft = pos.y - leftEyeY;
-    float distLeft = sqrt(dxLeft * dxLeft + dyLeft * dyLeft);
-
-    float dxRight = pos.x - rightEyeX;
-    float dyRight = pos.y - rightEyeY;
-    float distRight = sqrt(dxRight * dxRight + dyRight * dyRight);
-
-    if (distLeft < eyeRadius) {
-        float factor = 1.0 - (distLeft / eyeRadius) * strength;
-        newX = leftEyeX + dxLeft * factor;
-        newY = leftEyeY + dyLeft * factor;
-    } else if (distRight < eyeRadius) {
-        float factor = 1.0 - (distRight / eyeRadius) * strength;
-        newX = rightEyeX + dxRight * factor;
-        newY = rightEyeY + dyRight * factor;
-    }
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for funhouse_mirror
-kernel void draw_grid_overlay_funhouse_mirror(texture2d<float, access::read> inTexture [[texture(0)]],
-                                              texture2d<float, access::write> outTexture [[texture(1)]],
-                                              uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-
-    float halfWidth = float(width) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    float invHalfHeight = 1.0 / halfHeight;
-    const float strength = 0.25;
-
-    float2 pos = float2(gid);
-    float dx = (pos.x - centerX) * invHalfWidth;
-    float dy = (pos.y - centerY) * invHalfHeight;
-
-    float sinDyPI = sin(dy * M_PI_F);
-    float distortX = strength * sinDyPI * dx;
-    float distortY = strength * cos(dx * M_PI_F) * dy;
-    float newX = centerX + (pos.x - centerX) * (1.0 + distortX);
-    float newY = centerY + (pos.y - centerY) * (1.0 + distortY);
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for funny_squash
-kernel void draw_grid_overlay_funny_squash(texture2d<float, access::read> inTexture [[texture(0)]],
-                                           texture2d<float, access::write> outTexture [[texture(1)]],
-                                           uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerY = float(height) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfHeight = 1.0 / halfHeight;
-    const float strength = 0.35;
-
-    float2 pos = float2(gid);
-    float dy = (pos.y - centerY) * invHalfHeight;
-    float squashFactor = 1.0 + strength * dy * dy;
-    float newY = centerY + (pos.y - centerY) / squashFactor;
-
-    uint2 outPos = uint2(clamp(pos.x, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for pinch_cheeks
-kernel void draw_grid_overlay_pinch_cheeks(texture2d<float, access::read> inTexture [[texture(0)]],
-                                           texture2d<float, access::write> outTexture [[texture(1)]],
-                                           uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-    const float strength = 0.35;
-
-    float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float normalizedDist = min(dist * invRadius, 1.0);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-
-    float pinchFactor = 1.0 - strength * abs(cosAngle) * normalizedDist;
-    float newDist = dist * pinchFactor;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for pincushion
-kernel void draw_grid_overlay_pincushion(texture2d<float, access::read> inTexture [[texture(0)]],
-                                         texture2d<float, access::write> outTexture [[texture(1)]],
-                                         uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-    float radius = min(width, height) / 2.0;
-
-    float2 pos = float2(gid);
-    float2 delta = pos - center;
-    float dist = length(delta);
-
-    const float strength = 0.3;
-    float normalizedDist = dist / radius;
-    float factor = pow(normalizedDist, 1.0 + strength);
-
-    float2 newPos = center + delta * factor;
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for radial_wobble
-kernel void draw_grid_overlay_radial_wobble(texture2d<float, access::read> inTexture [[texture(0)]],
-                                            texture2d<float, access::write> outTexture [[texture(1)]],
-                                            uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-
-    float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float normalizedDist = min(dist * invRadius, 1.0);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-
-    float wobble = sin(angle * 6.0) * 15.0 * normalizedDist;
-    float newDist = dist + wobble;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for ultimate_distortion
-kernel void draw_grid_overlay_ultimate_distortion(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                  texture2d<float, access::write> outTexture [[texture(1)]],
-                                                  uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    float invHalfHeight = 1.0 / halfHeight;
-
-    float x = float(gid.x);
-    float y = float(gid.y);
-
-    float dx = (x - centerX) * invHalfWidth;
-    float dy = (y - centerY) * invHalfHeight;
-    float dx2 = dx * dx;
-    float dy2 = dy * dy;
-
-    float sinDyPI2 = sin(dy * M_PI_F * 2.0);
-    float cosDyPI2 = cos(dy * M_PI_F * 2.0);
-
-    float horizontalStretch = 0.3 * sinDyPI2 * dx;
-
-    float distNorm = sqrt(dx2 + dy2);
-    float ripple1 = sin(distNorm * 8.0) * 0.02;
-    float ripple2 = sin(distNorm * 15.0) * 0.01;
-
-    float wobble = 0.1 * sin(dx * M_PI_F * 3.0) * cosDyPI2;
-
-    float distortX = horizontalStretch + ripple1 + ripple2 + wobble;
-    float distortY = ripple1 * 1.5 + ripple2 * 0.8;
-
-    float newX = centerX + (x - centerX) * (1.0 + distortX);
-    float newY = centerY + (y - centerY) * (1.0 + distortY);
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for wobble_face
-kernel void draw_grid_overlay_wobble_face(texture2d<float, access::read> inTexture [[texture(0)]],
-                                          texture2d<float, access::write> outTexture [[texture(1)]],
-                                          uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-    const float strength = 12.0;
-
-    float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-    float normalizedDist = min(dist * invRadius, 1.0);
-
-    float wobble = strength * sin(angle * 6.0) * normalizedDist;
-    float newDist = dist + wobble;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for complex_ripple_v1
-kernel void draw_grid_overlay_complex_ripple_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                texture2d<float, access::write> outTexture [[texture(1)]],
-                                                uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float2 delta = pos - center;
-    float dist = length(delta);
-
-    const float strength = 15.0;
-    float ripple = sin(dist * 0.15 + cos(dist * 0.05) * 2.0) * strength;
-    float2 newPos = pos + normalize(delta) * ripple;
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for elastic_face
-kernel void draw_grid_overlay_elastic_face(texture2d<float, access::read> inTexture [[texture(0)]],
-                                           texture2d<float, access::write> outTexture [[texture(1)]],
-                                           uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-    const float strength = 0.5;
-
-    float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float normalizedDist = min(dist * invRadius, 1.0);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-
-    float elasticFactor = 1.0 + strength * sin(normalizedDist * M_PI_F * 2.0) * 0.3;
-    float newDist = normalizedDist * elasticFactor * radius;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for elastic_stretch
-kernel void draw_grid_overlay_elastic_stretch(texture2d<float, access::read> inTexture [[texture(0)]],
-                                              texture2d<float, access::write> outTexture [[texture(1)]],
-                                              uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float2 delta = pos - center;
-    const float strength = 0.3;
-    float normalizedY = delta.y / (height / 2.0);
-    float factor = 1.0 + strength * sin(normalizedY * M_PI_F);
-    float2 newPos = float2(center.x + delta.x * factor, pos.y);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for elastic_stretch_v1
-kernel void draw_grid_overlay_elastic_stretch_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                 texture2d<float, access::write> outTexture [[texture(1)]],
-                                                 uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float2 delta = pos - center;
-    const float strength = 0.4;
-    float normalizedY = delta.y / (height / 2.0);
-    float factor = 1.0 + strength * cos(normalizedY * M_PI_F * 2.0);
-    float2 newPos = float2(center.x + delta.x * factor, pos.y);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for funny_stretch
-kernel void draw_grid_overlay_funny_stretch(texture2d<float, access::read> inTexture [[texture(0)]],
-                                            texture2d<float, access::write> outTexture [[texture(1)]],
-                                            uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    const float strength = 1.2;
-
-    float2 pos = float2(gid);
-    float dx = (pos.x - centerX) * invHalfWidth;
-    float stretchFactor = 1.0 + strength * dx * dx;
-    float newX = centerX + (pos.x - centerX) / stretchFactor;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(pos.y, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for funny_stretch_v1
-kernel void draw_grid_overlay_funny_stretch_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                               texture2d<float, access::write> outTexture [[texture(1)]],
-                                               uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float dx = pos.x - center.x;
-    float dy = pos.y - center.y;
-
-    const float strength = 1.4;
-    float normalizedX = dx / (width / 2.0);
-    float factor = 1.0 + strength * abs(normalizedX);
-
-    float2 newPos = float2(pos.x, center.y + dy / factor);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for gentle_ripple
-kernel void draw_grid_overlay_gentle_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
-                                            texture2d<float, access::write> outTexture [[texture(1)]],
-                                            uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    const float frequency = 0.04;
-    const float amplitude = 12.0;
-
-    float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-
-    float ripple = sin(dist * frequency) * amplitude;
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-    float newX = pos.x + ripple * cosAngle;
-    float newY = pos.y + ripple * sinAngle;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for lens_distortion
-kernel void draw_grid_overlay_lens_distortion(texture2d<float, access::read> inTexture [[texture(0)]],
-                                              texture2d<float, access::write> outTexture [[texture(1)]],
-                                              uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-    float radius = min(width, height) / 2.0;
-
-    float2 pos = float2(gid);
-    float2 delta = pos - center;
-    float dist = length(delta);
-
-    const float strength = 0.7;
-    float normalizedDist = dist / radius;
-    float factor = 1.0 - strength * normalizedDist * normalizedDist;
-    float2 newPos = center + delta * factor;
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for lens_distortion_v1
-kernel void draw_grid_overlay_lens_distortion_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                 texture2d<float, access::write> outTexture [[texture(1)]],
-                                                 uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-    float radius = min(width, height) / 2.0;
-
-    float2 pos = float2(gid);
-    float2 delta = pos - center;
-    float dist = length(delta);
-
-    const float strength = 0.5;
-    float normalizedDist = dist / radius;
-    float factor = pow(normalizedDist, 1.0 - strength);
-    float2 newPos = center + normalize(delta) * dist * factor;
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for multi_ripple_v1
-kernel void draw_grid_overlay_multi_ripple_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                              texture2d<float, access::write> outTexture [[texture(1)]],
-                                              uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-
-    float2 pos = float2(gid);
-    float2 center1 = float2(width * 0.25, height * 0.25);
-    float2 center2 = float2(width * 0.75, height * 0.75);
-    float2 center3 = float2(width * 0.5, height * 0.5);
-
-    float dist1 = length(pos - center1);
-    float dist2 = length(pos - center2);
-    float dist3 = length(pos - center3);
-
-    const float strength = 8.0;
-    float ripple1 = sin(dist1 * 0.15) * strength;
-    float ripple2 = sin(dist2 * 0.12) * strength;
-    float ripple3 = cos(dist3 * 0.1) * strength * 0.5;
-
-    float2 offset = normalize(pos - center1) * ripple1 +
-                    normalize(pos - center2) * ripple2 +
-                    normalize(pos - center3) * ripple3;
-
-    float2 newPos = pos + offset * 0.5;
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for radial_squeeze
-kernel void draw_grid_overlay_radial_squeeze(texture2d<float, access::read> inTexture [[texture(0)]],
-                                             texture2d<float, access::write> outTexture [[texture(1)]],
-                                             uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-    float radius = min(width, height) / 2.0;
-
-    float2 pos = float2(gid);
-    float2 delta = pos - center;
-    float dist = length(delta);
-
-    const float strength = 0.6;
-    float normalizedDist = dist / radius;
-    float factor = pow(normalizedDist, 1.0 + strength);
-    float2 newPos = center + delta * factor;
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for radial_squeeze_v1
-kernel void draw_grid_overlay_radial_squeeze_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                texture2d<float, access::write> outTexture [[texture(1)]],
-                                                uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-    float radius = min(width, height) / 2.0;
-
-    float2 pos = float2(gid);
-    float2 delta = pos - center;
-    float dist = length(delta);
-
-    const float strength = 0.8;
-    float normalizedDist = dist / radius;
-    float factor = 1.0 - strength * exp(-normalizedDist * 2.0);
-    float2 newPos = center + delta * factor;
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for smush_face
-kernel void draw_grid_overlay_smush_face(texture2d<float, access::read> inTexture [[texture(0)]],
-                                         texture2d<float, access::write> outTexture [[texture(1)]],
-                                         uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float radius = min(float(width), float(height)) / 2.0;
-    float invRadius = 1.0 / radius;
-    const float strength = 0.3;
-
-    float2 pos = float2(gid);
-    float dx = pos.x - centerX;
-    float dy = pos.y - centerY;
-    float dist = sqrt(dx * dx + dy * dy);
-    float normalizedDist = min(dist * invRadius, 1.0);
-    float angle = atan2(dy, dx);
-    float cosAngle = cos(angle);
-    float sinAngle = sin(angle);
-
-    float smushFactor = 1.0 - strength * normalizedDist * normalizedDist;
-    float newDist = normalizedDist * smushFactor * radius;
-    float newX = centerX + newDist * cosAngle;
-    float newY = centerY + newDist * sinAngle;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for squeeze_horizontal
-kernel void draw_grid_overlay_squeeze_horizontal(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                 texture2d<float, access::write> outTexture [[texture(1)]],
-                                                 uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float dx = pos.x - center.x;
-
-    const float strength = 0.5;
-    float normalizedX = dx / (width / 2.0);
-    float factor = 1.0 - strength * abs(normalizedX);
-    float2 newPos = float2(center.x + dx * factor, pos.y);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for squeeze_horizontal_v1
-kernel void draw_grid_overlay_squeeze_horizontal_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                    texture2d<float, access::write> outTexture [[texture(1)]],
-                                                    uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float dx = pos.x - center.x;
-
-    const float strength = 0.6;
-    float normalizedX = dx / (width / 2.0);
-    float factor = 1.0 - strength * normalizedX * normalizedX;
-    float2 newPos = float2(center.x + dx * factor, pos.y);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for squeeze_vertical
-kernel void draw_grid_overlay_squeeze_vertical(texture2d<float, access::read> inTexture [[texture(0)]],
-                                               texture2d<float, access::write> outTexture [[texture(1)]],
-                                               uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float dy = pos.y - center.y;
-
-    const float strength = 0.5;
-    float normalizedY = dy / (height / 2.0);
-    float factor = 1.0 - strength * abs(normalizedY);
-    float2 newPos = float2(pos.x, center.y + dy * factor);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for squeeze_vertical_v1
-kernel void draw_grid_overlay_squeeze_vertical_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                  texture2d<float, access::write> outTexture [[texture(1)]],
-                                                  uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float dy = pos.y - center.y;
-
-    const float strength = 0.6;
-    float normalizedY = dy / (height / 2.0);
-    float factor = 1.0 - strength * normalizedY * normalizedY;
-    float2 newPos = float2(pos.x, center.y + dy * factor);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for squish_face
-kernel void draw_grid_overlay_squish_face(texture2d<float, access::read> inTexture [[texture(0)]],
-                                          texture2d<float, access::write> outTexture [[texture(1)]],
-                                          uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfHeight = 1.0 / halfHeight;
-    const float strength = 1.1;
-
-    float2 pos = float2(gid);
-    float dy = (pos.y - centerY) * invHalfHeight;
-    float squishFactor = 1.0 - strength * dy * dy;
-    float newX = centerX + (pos.x - centerX) / squishFactor;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(pos.y, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for squish_face_v1
-kernel void draw_grid_overlay_squish_face_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                             texture2d<float, access::write> outTexture [[texture(1)]],
-                                             uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float dx = pos.x - center.x;
-    float dy = pos.y - center.y;
-
-    const float xStrength = 0.5;
-    const float yStrength = 0.3;
-
-    float normalizedX = dx / (width / 2.0);
-    float normalizedY = dy / (height / 2.0);
-
-    float xFactor = 1.0 - xStrength * normalizedX * normalizedX;
-    float yFactor = 1.0 + yStrength * normalizedY * normalizedY;
-
-    float2 newPos = float2(center.x + dx * xFactor, center.y + dy * yFactor);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for stretch_face
-kernel void draw_grid_overlay_stretch_face(texture2d<float, access::read> inTexture [[texture(0)]],
-                                           texture2d<float, access::write> outTexture [[texture(1)]],
-                                           uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    const float strength = 1.4;
-
-    float2 pos = float2(gid);
-    float dx = (pos.x - centerX) * invHalfWidth;
-    float stretchFactor = 1.0 + strength * dx * dx;
-    float newY = centerY + (pos.y - centerY) / stretchFactor;
-
-    uint2 outPos = uint2(clamp(pos.x, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for stretch_face_v1
-kernel void draw_grid_overlay_stretch_face_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                              texture2d<float, access::write> outTexture [[texture(1)]],
-                                              uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float dy = pos.y - center.y;
-
-    const float strength = 1.4;
-    float normalizedY = dy / (height / 2.0);
-    float factor = 1.0 + strength * normalizedY * normalizedY;
-
-    float2 newPos = float2(pos.x, center.y + dy / factor);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for warp_face
-kernel void draw_grid_overlay_warp_face(texture2d<float, access::read> inTexture [[texture(0)]],
-                                        texture2d<float, access::write> outTexture [[texture(1)]],
-                                        uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
-    float halfWidth = float(width) / 2.0;
-    float halfHeight = float(height) / 2.0;
-    float invHalfWidth = 1.0 / halfWidth;
-    float invHalfHeight = 1.0 / halfHeight;
-    const float strength = 0.8;
-
-    float2 pos = float2(gid);
-    float dx = (pos.x - centerX) * invHalfWidth;
-    float dy = (pos.y - centerY) * invHalfHeight;
-
-    float sinDyPI2 = sin(dy * M_PI_F * 2.0);
-    float warpX = strength * sinDyPI2 * 45.0;
-    float warpY = strength * cos(dx * M_PI_F * 2.0) * 45.0;
-    float newX = pos.x + warpX;
-    float newY = pos.y + warpY;
-
-    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
-                         clamp(newY, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for warp_face_v1
-kernel void draw_grid_overlay_warp_face_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                           texture2d<float, access::write> outTexture [[texture(1)]],
-                                           uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-    float2 center = float2(width / 2.0, height / 2.0);
-
-    float2 pos = float2(gid);
-    float dx = pos.x - center.x;
-    float dy = pos.y - center.y;
-
-    const float strength = 1.0;
-    float normalizedX = dx / (width / 2.0);
-    float normalizedY = dy / (height / 2.0);
-
-    float warpX = normalizedX * (1.0 + strength * cos(normalizedY * M_PI_F * 3.0));
-    float warpY = normalizedY * (1.0 + strength * sin(normalizedX * M_PI_F * 3.0));
-
-    float2 newPos = float2(center.x + warpX * (width / 2.0), center.y + warpY * (height / 2.0));
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for wave_distortion
-kernel void draw_grid_overlay_wave_distortion(texture2d<float, access::read> inTexture [[texture(0)]],
-                                              texture2d<float, access::write> outTexture [[texture(1)]],
-                                              uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-
-    float2 pos = float2(gid);
-    const float amplitude = 20.0;
-    const float frequency = 0.05;
-
-    float offsetX = sin(pos.y * frequency) * amplitude;
-    float offsetY = cos(pos.x * frequency) * amplitude;
-    float2 newPos = pos + float2(offsetX, offsetY);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
-}
-
-// Grid overlay for wave_distortion_v1
-kernel void draw_grid_overlay_wave_distortion_v1(texture2d<float, access::read> inTexture [[texture(0)]],
-                                                 texture2d<float, access::write> outTexture [[texture(1)]],
-                                                 uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
-    if (!isGridPoint(gid)) return;
-
-    uint width = inTexture.get_width();
-    uint height = inTexture.get_height();
-
-    float2 pos = float2(gid);
-    const float amplitude = 15.0;
-    const float frequency = 0.08;
-
-    float offsetX = sin(pos.y * frequency + pos.x * 0.02) * amplitude;
-    float offsetY = cos(pos.x * frequency + pos.y * 0.02) * amplitude;
-    float2 newPos = pos + float2(offsetX, offsetY);
-
-    uint2 outPos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
 }

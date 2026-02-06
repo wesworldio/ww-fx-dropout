@@ -5756,52 +5756,29 @@
             },
             applyBulgeEyes(data, width, height) {
                 const centerX = width / 2, centerY = height / 2;
+                const radius = Math.min(width, height) / 2;
+                const invRadius = 1 / radius;
+                const strength = 0.4;
                 const temp = new Uint8ClampedArray(data);
                 
-                // Eye positions (approximate - left and right of center)
-                const eyeOffsetX = width * 0.15; // Eyes are about 15% of width from center
-                const eyeOffsetY = -height * 0.05; // Slightly above center
-                const leftEyeX = centerX - eyeOffsetX;
-                const leftEyeY = centerY + eyeOffsetY;
-                const rightEyeX = centerX + eyeOffsetX;
-                const rightEyeY = centerY + eyeOffsetY;
-                
-                // Eye bulge parameters
-                const eyeRadius = Math.min(width, height) * 0.12; // Size of each eye bulge
-                const strength = 0.65; // Bulge strength
-                
                 for (let y = 0; y < height; y++) {
+                    const dy = y - centerY;
+                    const dy2 = dy * dy;
                     const yOffset = y * width * 4;
                     
                     for (let x = 0; x < width; x++) {
-                        let newX = x;
-                        let newY = y;
-                        
-                        // Calculate distance to left eye
-                        const dxLeft = x - leftEyeX;
-                        const dyLeft = y - leftEyeY;
-                        const distLeft = Math.sqrt(dxLeft * dxLeft + dyLeft * dyLeft);
-                        
-                        // Calculate distance to right eye
-                        const dxRight = x - rightEyeX;
-                        const dyRight = y - rightEyeY;
-                        const distRight = Math.sqrt(dxRight * dxRight + dyRight * dyRight);
-                        
-                        // Apply bulge for left eye
-                        if (distLeft < eyeRadius) {
-                            const factor = 1.0 - (distLeft / eyeRadius) * strength;
-                            newX = leftEyeX + dxLeft * factor;
-                            newY = leftEyeY + dyLeft * factor;
-                        }
-                        // Apply bulge for right eye (only if not already affected by left)
-                        else if (distRight < eyeRadius) {
-                            const factor = 1.0 - (distRight / eyeRadius) * strength;
-                            newX = rightEyeX + dxRight * factor;
-                            newY = rightEyeY + dyRight * factor;
-                        }
-                        
-                        newX = Math.round(newX);
-                        newY = Math.round(newY);
+                        const dx = x - centerX;
+                        const distSq = dx * dx + dy2;
+                        const dist = Math.sqrt(distSq);
+                        const normalizedDist = Math.min(dist * invRadius, 1);
+                        const angle = Math.atan2(dy, dx);
+                        const cosAngle = Math.cos(angle);
+                        const sinAngle = Math.sin(angle);
+                        // Bulge center area outward - creates funny eye bulge
+                        const bulgeFactor = 1.0 + strength * (1.0 - normalizedDist) * Math.cos(angle * 2);
+                        const newDist = dist * bulgeFactor;
+                        const newX = Math.round(centerX + newDist * cosAngle);
+                        const newY = Math.round(centerY + newDist * sinAngle);
                         
                         if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
                             const srcIdx = yOffset + x * 4;
@@ -6803,34 +6780,13 @@
                     newY = y;
                     break;
                 case 'bulge_eyes':
-                    // Dual eye bulge effect
-                    const eyeOffsetX = width * 0.15;
-                    const eyeOffsetY = -height * 0.05;
-                    const leftEyeX = centerX - eyeOffsetX;
-                    const leftEyeY = centerY + eyeOffsetY;
-                    const rightEyeX = centerX + eyeOffsetX;
-                    const rightEyeY = centerY + eyeOffsetY;
-                    const eyeRadius = Math.min(width, height) * 0.12;
-                    const bulgeEyesStrength = 0.65;
-                    
-                    // Check left eye
-                    const dxLeft = x - leftEyeX;
-                    const dyLeft = y - leftEyeY;
-                    const distLeft = Math.sqrt(dxLeft * dxLeft + dyLeft * dyLeft);
-                    
-                    // Check right eye
-                    const dxRight = x - rightEyeX;
-                    const dyRight = y - rightEyeY;
-                    const distRight = Math.sqrt(dxRight * dxRight + dyRight * dyRight);
-                    
-                    if (distLeft < eyeRadius) {
-                        const factor = 1.0 - (distLeft / eyeRadius) * bulgeEyesStrength;
-                        newX = leftEyeX + dxLeft * factor;
-                        newY = leftEyeY + dyLeft * factor;
-                    } else if (distRight < eyeRadius) {
-                        const factor = 1.0 - (distRight / eyeRadius) * bulgeEyesStrength;
-                        newX = rightEyeX + dxRight * factor;
-                        newY = rightEyeY + dyRight * factor;
+                    const bulgeEyesStrength = 0.6;
+                    const bulgeEyesRadius = radius * 0.6;
+                    const bulgeEyesDist = Math.sqrt(dx * dx + dy * dy);
+                    if (bulgeEyesDist < bulgeEyesRadius) {
+                        const bulgeEyesFactor = 1.0 - (bulgeEyesDist / bulgeEyesRadius) * bulgeEyesStrength;
+                        newX = centerX + dx * bulgeEyesFactor;
+                        newY = centerY + dy * bulgeEyesFactor;
                     }
                     break;
                 case 'warp_face':

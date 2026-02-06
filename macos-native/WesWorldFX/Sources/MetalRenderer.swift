@@ -53,28 +53,10 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     }
     
     private func setupPipeline(view: MTKView) {
-        // Load shader source from file system or use embedded source
-        let fileManager = FileManager.default
-        let currentDir = fileManager.currentDirectoryPath
-        let possiblePaths = [
-            "\(currentDir)/WesWorldFX/Metal/Shaders.metal",
-            "\(currentDir)/macos-native/WesWorldFX/Metal/Shaders.metal",
-            "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Metal/Shaders.metal"
-        ]
-        
-        var shaderSource: String?
-        for path in possiblePaths {
-            if fileManager.fileExists(atPath: path) {
-                if let source = try? String(contentsOfFile: path, encoding: .utf8) {
-                    shaderSource = source
-                    print("✓ Loaded shaders from: \(path)")
-                    break
-                }
-            }
-        }
-        
-        guard let shaderSource = shaderSource else {
-            fatalError("Failed to load shader source file from: \(possiblePaths.joined(separator: ", "))")
+        // Load shader source from bundle
+        guard let shaderURL = Bundle.main.url(forResource: "Shaders", withExtension: "metal"),
+              let shaderSource = try? String(contentsOf: shaderURL, encoding: .utf8) else {
+            fatalError("Failed to load shader source file")
         }
         
         print("Loaded shader source, length: \(shaderSource.count)")

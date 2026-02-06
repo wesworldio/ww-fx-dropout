@@ -28,19 +28,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeEditorViewController.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeFilterManager.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CameraViewController.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CustomBulgeFilter.swift"
         },
         {
           "kind" : "file",
@@ -76,10 +64,7 @@
       "moduleOutputPath" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/Modules/WesWorldFX.swiftmodule",
       "objects" : [
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFX.build/AppDelegate.swift.o",
-        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeEditorViewController.swift.o",
-        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeFilterManager.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFX.build/CameraViewController.swift.o",
-        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFX.build/CustomBulgeFilter.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFX.build/FilterProcessor.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFX.build/FilterType.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/index-build/arm64-apple-macosx/debug/WesWorldFX.build/MetalRenderer.swift.o",
@@ -157,10 +142,7 @@
       "prepareForIndexing" : true,
       "sources" : [
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate.swift",
-        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeEditorViewController.swift",
-        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeFilterManager.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CameraViewController.swift",
-        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CustomBulgeFilter.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterProcessor.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterType.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/MetalRenderer.swift",
@@ -183,10 +165,7 @@
       "macos_native",
       "-c",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate.swift",
-      "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeEditorViewController.swift",
-      "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeFilterManager.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CameraViewController.swift",
-      "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CustomBulgeFilter.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterProcessor.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterType.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/MetalRenderer.swift",
@@ -287,19 +266,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeEditorViewController.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeFilterManager.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CameraViewController.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CustomBulgeFilter.swift"
         },
         {
           "kind" : "file",

@@ -9,33 +9,12 @@
     "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/AppDelegate.swiftdeps",
     "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/AppDelegate.dia"
   },
-  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeEditorViewController.swift": {
-    "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeEditorViewController.d",
-    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeEditorViewController.swift.o",
-    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeEditorViewController~partial.swiftmodule",
-    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeEditorViewController.swiftdeps",
-    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeEditorViewController.dia"
-  },
-  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/BulgeFilterManager.swift": {
-    "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeFilterManager.d",
-    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeFilterManager.swift.o",
-    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeFilterManager~partial.swiftmodule",
-    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeFilterManager.swiftdeps",
-    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/BulgeFilterManager.dia"
-  },
   "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CameraViewController.swift": {
     "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CameraViewController.d",
     "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CameraViewController.swift.o",
     "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CameraViewController~partial.swiftmodule",
     "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CameraViewController.swiftdeps",
     "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CameraViewController.dia"
-  },
-  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CustomBulgeFilter.swift": {
-    "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CustomBulgeFilter.d",
-    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CustomBulgeFilter.swift.o",
-    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CustomBulgeFilter~partial.swiftmodule",
-    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CustomBulgeFilter.swiftdeps",
-    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CustomBulgeFilter.dia"
   },
   "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterProcessor.swift": {
     "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/FilterProcessor.d",
@@ -57,13 +36,6 @@
     "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/MetalRenderer~partial.swiftmodule",
     "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/MetalRenderer.swiftdeps",
     "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/MetalRenderer.dia"
-  },
-  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/UpdateChecker.swift": {
-    "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.d",
-    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.swift.o",
-    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker~partial.swiftmodule",
-    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.swiftdeps",
-    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/UpdateChecker.dia"
   },
   "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift": {
     "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/main.d",

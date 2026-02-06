@@ -168,48 +168,34 @@ void apply_bulge(ImageBuffer* image, const FaceRect* face) {
     
     float center_x = image->width / 2.0f;
     float center_y = image->height / 2.0f;
-    
-    // Dual eye bulge effect - left and right eyes
-    float eye_offset_x = image->width * 0.15f;
-    float eye_offset_y = -image->height * 0.05f;
-    float left_eye_x = center_x - eye_offset_x;
-    float left_eye_y = center_y + eye_offset_y;
-    float right_eye_x = center_x + eye_offset_x;
-    float right_eye_y = center_y + eye_offset_y;
-    float eye_radius = std::min(image->width, image->height) * 0.12f;
-    float strength = 0.65f;
+    float radius = std::min(image->width, image->height) / 2.0f;
+    float strength = 0.5f;
     
     for (size_t y = 0; y < image->height; ++y) {
         for (size_t x = 0; x < image->width; ++x) {
-            float new_x = static_cast<float>(x);
-            float new_y = static_cast<float>(y);
+            float dx = x - center_x;
+            float dy = y - center_y;
+            float dist_sq = dx * dx + dy * dy;
+            float max_dist_sq = radius * radius;
             
-            // Calculate distance to left eye
-            float dx_left = x - left_eye_x;
-            float dy_left = y - left_eye_y;
-            float dist_left = std::sqrt(dx_left * dx_left + dy_left * dy_left);
-            
-            // Calculate distance to right eye
-            float dx_right = x - right_eye_x;
-            float dy_right = y - right_eye_y;
-            float dist_right = std::sqrt(dx_right * dx_right + dy_right * dy_right);
-            
-            // Apply bulge for left eye
-            if (dist_left < eye_radius) {
-                float factor = 1.0f - (dist_left / eye_radius) * strength;
-                new_x = left_eye_x + dx_left * factor;
-                new_y = left_eye_y + dy_left * factor;
-            }
-            // Apply bulge for right eye (only if not already affected by left)
-            else if (dist_right < eye_radius) {
-                float factor = 1.0f - (dist_right / eye_radius) * strength;
-                new_x = right_eye_x + dx_right * factor;
-                new_y = right_eye_y + dy_right * factor;
-            }
-            
-            for (int c = 0; c < static_cast<int>(image->channels); ++c) {
-                uint8_t val = bilinear_interpolate(temp, new_x, new_y, c);
-                set_pixel(image, x, y, c, val);
+            if (dist_sq < max_dist_sq) {
+                float dist = std::sqrt(dist_sq);
+                float factor = 1.0f - (dist / radius) * strength;
+                factor = clamp(factor, 0.0f, 1.0f);
+                
+                float new_x = center_x + dx * factor;
+                float new_y = center_y + dy * factor;
+                
+                for (int c = 0; c < static_cast<int>(image->channels); ++c) {
+                    uint8_t val = bilinear_interpolate(temp, new_x, new_y, c);
+                    set_pixel(image, x, y, c, val);
+                }
+            } else {
+                // Copy original pixel
+                for (int c = 0; c < static_cast<int>(image->channels); ++c) {
+                    uint8_t val = get_pixel(temp, x, y, c);
+                    set_pixel(image, x, y, c, val);
+                }
             }
         }
     }
