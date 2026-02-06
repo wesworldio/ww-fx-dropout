@@ -39,10 +39,14 @@ build:
 	@cd $(NATIVE_DIR) && $(MAKE) build
 
 release:
+	@echo "Incrementing version and build number..."
+	@$(PYTHON) scripts/increment_version.py
 	@echo "Building macOS Native app (Release)..."
 	@cd $(NATIVE_DIR) && $(MAKE) release
 
 run:
+	@echo "Incrementing build number..."
+	@$(PYTHON) scripts/increment_build.py
 	@echo "Running macOS Native app..."
 	@cd $(NATIVE_DIR) && $(MAKE) run
 

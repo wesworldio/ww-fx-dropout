@@ -36,6 +36,27 @@ class CameraViewController: NSViewController {
     private var lastFrameTime: CFTimeInterval = 0
     private var fps: Double = 0.0
     
+    // MARK: - Build Info Helper
+    
+    private func getBuildVersionString() -> String {
+        // Try to read build-info.json from the project root
+        let buildInfoPath = "/Users/wes/Sites/wesworld/ww-fx-dropout/build-info.json"
+        
+        if FileManager.default.fileExists(atPath: buildInfoPath) {
+            do {
+                let data = try Data(contentsOf: URL(fileURLWithPath: buildInfoPath))
+                if let jsonDict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let version = jsonDict["version"] as? String ?? "2.1.3"
+                    let buildNumber = jsonDict["buildNumber"] as? Int ?? 190
+                    return "WesWorld FX v\(version) (Build \(buildNumber))"
+                }
+            } catch {
+                print("Error reading build-info.json: \(error)")
+            }
+        }
+        return "WesWorld FX v2.1.3 (Build 190)"
+    }
+    
     override func loadView() {
         view = NSView(frame: NSRect(x: 0, y: 0, width: 1920, height: 1080))
         view.wantsLayer = true
@@ -45,23 +66,23 @@ class CameraViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        DiagnosticLogger.shared.info("CameraViewController viewDidLoad started", category: "LIFECYCLE")
         print("CameraViewController viewDidLoad started")
         
-        do {
-            setupMetalView()
-            print("Metal view setup complete")
-            
-            setupUI()
-            print("UI setup complete")
-            
-            setupCamera()
-            print("Camera setup complete")
-            
-            setupFilterProcessor()
-            print("Filter processor setup complete")
-        } catch {
-            print("Error during setup: \(error)")
-        }
+        setupMetalView()
+        print("Metal view setup complete")
+        DiagnosticLogger.shared.info("Metal view setup complete", category: "GRAPHICS")
+        
+        setupUI()
+        print("UI setup complete")
+        DiagnosticLogger.shared.info("UI setup complete", category: "UI")
+        
+        setupCamera()
+        print("Camera setup complete")
+        
+        setupFilterProcessor()
+        print("Filter processor setup complete")
+        DiagnosticLogger.shared.info("Filter processor setup complete", category: "FILTERS")
     }
     
     override func viewDidAppear() {
@@ -104,7 +125,7 @@ class CameraViewController: NSViewController {
         view.addSubview(controlsView)
         
         // Version Label
-        let versionLabel = NSTextField(labelWithString: "WesWorld FX v2.1.3 (Build 186)")
+        let versionLabel = NSTextField(labelWithString: getBuildVersionString())
         versionLabel.frame = NSRect(x: 10, y: 165, width: 280, height: 15)
         versionLabel.textColor = .white.withAlphaComponent(0.6)
         versionLabel.font = .systemFont(ofSize: 11, weight: .regular)
@@ -159,15 +180,28 @@ class CameraViewController: NSViewController {
         
         guard let camera = AVCaptureDevice.default(for: .video) else {
             showError("No camera found")
+            DiagnosticLogger.shared.error("No camera device found", category: "CAMERA")
             return
         }
         
         currentCamera = camera
+        DiagnosticLogger.shared.logCameraStatus(
+            status: "Found camera",
+            details: [
+                "Name": camera.localizedName,
+                "Model": camera.modelID,
+                "Supports 1080p": camera.formats.contains { format in
+                    let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+                    return dimensions.width == 1920 && dimensions.height == 1080
+                }
+            ]
+        )
         
         do {
             let input = try AVCaptureDeviceInput(device: camera)
             if captureSession.canAddInput(input) {
                 captureSession.addInput(input)
+                DiagnosticLogger.shared.info("Camera input added to session", category: "CAMERA")
             }
             
             videoOutput = AVCaptureVideoDataOutput()
@@ -181,17 +215,25 @@ class CameraViewController: NSViewController {
             
             if captureSession.canAddOutput(videoOutput) {
                 captureSession.addOutput(videoOutput)
+                DiagnosticLogger.shared.info("Video output added to session", category: "CAMERA")
             }
             
             // Start session
             sessionQueue.async { [weak self] in
                 print("Starting camera capture session...")
                 self?.captureSession.startRunning()
-                print("Camera capture session started: \(self?.captureSession.isRunning ?? false)")
+                let isRunning = self?.captureSession.isRunning ?? false
+                print("Camera capture session started: \(isRunning)")
+                if isRunning {
+                    DiagnosticLogger.shared.info("Camera capture session started successfully", category: "CAMERA")
+                } else {
+                    DiagnosticLogger.shared.warning("Camera capture session failed to start", category: "CAMERA")
+                }
             }
             
         } catch {
             print("Camera setup error: \(error)")
+            DiagnosticLogger.shared.error("Camera setup error", error: error, category: "CAMERA")
             showError("Camera setup failed: \(error.localizedDescription)")
         }
     }
@@ -209,6 +251,7 @@ class CameraViewController: NSViewController {
             let filterType = FilterType.allCases[selectedIndex]
             filterProcessor.currentFilter = filterType
             updateFilterLabel(filterType.displayName)
+            DiagnosticLogger.shared.info("Filter changed to: \(filterType.displayName)", category: "FILTERS")
         }
     }
     

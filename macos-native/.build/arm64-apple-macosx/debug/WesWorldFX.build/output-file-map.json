@@ -16,6 +16,20 @@
     "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CameraViewController.swiftdeps",
     "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/CameraViewController.dia"
   },
+  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/DiagnosticLogger.swift": {
+    "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticLogger.d",
+    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticLogger.swift.o",
+    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticLogger~partial.swiftmodule",
+    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticLogger.swiftdeps",
+    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticLogger.dia"
+  },
+  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/DiagnosticsMenuController.swift": {
+    "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticsMenuController.d",
+    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticsMenuController.swift.o",
+    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticsMenuController~partial.swiftmodule",
+    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticsMenuController.swiftdeps",
+    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/DiagnosticsMenuController.dia"
+  },
   "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterProcessor.swift": {
     "dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/FilterProcessor.d",
     "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/debug/WesWorldFX.build/FilterProcessor.swift.o",

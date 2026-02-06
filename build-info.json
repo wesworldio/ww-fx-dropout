@@ -1,6 +1,7 @@
 {
-  "buildNumber": 191,
-  "buildTimestamp": 1770402580000,
-  "commitHash": "9b6b5f7",
-  "commitTime": 1770402580000
+  "version": "2.1.3",
+  "buildNumber": 192,
+  "buildTimestamp": 1770402921000,
+  "commitHash": "71f719f",
+  "commitTime": 1770402921000
 }

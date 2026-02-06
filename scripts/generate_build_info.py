@@ -5,6 +5,7 @@ This file contains build number, commit hash, and commit timestamp.
 """
 
 import json
+import plistlib
 import subprocess
 import sys
 from datetime import datetime
@@ -50,22 +51,38 @@ def get_git_commit_count():
     except (subprocess.CalledProcessError, FileNotFoundError, ValueError):
         return 0
 
+
+def get_app_version(repo_root: Path) -> str:
+    """Get app version from macOS Info.plist if available."""
+    info_plist = repo_root / 'macos-native' / 'WesWorldFX' / 'Resources' / 'Info.plist'
+    if not info_plist.exists():
+        return ''
+    try:
+        with open(info_plist, 'rb') as f:
+            plist = plistlib.load(f)
+        return str(plist.get('CFBundleShortVersionString', '')).strip()
+    except (OSError, plistlib.InvalidFileException):
+        return ''
+
 def generate_build_info():
     """Generate build-info.json file."""
     repo_root = Path(__file__).parent.parent
     output_file = repo_root / 'build-info.json'
+
+    version = get_app_version(repo_root)
     
     build_info = {
+        'version': version or '0.0.0',
         'buildNumber': get_git_commit_count(),
         'buildTimestamp': get_git_commit_time(),
         'commitHash': get_git_commit_hash(),
         'commitTime': get_git_commit_time()
     }
     
-    with open(output_file, 'w') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(build_info, f, indent=2)
     
-    print(f"Generated build-info.json:")
+    print("Generated build-info.json:")
     print(f"  Build Number: {build_info['buildNumber']}")
     print(f"  Commit Hash: {build_info['commitHash']}")
     print(f"  Commit Time: {datetime.fromtimestamp(build_info['commitTime'] / 1000).isoformat()}")
@@ -76,7 +93,7 @@ if __name__ == '__main__':
     try:
         generate_build_info()
         sys.exit(0)
-    except Exception as e:
+    except (OSError, json.JSONDecodeError) as e:
         print(f"Error generating build-info.json: {e}", file=sys.stderr)
         sys.exit(1)
 

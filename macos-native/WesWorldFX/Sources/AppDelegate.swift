@@ -13,8 +13,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     var cameraViewController: CameraViewController!
     
+    // MARK: - Build Info Helper
+    
+    private func getBuildVersionString() -> String {
+        // Try to read build-info.json from the project root
+        let buildInfoPath = "/Users/wes/Sites/wesworld/ww-fx-dropout/build-info.json"
+        
+        if FileManager.default.fileExists(atPath: buildInfoPath) {
+            do {
+                let data = try Data(contentsOf: URL(fileURLWithPath: buildInfoPath))
+                if let jsonDict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let version = jsonDict["version"] as? String ?? "2.1.3"
+                    let buildNumber = jsonDict["buildNumber"] as? Int ?? 190
+                    return "Version \(version) (Build \(buildNumber))"
+                }
+            } catch {
+                print("Error reading build-info.json: \(error)")
+            }
+        }
+        return "Version 2.1.3 (Build 190)"
+    }
+    
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        // Initialize diagnostic logger
+        DiagnosticLogger.shared.info("Application did finish launching", category: "LIFECYCLE")
+        DiagnosticLogger.shared.startPeriodicMonitoring(interval: 60) // Log system status every minute
+        
         print("Application did finish launching")
+        
+        // Set up debug menu
+        setupDebugMenu()
         
         // Check for updates on launch (after a short delay to let the app fully load)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -24,9 +52,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Activate the app - CRITICAL for window visibility
         NSApp.setActivationPolicy(.regular)
         print("Activation policy set to .regular")
+        DiagnosticLogger.shared.info("Activation policy set to .regular", category: "LIFECYCLE")
         
         NSApp.activate(ignoringOtherApps: true)
         print("App activated")
+        DiagnosticLogger.shared.info("App activated", category: "LIFECYCLE")
         
         // Request camera permissions
         requestCameraAccess()
@@ -71,6 +101,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillTerminate(_ aNotification: Notification) {
+        // Log app termination
+        DiagnosticLogger.shared.info("Application will terminate", category: "LIFECYCLE")
+        
         // Clean up camera and Metal resources
         cameraViewController?.cleanup()
     }
@@ -82,7 +115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func showAbout(_ sender: Any?) {
         let alert = NSAlert()
         alert.messageText = "WesWorld FX"
-        alert.informativeText = "Version 2.1.0\n\nNative macOS camera filters with Metal GPU acceleration.\n\n© 2026 WesWorld"
+        alert.informativeText = "\(getBuildVersionString())\n\nNative macOS camera filters with Metal GPU acceleration.\n\n© 2026 WesWorld"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "Check for Updates...")
@@ -96,6 +129,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func requestCameraAccess() {
         AVCaptureDevice.requestAccess(for: .video) { granted in
             if !granted {
+                DiagnosticLogger.shared.warning("Camera access denied by user", category: "CAMERA")
+                
                 DispatchQueue.main.async {
                     let alert = NSAlert()
                     alert.messageText = "Camera Access Required"
@@ -104,7 +139,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     alert.addButton(withTitle: "OK")
                     alert.runModal()
                 }
+            } else {
+                DiagnosticLogger.shared.info("Camera access granted", category: "CAMERA")
             }
         }
     }
-}
+    
+    private func setupDebugMenu() {
+        let mainMenu = NSApplication.shared.mainMenu ?? NSMenu()
+        DiagnosticsMenuController.shared.setupMenuItems(in: mainMenu)
+        NSApplication.shared.mainMenu = mainMenu
+    }}

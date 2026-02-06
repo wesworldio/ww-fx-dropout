@@ -15,6 +15,10 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     private let textureCache: CVMetalTextureCache
     private let textureLock = NSLock()
     
+    // Performance tracking
+    private var frameCount: Int = 0
+    private var lastLogTime: Date = Date()
+    
     // Render pipeline
     private var pipelineState: MTLRenderPipelineState!
     private var vertexBuffer: MTLBuffer!
@@ -119,6 +123,13 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         defer { textureLock.unlock() }
         
         if currentTexture == nil {
+            DiagnosticLogger.shared.logCameraStatus(
+                status: "First texture received",
+                details: [
+                    "Resolution": "\(texture.width)x\(texture.height)",
+                    "Format": "\(texture.pixelFormat)"
+                ]
+            )
             print("MetalRenderer: First texture received! Size: \(texture.width)x\(texture.height)")
         }
         currentTexture = texture
@@ -165,5 +176,23 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         
         commandBuffer.present(drawable)
         commandBuffer.commit()
+        
+        // Log performance metrics every 5 seconds
+        frameCount += 1
+        let elapsed = Date().timeIntervalSince(lastLogTime)
+        if elapsed >= 5.0 {
+            let fps = Double(frameCount) / elapsed
+            DiagnosticLogger.shared.logPerformance(
+                operation: "Frame Render",
+                duration: (1000.0 / fps),
+                details: [
+                    "FPS": String(format: "%.1f", fps),
+                    "Frames": frameCount,
+                    "Texture": "\(texture.width)x\(texture.height)"
+                ]
+            )
+            frameCount = 0
+            lastLogTime = Date()
+        }
     }
 }
