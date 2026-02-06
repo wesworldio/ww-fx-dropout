@@ -34,6 +34,10 @@ class BulgeEditorViewController: NSViewController {
     private var sliderChangeTimer: Timer?
     private var hasPendingSliderChange = false
     
+    // Serial queue for GPU operations to prevent overwhelming command queue
+    private let processingQueue = DispatchQueue(label: "com.wesworld.fx.bulge.processing", qos: .userInitiated)
+    private var currentProcessingWorkItem: DispatchWorkItem?
+    
     // Control panel
     private var controlsView: NSView!
     private var filterNameField: NSTextField!
@@ -377,8 +381,11 @@ class BulgeEditorViewController: NSViewController {
             }
         }
         
-        // Apply filter asynchronously to prevent blocking UI
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        // Cancel any pending GPU work to prevent queue overflow
+        currentProcessingWorkItem?.cancel()
+        
+        // Create new work item for this filter update
+        let workItem = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
             
             // Apply custom bulge filter to test texture
@@ -391,6 +398,9 @@ class BulgeEditorViewController: NSViewController {
                 }
             }
         }
+        
+        currentProcessingWorkItem = workItem
+        processingQueue.async(execute: workItem)
         
         lastAppliedFilter = filter
     }

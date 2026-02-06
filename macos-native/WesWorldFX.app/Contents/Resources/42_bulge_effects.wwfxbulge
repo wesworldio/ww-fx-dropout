@@ -1,0 +1,1141 @@
+{
+  "version": "1.0",
+  "appName": "WesWorld FX",
+  "exportDate": "2026-02-05T21:01:58.069173Z",
+  "filters": [
+    {
+      "id": "8dfcde2b-e785-4877-932a-94fcdef3c5da",
+      "name": "Classic Eye Bulge",
+      "points": [
+        {
+          "x": 0.35,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.8
+        },
+        {
+          "x": 0.65,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.8
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066498Z",
+      "modifiedDate": "2026-02-05T21:01:58.066498Z"
+    },
+    {
+      "id": "7a84e32f-b190-49fb-8921-b4e291cce9e8",
+      "name": "Alien Eyes",
+      "points": [
+        {
+          "x": 0.35,
+          "y": 0.35,
+          "radius": 0.18,
+          "strength": 0.95
+        },
+        {
+          "x": 0.65,
+          "y": 0.35,
+          "radius": 0.18,
+          "strength": 0.95
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066512Z",
+      "modifiedDate": "2026-02-05T21:01:58.066512Z"
+    },
+    {
+      "id": "927da8d1-ea8e-4bc6-b6d9-b38675826c61",
+      "name": "Fish Eye Center",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.35,
+          "strength": 0.75
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066517Z",
+      "modifiedDate": "2026-02-05T21:01:58.066517Z"
+    },
+    {
+      "id": "9ed5e4e9-d343-4ac1-acf5-ee4583dd39a6",
+      "name": "Pinch Face",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.25,
+          "strength": -0.7
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066520Z",
+      "modifiedDate": "2026-02-05T21:01:58.066520Z"
+    },
+    {
+      "id": "d9acaaec-3bd3-46fc-bf91-df434f7ce67f",
+      "name": "Bulge Cheeks",
+      "points": [
+        {
+          "x": 0.3,
+          "y": 0.55,
+          "radius": 0.15,
+          "strength": 0.65
+        },
+        {
+          "x": 0.7,
+          "y": 0.55,
+          "radius": 0.15,
+          "strength": 0.65
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066523Z",
+      "modifiedDate": "2026-02-05T21:01:58.066523Z"
+    },
+    {
+      "id": "212989af-08a7-40d9-a689-c45812044eed",
+      "name": "Forehead Dome",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.25,
+          "radius": 0.2,
+          "strength": 0.8
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066526Z",
+      "modifiedDate": "2026-02-05T21:01:58.066526Z"
+    },
+    {
+      "id": "8b49273f-3a2a-40a0-8677-10e8c363d6de",
+      "name": "Chin Bulge",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.75,
+          "radius": 0.15,
+          "strength": 0.7
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066528Z",
+      "modifiedDate": "2026-02-05T21:01:58.066528Z"
+    },
+    {
+      "id": "cb1be9b8-5dac-40f2-b10b-0d4ef3ec9499",
+      "name": "Nose Pinch",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.08,
+          "strength": -0.6
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066531Z",
+      "modifiedDate": "2026-02-05T21:01:58.066531Z"
+    },
+    {
+      "id": "28d8c064-6239-4a47-bddf-7acf60a5f83d",
+      "name": "Quad Bulge",
+      "points": [
+        {
+          "x": 0.25,
+          "y": 0.25,
+          "radius": 0.15,
+          "strength": 0.6
+        },
+        {
+          "x": 0.75,
+          "y": 0.25,
+          "radius": 0.15,
+          "strength": 0.6
+        },
+        {
+          "x": 0.25,
+          "y": 0.75,
+          "radius": 0.15,
+          "strength": 0.6
+        },
+        {
+          "x": 0.75,
+          "y": 0.75,
+          "radius": 0.15,
+          "strength": 0.6
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066534Z",
+      "modifiedDate": "2026-02-05T21:01:58.066534Z"
+    },
+    {
+      "id": "3136be94-e656-48bb-bbcb-93e6abca4ecd",
+      "name": "Vertical Stretch",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.15,
+          "radius": 0.25,
+          "strength": 0.65
+        },
+        {
+          "x": 0.5,
+          "y": 0.85,
+          "radius": 0.25,
+          "strength": 0.65
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066537Z",
+      "modifiedDate": "2026-02-05T21:01:58.066537Z"
+    },
+    {
+      "id": "e7a17871-bdeb-4575-aa13-f749b63b585d",
+      "name": "Horizontal Squeeze",
+      "points": [
+        {
+          "x": 0.15,
+          "y": 0.5,
+          "radius": 0.2,
+          "strength": -0.6
+        },
+        {
+          "x": 0.85,
+          "y": 0.5,
+          "radius": 0.2,
+          "strength": -0.6
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066539Z",
+      "modifiedDate": "2026-02-05T21:01:58.066539Z"
+    },
+    {
+      "id": "fa3e29a2-2b58-40b2-901e-3a5f98976751",
+      "name": "Circular Wave",
+      "points": [
+        {
+          "x": 0.85,
+          "y": 0.5,
+          "radius": 0.1,
+          "strength": 0.5
+        },
+        {
+          "x": 0.7474873734152916,
+          "y": 0.7474873734152916,
+          "radius": 0.1,
+          "strength": 0.5
+        },
+        {
+          "x": 0.5,
+          "y": 0.85,
+          "radius": 0.1,
+          "strength": 0.5
+        },
+        {
+          "x": 0.2525126265847084,
+          "y": 0.7474873734152916,
+          "radius": 0.1,
+          "strength": 0.5
+        },
+        {
+          "x": 0.15000000000000002,
+          "y": 0.5,
+          "radius": 0.1,
+          "strength": 0.5
+        },
+        {
+          "x": 0.2525126265847083,
+          "y": 0.2525126265847084,
+          "radius": 0.1,
+          "strength": 0.5
+        },
+        {
+          "x": 0.49999999999999994,
+          "y": 0.15000000000000002,
+          "radius": 0.1,
+          "strength": 0.5
+        },
+        {
+          "x": 0.7474873734152916,
+          "y": 0.2525126265847083,
+          "radius": 0.1,
+          "strength": 0.5
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066551Z",
+      "modifiedDate": "2026-02-05T21:01:58.066551Z"
+    },
+    {
+      "id": "015e9439-4208-4507-b3c4-2d5b3663b52a",
+      "name": "Spiral Distortion",
+      "points": [
+        {
+          "x": 0.65,
+          "y": 0.5,
+          "radius": 0.12,
+          "strength": 0.55
+        },
+        {
+          "x": 0.6166666666666667,
+          "y": 0.702072594216369,
+          "radius": 0.12,
+          "strength": 0.55
+        },
+        {
+          "x": 0.34166666666666673,
+          "y": 0.7742413778650723,
+          "radius": 0.12,
+          "strength": 0.55
+        },
+        {
+          "x": 0.09999999999999998,
+          "y": 0.5,
+          "radius": 0.12,
+          "strength": 0.55
+        },
+        {
+          "x": 0.25833333333333314,
+          "y": 0.08142105483752149,
+          "radius": 0.12,
+          "strength": 0.55
+        },
+        {
+          "x": 0.7833333333333334,
+          "y": 0.009252271188818162,
+          "radius": 0.12,
+          "strength": 0.55
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066557Z",
+      "modifiedDate": "2026-02-05T21:01:58.066557Z"
+    },
+    {
+      "id": "5daa4202-d6bc-4fc7-80d0-0ddb0d23d207",
+      "name": "Diamond Pattern",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.2,
+          "radius": 0.15,
+          "strength": 0.65
+        },
+        {
+          "x": 0.2,
+          "y": 0.5,
+          "radius": 0.15,
+          "strength": 0.65
+        },
+        {
+          "x": 0.8,
+          "y": 0.5,
+          "radius": 0.15,
+          "strength": 0.65
+        },
+        {
+          "x": 0.5,
+          "y": 0.8,
+          "radius": 0.15,
+          "strength": 0.65
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066560Z",
+      "modifiedDate": "2026-02-05T21:01:58.066560Z"
+    },
+    {
+      "id": "7b27a2b5-5e44-493e-af98-d6ac63b23851",
+      "name": "Grid 3x3",
+      "points": [
+        {
+          "x": 0.25,
+          "y": 0.25,
+          "radius": 0.1,
+          "strength": 0.45
+        },
+        {
+          "x": 0.5,
+          "y": 0.25,
+          "radius": 0.1,
+          "strength": 0.45
+        },
+        {
+          "x": 0.75,
+          "y": 0.25,
+          "radius": 0.1,
+          "strength": 0.45
+        },
+        {
+          "x": 0.25,
+          "y": 0.5,
+          "radius": 0.1,
+          "strength": 0.45
+        },
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.1,
+          "strength": 0.45
+        },
+        {
+          "x": 0.75,
+          "y": 0.5,
+          "radius": 0.1,
+          "strength": 0.45
+        },
+        {
+          "x": 0.25,
+          "y": 0.75,
+          "radius": 0.1,
+          "strength": 0.45
+        },
+        {
+          "x": 0.5,
+          "y": 0.75,
+          "radius": 0.1,
+          "strength": 0.45
+        },
+        {
+          "x": 0.75,
+          "y": 0.75,
+          "radius": 0.1,
+          "strength": 0.45
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066565Z",
+      "modifiedDate": "2026-02-05T21:01:58.066565Z"
+    },
+    {
+      "id": "6b365892-64d0-4c93-91fb-7703da3b458f",
+      "name": "Asymmetric Face",
+      "points": [
+        {
+          "x": 0.3,
+          "y": 0.35,
+          "radius": 0.15,
+          "strength": 0.8
+        },
+        {
+          "x": 0.7,
+          "y": 0.45,
+          "radius": 0.12,
+          "strength": -0.6
+        },
+        {
+          "x": 0.4,
+          "y": 0.65,
+          "radius": 0.1,
+          "strength": 0.5
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066568Z",
+      "modifiedDate": "2026-02-05T21:01:58.066568Z"
+    },
+    {
+      "id": "5fe0ae51-6a1a-4e47-978e-99a06ebc7e07",
+      "name": "Triple Eye",
+      "points": [
+        {
+          "x": 0.3,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.75
+        },
+        {
+          "x": 0.5,
+          "y": 0.35,
+          "radius": 0.12,
+          "strength": 0.75
+        },
+        {
+          "x": 0.7,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.75
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066570Z",
+      "modifiedDate": "2026-02-05T21:01:58.066570Z"
+    },
+    {
+      "id": "f162c41a-2f97-4a7b-9b43-aa2a00252c0a",
+      "name": "Bug Eyes Wide",
+      "points": [
+        {
+          "x": 0.2,
+          "y": 0.4,
+          "radius": 0.15,
+          "strength": 0.9
+        },
+        {
+          "x": 0.8,
+          "y": 0.4,
+          "radius": 0.15,
+          "strength": 0.9
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066573Z",
+      "modifiedDate": "2026-02-05T21:01:58.066573Z"
+    },
+    {
+      "id": "83aa3d66-9e7a-49b0-a3b6-e9ae3710371a",
+      "name": "Cartoon Smile",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.65,
+          "radius": 0.2,
+          "strength": 0.6
+        },
+        {
+          "x": 0.35,
+          "y": 0.6,
+          "radius": 0.1,
+          "strength": 0.4
+        },
+        {
+          "x": 0.65,
+          "y": 0.6,
+          "radius": 0.1,
+          "strength": 0.4
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066576Z",
+      "modifiedDate": "2026-02-05T21:01:58.066576Z"
+    },
+    {
+      "id": "5f2801ea-c46c-4032-b3fb-db24468d8413",
+      "name": "Extreme Fisheye",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.45,
+          "strength": 0.85
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066578Z",
+      "modifiedDate": "2026-02-05T21:01:58.066578Z"
+    },
+    {
+      "id": "7bb2449c-f38c-43c7-869a-798097432953",
+      "name": "Pinched Corners",
+      "points": [
+        {
+          "x": 0.15,
+          "y": 0.15,
+          "radius": 0.12,
+          "strength": -0.7
+        },
+        {
+          "x": 0.85,
+          "y": 0.15,
+          "radius": 0.12,
+          "strength": -0.7
+        },
+        {
+          "x": 0.15,
+          "y": 0.85,
+          "radius": 0.12,
+          "strength": -0.7
+        },
+        {
+          "x": 0.85,
+          "y": 0.85,
+          "radius": 0.12,
+          "strength": -0.7
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066581Z",
+      "modifiedDate": "2026-02-05T21:01:58.066581Z"
+    },
+    {
+      "id": "6dcd571e-8659-461b-9c65-a84b6fd238b0",
+      "name": "Wave Left-Right",
+      "points": [
+        {
+          "x": 0.2,
+          "y": 0.5,
+          "radius": 0.18,
+          "strength": 0.7
+        },
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.18,
+          "strength": -0.7
+        },
+        {
+          "x": 0.8,
+          "y": 0.5,
+          "radius": 0.18,
+          "strength": 0.7
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066583Z",
+      "modifiedDate": "2026-02-05T21:01:58.066583Z"
+    },
+    {
+      "id": "92b7ae7b-4d60-475e-aea8-d554ec9ac846",
+      "name": "Ripple Effect",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.15,
+          "strength": 0.8
+        },
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.25,
+          "strength": -0.4
+        },
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.35,
+          "strength": 0.3
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066586Z",
+      "modifiedDate": "2026-02-05T21:01:58.066586Z"
+    },
+    {
+      "id": "a91c6d24-ad94-4a06-ad88-68cd9a0ca030",
+      "name": "Subtle Eye Enhance",
+      "points": [
+        {
+          "x": 0.35,
+          "y": 0.4,
+          "radius": 0.1,
+          "strength": 0.35
+        },
+        {
+          "x": 0.65,
+          "y": 0.4,
+          "radius": 0.1,
+          "strength": 0.35
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066588Z",
+      "modifiedDate": "2026-02-05T21:01:58.066588Z"
+    },
+    {
+      "id": "4951a40f-1ab9-4697-bdc5-2e6a77360d08",
+      "name": "Dramatic Center Pull",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.3,
+          "strength": -0.85
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066591Z",
+      "modifiedDate": "2026-02-05T21:01:58.066591Z"
+    },
+    {
+      "id": "f41d5b85-5e24-44c8-b01b-1e97ca1dcc2a",
+      "name": "Upper Face Bulge",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.25,
+          "radius": 0.18,
+          "strength": 0.6
+        },
+        {
+          "x": 0.35,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.7
+        },
+        {
+          "x": 0.65,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.7
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066593Z",
+      "modifiedDate": "2026-02-05T21:01:58.066593Z"
+    },
+    {
+      "id": "96077375-2901-4835-85c1-e3bc0192ee95",
+      "name": "Lower Face Squeeze",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.7,
+          "radius": 0.2,
+          "strength": -0.65
+        },
+        {
+          "x": 0.35,
+          "y": 0.65,
+          "radius": 0.12,
+          "strength": -0.4
+        },
+        {
+          "x": 0.65,
+          "y": 0.65,
+          "radius": 0.12,
+          "strength": -0.4
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.066596Z",
+      "modifiedDate": "2026-02-05T21:01:58.066596Z"
+    },
+    {
+      "id": "f377acfa-2887-4352-81bd-c5cb46572fd6",
+      "name": "Random Chaos",
+      "points": [
+        {
+          "x": 0.5836560790747303,
+          "y": 0.21500645313360017,
+          "radius": 0.09925205228583835,
+          "strength": -0.28750496659164815
+        },
+        {
+          "x": 0.6418827284984074,
+          "y": 0.6060196924537469,
+          "radius": 0.14245256973933917,
+          "strength": -0.4782856343188174
+        },
+        {
+          "x": 0.4531530918111623,
+          "y": 0.2178783316628422,
+          "radius": 0.09530465823625224,
+          "strength": 0.10749740334470737
+        },
+        {
+          "x": 0.21592158181031817,
+          "y": 0.3193025904119891,
+          "radius": 0.1254919106445666,
+          "strength": 0.16291807284450333
+        },
+        {
+          "x": 0.33226437322441804,
+          "y": 0.5535594103255452,
+          "radius": 0.13666013196744786,
+          "strength": -0.5909017364507145
+        },
+        {
+          "x": 0.6834915510996848,
+          "y": 0.6188836369929362,
+          "radius": 0.10381753615625944,
+          "strength": -0.38232870026350585
+        },
+        {
+          "x": 0.7743278433240688,
+          "y": 0.4019567270675761,
+          "radius": 0.08649220903661035,
+          "strength": -0.4645970724331504
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069120Z",
+      "modifiedDate": "2026-02-05T21:01:58.069120Z"
+    },
+    {
+      "id": "c63e0e75-ba34-413c-a3d3-07071786080a",
+      "name": "Hourglass Figure",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.15,
+          "strength": -0.7
+        },
+        {
+          "x": 0.5,
+          "y": 0.25,
+          "radius": 0.2,
+          "strength": 0.5
+        },
+        {
+          "x": 0.5,
+          "y": 0.75,
+          "radius": 0.2,
+          "strength": 0.5
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069127Z",
+      "modifiedDate": "2026-02-05T21:01:58.069127Z"
+    },
+    {
+      "id": "1d01ccc5-e535-4967-bb02-2124910f47f6",
+      "name": "Split Personality",
+      "points": [
+        {
+          "x": 0.25,
+          "y": 0.35,
+          "radius": 0.18,
+          "strength": 0.75
+        },
+        {
+          "x": 0.25,
+          "y": 0.65,
+          "radius": 0.18,
+          "strength": 0.75
+        },
+        {
+          "x": 0.75,
+          "y": 0.35,
+          "radius": 0.18,
+          "strength": -0.75
+        },
+        {
+          "x": 0.75,
+          "y": 0.65,
+          "radius": 0.18,
+          "strength": -0.75
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069131Z",
+      "modifiedDate": "2026-02-05T21:01:58.069131Z"
+    },
+    {
+      "id": "3689af72-bf02-4afc-8c64-c585f5444319",
+      "name": "Tunnel Vision",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.2,
+          "strength": 0.8
+        },
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.4,
+          "strength": -0.5
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069134Z",
+      "modifiedDate": "2026-02-05T21:01:58.069134Z"
+    },
+    {
+      "id": "8ad4e2f4-e876-4798-a217-84deca31caff",
+      "name": "Cross Pattern",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.3,
+          "radius": 0.12,
+          "strength": 0.6
+        },
+        {
+          "x": 0.3,
+          "y": 0.5,
+          "radius": 0.12,
+          "strength": 0.6
+        },
+        {
+          "x": 0.7,
+          "y": 0.5,
+          "radius": 0.12,
+          "strength": 0.6
+        },
+        {
+          "x": 0.5,
+          "y": 0.7,
+          "radius": 0.12,
+          "strength": 0.6
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069137Z",
+      "modifiedDate": "2026-02-05T21:01:58.069137Z"
+    },
+    {
+      "id": "1dbdae36-66b0-421c-9bf9-d0c89390e0e3",
+      "name": "X Pattern",
+      "points": [
+        {
+          "x": 0.3,
+          "y": 0.3,
+          "radius": 0.12,
+          "strength": 0.65
+        },
+        {
+          "x": 0.7,
+          "y": 0.3,
+          "radius": 0.12,
+          "strength": 0.65
+        },
+        {
+          "x": 0.3,
+          "y": 0.7,
+          "radius": 0.12,
+          "strength": 0.65
+        },
+        {
+          "x": 0.7,
+          "y": 0.7,
+          "radius": 0.12,
+          "strength": 0.65
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069140Z",
+      "modifiedDate": "2026-02-05T21:01:58.069140Z"
+    },
+    {
+      "id": "1c14ce4d-c2f9-44b0-9701-250627cd0a97",
+      "name": "Star Burst",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.2,
+          "radius": 0.12,
+          "strength": 0.65
+        },
+        {
+          "x": 0.785316954888546,
+          "y": 0.4072949016875158,
+          "radius": 0.12,
+          "strength": 0.65
+        },
+        {
+          "x": 0.6763355756877419,
+          "y": 0.7427050983124842,
+          "radius": 0.12,
+          "strength": 0.65
+        },
+        {
+          "x": 0.32366442431225806,
+          "y": 0.7427050983124842,
+          "radius": 0.12,
+          "strength": 0.65
+        },
+        {
+          "x": 0.21468304511145392,
+          "y": 0.4072949016875158,
+          "radius": 0.12,
+          "strength": 0.65
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069147Z",
+      "modifiedDate": "2026-02-05T21:01:58.069147Z"
+    },
+    {
+      "id": "2cb95bc7-ef09-47b8-85ed-791335653a30",
+      "name": "Hexagon",
+      "points": [
+        {
+          "x": 0.8,
+          "y": 0.5,
+          "radius": 0.11,
+          "strength": 0.55
+        },
+        {
+          "x": 0.65,
+          "y": 0.7598076211353315,
+          "radius": 0.11,
+          "strength": 0.55
+        },
+        {
+          "x": 0.3500000000000001,
+          "y": 0.7598076211353316,
+          "radius": 0.11,
+          "strength": 0.55
+        },
+        {
+          "x": 0.2,
+          "y": 0.5,
+          "radius": 0.11,
+          "strength": 0.55
+        },
+        {
+          "x": 0.34999999999999987,
+          "y": 0.2401923788646685,
+          "radius": 0.11,
+          "strength": 0.55
+        },
+        {
+          "x": 0.65,
+          "y": 0.24019237886466843,
+          "radius": 0.11,
+          "strength": 0.55
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069153Z",
+      "modifiedDate": "2026-02-05T21:01:58.069153Z"
+    },
+    {
+      "id": "c166306d-9562-40f3-b4c2-cfb8917c58c8",
+      "name": "Tiny Eyes",
+      "points": [
+        {
+          "x": 0.4,
+          "y": 0.4,
+          "radius": 0.08,
+          "strength": 0.9
+        },
+        {
+          "x": 0.6,
+          "y": 0.4,
+          "radius": 0.08,
+          "strength": 0.9
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069156Z",
+      "modifiedDate": "2026-02-05T21:01:58.069156Z"
+    },
+    {
+      "id": "b5104803-7e7e-4db4-a97f-59dc7dc6e19d",
+      "name": "Giant Nose",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.15,
+          "strength": 0.85
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069158Z",
+      "modifiedDate": "2026-02-05T21:01:58.069158Z"
+    },
+    {
+      "id": "4b7b45da-cdb9-422e-a333-8b80c5f5bbb9",
+      "name": "Elf Ears",
+      "points": [
+        {
+          "x": 0.1,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.7
+        },
+        {
+          "x": 0.9,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.7
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069161Z",
+      "modifiedDate": "2026-02-05T21:01:58.069161Z"
+    },
+    {
+      "id": "3a70bba6-c248-474d-98de-2a2385f2ec16",
+      "name": "Gradient Bulge",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.2,
+          "radius": 0.12,
+          "strength": 0.3
+        },
+        {
+          "x": 0.5,
+          "y": 0.4,
+          "radius": 0.12,
+          "strength": 0.5
+        },
+        {
+          "x": 0.5,
+          "y": 0.6,
+          "radius": 0.12,
+          "strength": 0.7
+        },
+        {
+          "x": 0.5,
+          "y": 0.8,
+          "radius": 0.12,
+          "strength": 0.9
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069164Z",
+      "modifiedDate": "2026-02-05T21:01:58.069164Z"
+    },
+    {
+      "id": "20a6ab31-c7a7-4cf8-b960-ca4e5d82f166",
+      "name": "Kaleidoscope",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.3,
+          "radius": 0.1,
+          "strength": 0.6
+        },
+        {
+          "x": 0.35,
+          "y": 0.5,
+          "radius": 0.1,
+          "strength": -0.5
+        },
+        {
+          "x": 0.65,
+          "y": 0.5,
+          "radius": 0.1,
+          "strength": -0.5
+        },
+        {
+          "x": 0.5,
+          "y": 0.7,
+          "radius": 0.1,
+          "strength": 0.6
+        },
+        {
+          "x": 0.3,
+          "y": 0.3,
+          "radius": 0.08,
+          "strength": 0.4
+        },
+        {
+          "x": 0.7,
+          "y": 0.3,
+          "radius": 0.08,
+          "strength": 0.4
+        },
+        {
+          "x": 0.3,
+          "y": 0.7,
+          "radius": 0.08,
+          "strength": 0.4
+        },
+        {
+          "x": 0.7,
+          "y": 0.7,
+          "radius": 0.08,
+          "strength": 0.4
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069167Z",
+      "modifiedDate": "2026-02-05T21:01:58.069167Z"
+    },
+    {
+      "id": "ee5df27d-8509-47a8-820d-fdc7485a2808",
+      "name": "Dual Fisheye",
+      "points": [
+        {
+          "x": 0.3,
+          "y": 0.5,
+          "radius": 0.25,
+          "strength": 0.75
+        },
+        {
+          "x": 0.7,
+          "y": 0.5,
+          "radius": 0.25,
+          "strength": 0.75
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069169Z",
+      "modifiedDate": "2026-02-05T21:01:58.069169Z"
+    },
+    {
+      "id": "f9b99ca9-7b4f-4832-9810-6a72521a86f0",
+      "name": "Portal Effect",
+      "points": [
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.15,
+          "strength": -0.9
+        },
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "radius": 0.28,
+          "strength": 0.6
+        }
+      ],
+      "createdDate": "2026-02-05T21:01:58.069172Z",
+      "modifiedDate": "2026-02-05T21:01:58.069172Z"
+    }
+  ]
+}

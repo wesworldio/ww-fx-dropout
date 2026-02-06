@@ -13,11 +13,22 @@ class BulgeFilterManager {
     
     private let userDefaultsKey = "com.wesworld.fx.customBulgeFilters"
     private let fileExtension = "wwfxbulge"
+    private let bundledEffectsImportedKey = "com.wesworld.fx.bundledEffectsImported"
+    private let bundledEffectsLastCountKey = "com.wesworld.fx.bundledEffectsLastCount"
     
     private var customFilters: [CustomBulgeFilter] = []
     
     private init() {
         loadFilters()
+        // Import bundled 42 bulge effects on first launch
+        importBundledEffectsIfNeeded()
+    }
+
+    // MARK: - Bundled Effects Reload
+
+    public func reloadBundledEffects() {
+        UserDefaults.standard.set(false, forKey: bundledEffectsImportedKey)
+        importBundledEffectsIfNeeded()
     }
     
     // MARK: - Filter Management
@@ -211,6 +222,88 @@ class BulgeFilterManager {
     }
     
     // MARK: - Helper Methods
+    
+    private func importBundledEffectsIfNeeded() {
+        // Log to file for debugging
+        let logPath = "/Users/wes/Desktop/bulge_import_log.txt"
+        func log(_ message: String) {
+            let timestamp = ISO8601DateFormatter().string(from: Date())
+            let logLine = "[\(timestamp)] \(message)\n"
+            if let data = logLine.data(using: .utf8) {
+                if FileManager.default.fileExists(atPath: logPath) {
+                    if let fileHandle = FileHandle(forWritingAtPath: logPath) {
+                        fileHandle.seekToEndOfFile()
+                        fileHandle.write(data)
+                        fileHandle.closeFile()
+                    }
+                } else {
+                    try? data.write(to: URL(fileURLWithPath: logPath))
+                }
+            }
+            NSLog(message)
+        }
+        
+        log("🔍 BulgeFilterManager: importBundledEffectsIfNeeded() called")
+        log("🔍 Bundle.main.bundlePath: \(Bundle.main.bundlePath)")
+        log("🔍 Bundle.main.resourcePath: \(Bundle.main.resourcePath ?? "nil")")
+        
+        // Try to load the bundled effects file
+        var bundledURL = Bundle.main.url(forResource: "42_bulge_effects", withExtension: "wwfxbulge")
+        log("🔍 Bundle.main.url result: \(bundledURL?.path ?? "nil")")
+
+        if bundledURL == nil {
+            let cwd = FileManager.default.currentDirectoryPath
+            let candidatePaths = [
+                "\(cwd)/42_bulge_effects.wwfxbulge",
+                "\(cwd)/macos-native/42_bulge_effects.wwfxbulge",
+                "\(cwd)/WesWorldFX/Resources/42_bulge_effects.wwfxbulge"
+            ]
+            if let foundPath = candidatePaths.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+                bundledURL = URL(fileURLWithPath: foundPath)
+                log("🔍 Fallback bundled path used: \(foundPath)")
+            }
+        }
+        
+        guard let bundledURL = bundledURL else {
+            log("⚠️ Bundled 42 bulge effects file not found in app bundle")
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: bundledURL)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let exportData = try decoder.decode(CustomBulgeFilterExport.self, from: data)
+
+            let existingNames = Set(customFilters.map { $0.name })
+            let bundledNames = Set(exportData.filters.map { $0.name })
+            let missingNames = bundledNames.subtracting(existingNames)
+            let lastImportedCount = UserDefaults.standard.integer(forKey: bundledEffectsLastCountKey)
+            let alreadyImported = UserDefaults.standard.bool(forKey: bundledEffectsImportedKey)
+
+            log("🔍 bundledEffectsImportedKey = \(alreadyImported)")
+            log("🔍 bundledEffectsLastCount = \(lastImportedCount)")
+            log("🔍 bundledEffectsCount = \(exportData.filters.count)")
+            log("🔍 missingBundledEffects = \(missingNames.count)")
+
+            if !missingNames.isEmpty || !alreadyImported || lastImportedCount != exportData.filters.count {
+                let newFilters = exportData.filters.filter { missingNames.contains($0.name) }
+                if !newFilters.isEmpty {
+                    customFilters.append(contentsOf: newFilters)
+                    saveFilters()
+                    log("✓ Imported \(newFilters.count) new bundled bulge effects")
+                } else {
+                    log("✓ Bundled effects already present; no new filters to add")
+                }
+                UserDefaults.standard.set(true, forKey: bundledEffectsImportedKey)
+                UserDefaults.standard.set(exportData.filters.count, forKey: bundledEffectsLastCountKey)
+            } else {
+                log("✓ Bundled bulge effects already imported and up-to-date")
+            }
+        } catch {
+            log("❌ Failed to import bundled bulge effects: \(error.localizedDescription)")
+        }
+    }
     
     private func showAlert(title: String, message: String, style: NSAlert.Style) {
         DispatchQueue.main.async {

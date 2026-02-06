@@ -22,7 +22,9 @@ class FilterProcessor {
     private var customBulgePipeline: MTLComputePipelineState?
         // Grid overlay pipelines (filter-specific)
     private var gridPipelines: [FilterType: MTLComputePipelineState] = [:]
+    private var customGridPipeline: MTLComputePipelineState?
     private var defaultGridPipeline: MTLComputePipelineState?
+    private var simpleGridPipeline: MTLComputePipelineState?
     
     // Current filter
     var currentFilter: FilterType = .preset(.bulgeEyes)
@@ -167,8 +169,8 @@ class FilterProcessor {
         // Grid overlay for custom bulge filters
         if let customGridFunction = library.makeFunction(name: "draw_grid_overlay_custom_bulge") {
             do {
-                let pipeline = try device.makeComputePipelineState(function: customGridFunction)
-                gridPipelines[.custom(UUID())] = pipeline
+                customGridPipeline = try device.makeComputePipelineState(function: customGridFunction)
+                print("✓ Custom bulge grid pipeline created successfully")
             } catch {
                 print("Failed to create custom bulge grid pipeline: \(error)")
             }
@@ -178,8 +180,19 @@ class FilterProcessor {
         if let defaultGridFunction = library.makeFunction(name: "draw_grid_overlay") {
             do {
                 defaultGridPipeline = try device.makeComputePipelineState(function: defaultGridFunction)
+                print("✓ Default grid pipeline created successfully")
             } catch {
                 print("Failed to create default grid pipeline: \(error)")
+            }
+        }
+        
+        // Simple universal grid overlay for any filter that doesn't have a specific grid overlay
+        if let simpleGridFunction = library.makeFunction(name: "draw_simple_grid_overlay") {
+            do {
+                simpleGridPipeline = try device.makeComputePipelineState(function: simpleGridFunction)
+                print("✓ Simple grid overlay pipeline created successfully")
+            } catch {
+                print("Failed to create simple grid overlay pipeline: \(error)")
             }
         }
     }
@@ -245,13 +258,15 @@ class FilterProcessor {
             // Get pipeline based on filter type
             var pipeline: MTLComputePipelineState? = nil
             if case .custom = currentFilter {
-                // Use the custom bulge pipeline (stored with placeholder UUID)
-                pipeline = filterPipelines[.custom(UUID())]
+                // Use the custom bulge pipeline
+                pipeline = customBulgePipeline
             } else {
                 pipeline = filterPipelines[currentFilter]
             }
             
             guard let pipeline = pipeline else {
+                computeEncoder.endEncoding()
+                print("FilterProcessor: Pipeline not found for filter \(currentFilter)")
                 return sourceTexture
             }
             
@@ -299,12 +314,13 @@ class FilterProcessor {
             // Select the appropriate grid pipeline based on current filter
             var gridPipeline: MTLComputePipelineState? = nil
             if case .custom = currentFilter {
-                gridPipeline = gridPipelines[.custom(UUID())]
+                gridPipeline = customGridPipeline
             } else {
-                gridPipeline = gridPipelines[currentFilter] ?? defaultGridPipeline
+                gridPipeline = gridPipelines[currentFilter] ?? defaultGridPipeline ?? simpleGridPipeline
             }
             
             guard let gridPipeline = gridPipeline else {
+                print("FilterProcessor: No grid pipeline available for filter")
                 return processingTexture
             }
             
@@ -323,6 +339,7 @@ class FilterProcessor {
 
             guard let gridCommandBuffer = commandQueue.makeCommandBuffer(),
                   let gridEncoder = gridCommandBuffer.makeComputeCommandEncoder() else {
+                print("FilterProcessor: Failed to create grid command buffer or encoder")
                 return processingTexture
             }
 
@@ -452,8 +469,10 @@ class FilterProcessor {
             return texture
         }
         
-        // Create output texture
+        // Create output texture - if this fails, must end encoder before returning
         guard let outputTexture = createOutputTexture(matching: texture) else {
+            computeEncoder.endEncoding()
+            print("FilterProcessor: Failed to create output texture for custom bulge")
             return texture
         }
         

@@ -1,45 +1,89 @@
 import Foundation
 import AppKit
+import UserNotifications
 
-class UpdateChecker: NSObject, NSUserNotificationCenterDelegate {
+class UpdateChecker: NSObject, UNUserNotificationCenterDelegate {
     static let shared = UpdateChecker()
     
     private let repoOwner = "wesworldio"
     private let repoName = "ww-fx-dropout"
     private let currentVersion = "2.1.0"
+    private let notificationsEnabled: Bool
     
     override private init() {
+        if let bundleId = Bundle.main.bundleIdentifier, !bundleId.isEmpty {
+            notificationsEnabled = true
+        } else {
+            notificationsEnabled = false
+        }
         super.init()
-        // Set up notification delegate to handle notification interactions
-        NSUserNotificationCenter.default.delegate = self
-    }
-    
-    // MARK: - NSUserNotificationCenterDelegate
-    
-    func userNotificationCenter(_ center: NSUserNotificationCenter, didActivate notification: NSUserNotification) {
-        guard let userInfo = notification.userInfo else { return }
-        
-        if notification.activationType == .actionButtonClicked {
-            // Action button clicked (Download or View Release)
-            if let downloadUrl = userInfo["downloadUrl"] as? String,
-               let url = URL(string: downloadUrl) {
-                NSWorkspace.shared.open(url)
-            } else if let releaseUrl = userInfo["releaseUrl"] as? String,
-                      let url = URL(string: releaseUrl) {
-                NSWorkspace.shared.open(url)
-            }
-        } else if notification.activationType == .contentsClicked {
-            // Notification body clicked - open release page
-            if let releaseUrl = userInfo["releaseUrl"] as? String,
-               let url = URL(string: releaseUrl) {
-                NSWorkspace.shared.open(url)
+        guard notificationsEnabled else {
+            print("⚠️  Notifications disabled (no app bundle identifier)")
+            return
+        }
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if let error = error {
+                print("Notification authorization error: \(error.localizedDescription)")
+            } else if !granted {
+                print("Notification authorization not granted")
             }
         }
+        let downloadAction = UNNotificationAction(
+            identifier: "UpdateChecker.Download",
+            title: "Download",
+            options: [.foreground]
+        )
+        let viewReleaseAction = UNNotificationAction(
+            identifier: "UpdateChecker.ViewRelease",
+            title: "View Release",
+            options: [.foreground]
+        )
+        let laterAction = UNNotificationAction(
+            identifier: "UpdateChecker.Later",
+            title: "Later",
+            options: []
+        )
+        let category = UNNotificationCategory(
+            identifier: "UpdateChecker.UpdateAvailable",
+            actions: [downloadAction, viewReleaseAction, laterAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        center.setNotificationCategories([category])
     }
     
-    func userNotificationCenter(_ center: NSUserNotificationCenter, shouldPresent notification: NSUserNotification) -> Bool {
-        // Always present notifications, even if the app is in focus
-        return true
+    // MARK: - UNUserNotificationCenterDelegate
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        let downloadUrl = userInfo["downloadUrl"] as? String
+        let releaseUrl = userInfo["releaseUrl"] as? String
+        
+        switch response.actionIdentifier {
+        case "UpdateChecker.Download":
+            if let downloadUrl, let url = URL(string: downloadUrl) {
+                NSWorkspace.shared.open(url)
+            } else if let releaseUrl, let url = URL(string: releaseUrl) {
+                NSWorkspace.shared.open(url)
+            }
+        case "UpdateChecker.ViewRelease", UNNotificationDefaultActionIdentifier:
+            if let releaseUrl, let url = URL(string: releaseUrl) {
+                NSWorkspace.shared.open(url)
+            }
+        default:
+            break
+        }
+        completionHandler()
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
     
     func checkForUpdates(showNoUpdateAlert: Bool = false) {
@@ -128,34 +172,50 @@ class UpdateChecker: NSObject, NSUserNotificationCenterDelegate {
     }
     
     private func showUpdateAlert(latestVersion: String, releaseUrl: String, downloadUrl: String?, releaseNotes: String) {
-        // Use macOS notification instead of modal alert - subtle and non-intrusive
-        let notification = NSUserNotification()
-        notification.title = "Update Available"
-        notification.subtitle = "WesWorld FX v\(latestVersion)"
-        notification.informativeText = "A new version is available. Click to download or visit the release page."
-        notification.soundName = nil // Silent notification
-        
-        // Set action buttons for the notification
+        guard notificationsEnabled else {
+            print("Update available: v\(latestVersion) - \(releaseUrl)")
+            return
+        }
+        let content = UNMutableNotificationContent()
+        content.title = "Update Available"
+        content.subtitle = "WesWorld FX v\(latestVersion)"
+        content.body = "A new version is available. Click to download or visit the release page."
+        content.userInfo = ["releaseUrl": releaseUrl]
+        content.categoryIdentifier = "UpdateChecker.UpdateAvailable"
         if let downloadUrl = downloadUrl {
-            notification.actionButtonTitle = "Download"
-            notification.otherButtonTitle = "Later"
-            notification.userInfo = ["downloadUrl": downloadUrl, "releaseUrl": releaseUrl]
-        } else {
-            notification.actionButtonTitle = "View Release"
-            notification.otherButtonTitle = "Later"
-            notification.userInfo = ["releaseUrl": releaseUrl]
+            content.userInfo["downloadUrl"] = downloadUrl
         }
         
-        NSUserNotificationCenter.default.deliver(notification)
+        let request = UNNotificationRequest(
+            identifier: "UpdateChecker.UpdateAvailable",
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Failed to deliver update notification: \(error.localizedDescription)")
+            }
+        }
     }
     
     private func showNoUpdateAlert() {
-        // Subtle notification for "no update available" - only shown if user explicitly checked
-        let notification = NSUserNotification()
-        notification.title = "App is Up to Date"
-        notification.informativeText = "You're running the latest version (\(currentVersion))."
-        notification.soundName = nil // Silent notification
+        guard notificationsEnabled else {
+            print("App is up to date (v\(currentVersion))")
+            return
+        }
+        let content = UNMutableNotificationContent()
+        content.title = "App is Up to Date"
+        content.body = "You're running the latest version (\(currentVersion))."
         
-        NSUserNotificationCenter.default.deliver(notification)
+        let request = UNNotificationRequest(
+            identifier: "UpdateChecker.NoUpdate",
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Failed to deliver no-update notification: \(error.localizedDescription)")
+            }
+        }
     }
 }

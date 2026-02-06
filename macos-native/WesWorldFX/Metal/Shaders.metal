@@ -1124,6 +1124,31 @@ kernel void wave_distortion_v1(texture2d<float, access::read> inTexture [[textur
     outTexture.write(color, gid);
 }
 
+// Simple Universal Grid Overlay - Used as fallback for all filters
+kernel void draw_simple_grid_overlay(texture2d<float, access::read> inTexture [[texture(0)]],
+                                     texture2d<float, access::write> outTexture [[texture(1)]],
+                                     uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+
+    // Read the input texture color
+    float4 textureColor = inTexture.read(gid);
+    
+    // Grid parameters (match web)
+    const uint gridSize = 30;
+    const uint gridOffset = 5;
+
+    // Check if this pixel is on a grid line
+    bool onHorizontalGrid = (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0);
+    bool onVerticalGrid = (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0);
+
+    // Overlay yellow grid or write texture color
+    if (onHorizontalGrid || onVerticalGrid) {
+        outTexture.write(float4(1.0, 1.0, 0.0, 1.0), gid);
+    } else {
+        outTexture.write(textureColor, gid);
+    }
+}
+
 // Grid Overlay with Bulge Eyes Distortion - Forward-maps grid lines like the web version
 // Grid overlay for complex_ripple filter
 kernel void draw_grid_overlay_complex_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
@@ -1278,7 +1303,10 @@ kernel void draw_grid_overlay(texture2d<float, access::read> inTexture [[texture
     const uint gridSize = 30;
     const uint gridOffset = 5;
 
-    // Only draw for source grid points
+    // Read the input texture color first
+    float4 textureColor = inTexture.read(gid);
+    
+    // Only draw grid for source grid points
     bool isGridPoint = false;
     if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
         isGridPoint = true;
@@ -1286,49 +1314,13 @@ kernel void draw_grid_overlay(texture2d<float, access::read> inTexture [[texture
     if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
         isGridPoint = true;
     }
-    if (!isGridPoint) {
-        return;
+    
+    // If it's a grid point, write yellow; otherwise write the texture color
+    if (isGridPoint) {
+        outTexture.write(float4(1.0, 1.0, 0.0, 1.0), gid);
+    } else {
+        outTexture.write(textureColor, gid);
     }
-
-    // Eye positions (same as bulge_eyes filter)
-    float eyeOffsetX = float(width) * 0.15;
-    float eyeOffsetY = -float(height) * 0.05;
-    float leftEyeX = centerX - eyeOffsetX;
-    float leftEyeY = centerY + eyeOffsetY;
-    float rightEyeX = centerX + eyeOffsetX;
-    float rightEyeY = centerY + eyeOffsetY;
-
-    // Eye bulge parameters (same as bulge_eyes filter)
-    float eyeRadius = min(float(width), float(height)) * 0.12;
-    const float strength = 0.65;
-
-    float2 pos = float2(gid);
-    float2 distorted = pos;
-
-    // Calculate distance to left eye
-    float dxLeft = pos.x - leftEyeX;
-    float dyLeft = pos.y - leftEyeY;
-    float distLeft = sqrt(dxLeft * dxLeft + dyLeft * dyLeft);
-
-    // Calculate distance to right eye
-    float dxRight = pos.x - rightEyeX;
-    float dyRight = pos.y - rightEyeY;
-    float distRight = sqrt(dxRight * dxRight + dyRight * dyRight);
-
-    // Apply bulge transformation to grid point (forward mapping)
-    if (distLeft < eyeRadius) {
-        float factor = 1.0 - (distLeft / eyeRadius) * strength;
-        distorted.x = leftEyeX + dxLeft * factor;
-        distorted.y = leftEyeY + dyLeft * factor;
-    } else if (distRight < eyeRadius) {
-        float factor = 1.0 - (distRight / eyeRadius) * strength;
-        distorted.x = rightEyeX + dxRight * factor;
-        distorted.y = rightEyeY + dyRight * factor;
-    }
-
-    uint2 outPos = uint2(clamp(distorted.x, 0.0, float(width - 1)),
-                         clamp(distorted.y, 0.0, float(height - 1)));
-    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
 }
 
 
@@ -1390,51 +1382,32 @@ kernel void draw_grid_overlay_bulge_eyes(texture2d<float, access::read> inTextur
 
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
-    float centerX = float(width) / 2.0;
-    float centerY = float(height) / 2.0;
+    
+    // Read the input texture color first - this is the processed image
+    float4 textureColor = inTexture.read(gid);
+    
+    // Always write the texture color as the base
+    outTexture.write(textureColor, gid);
 
-    float bulgeRadius = min(float(width), float(height)) * 0.15;
-    const float strength = 0.65;
+    // Grid parameters
     const uint gridSize = 30;
     const uint gridOffset = 5;
 
-    // Output pixel position
-    float2 outPos = float2(gid);
-    float2 sourcePos = outPos;
-    
-    // Check if this output position is within the bulge region
-    float dxOut = outPos.x - centerX;
-    float dyOut = outPos.y - centerY;
-    float distOut = sqrt(dxOut * dxOut + dyOut * dyOut);
-    
-    if (distOut < bulgeRadius) {
-        float factor = 1.0 - (distOut / bulgeRadius) * strength;
-        if (factor > 0.01) {
-            float sourceDx = dxOut / factor;
-            float sourceDy = dyOut / factor;
-            sourcePos.x = centerX + sourceDx;
-            sourcePos.y = centerY + sourceDy;
-        }
-    }
-    
-    // Check if sourcePos is on a grid line
+    // Check if this output position is on a grid line
     bool onHorizontalGrid = false;
     bool onVerticalGrid = false;
     
-    // Only check grid if sourcePos is within bounds
-    if (sourcePos.x >= 0.0 && sourcePos.x < float(width) &&
-        sourcePos.y >= 0.0 && sourcePos.y < float(height)) {
-        uint gridX = uint(sourcePos.x);
-        uint gridY = uint(sourcePos.y);
-        
-        if (gridY >= gridOffset && ((gridY - gridOffset) % gridSize) < 2) {
-            onHorizontalGrid = true;
-        }
-        if (gridX >= gridOffset && ((gridX - gridOffset) % gridSize) < 2) {
-            onVerticalGrid = true;
-        }
+    uint gridX = gid.x;
+    uint gridY = gid.y;
+    
+    if (gridY >= gridOffset && ((gridY - gridOffset) % gridSize) == 0) {
+        onHorizontalGrid = true;
+    }
+    if (gridX >= gridOffset && ((gridX - gridOffset) % gridSize) == 0) {
+        onVerticalGrid = true;
     }
     
+    // Overlay yellow grid lines
     if (onHorizontalGrid || onVerticalGrid) {
         outTexture.write(float4(1.0, 1.0, 0.0, 1.0), gid);
     }

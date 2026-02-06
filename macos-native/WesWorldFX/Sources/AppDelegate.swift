@@ -113,6 +113,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func exportBulgeFilters(_ sender: Any?) {
         BulgeFilterManager.shared.exportAllFilters()
     }
+
+    @objc func reloadBundledBulgeFilters(_ sender: Any?) {
+        BulgeFilterManager.shared.reloadBundledEffects()
+        cameraViewController?.updateFilterList()
+    }
     
     private func requestCameraAccess() {
         // Check current authorization status
@@ -133,8 +138,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Load previously saved permission state
         let defaults = UserDefaults.standard
-        let wasAskedBefore = defaults.bool(forKey: cameraPermissionLastAskedKey)
-        let wasGrantedBefore = defaults.bool(forKey: cameraPermissionGrantedKey)
         
         switch currentStatus {
         case .authorized:

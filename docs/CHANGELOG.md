@@ -1,149 +1,81 @@
-# Changelog - Mac Standalone Version Enhancements
+# Changelog
 
-## New Features
+All notable changes to WesWorld FX will be documented in this file.
 
-### 🔄 Auto-Update System
-- **Automatic update checking**: Checks GitHub for updates every 5 minutes (configurable)
-- **Configurable branch**: Defaults to `main` branch, can be changed in `config.json`
-- **Manual update pull**: Press `U` to check for updates or pull them
-- **Update notifications**: Shows update available indicator in UI when updates are found
-- **Git integration**: Automatically pulls updates from configured branch
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**Configuration** (in `config.json`):
-```json
-{
-  "updates": {
-    "enabled": true,
-    "branch": "main",
-    "check_interval": 300,
-    "auto_pull": false
-  }
-}
-```
+## [Unreleased]
 
-### ⭐ Favorites System
-- **Save favorite filters**: Press `F` to toggle favorite status for current filter
-- **Persistent storage**: Favorites are saved to `config.json`
-- **Visual indicator**: Favorite filters show a ★ indicator in the UI
+### Added
+- Desktop app for Windows, macOS, and Linux
+- GitHub Actions workflow for automated releases
+- Release management scripts (`create-release.sh` and `.bat`)
+- Comprehensive desktop app documentation
+- Hardware acceleration for better FPS
 
-### 🎥 Recording Capability
-- **Start/Stop recording**: Press `R` to toggle recording
-- **Automatic file naming**: Recordings saved with timestamp to `recordings/` directory
-- **Visual indicator**: Recording status shown in UI with ● RECORDING indicator
-- **Format**: MP4 format using mp4v codec
+### Changed
+- Improved performance with Electron-based desktop app
+- Better camera access with lower latency
 
-### 🎨 Theme Support
-- **Multiple themes**: Support for different color themes
-- **Web theme compatibility**: Automatically converts web themes to standalone format
-- **Configurable**: Set theme in `config.json` with `"theme": "theme_name"`
-- **Default themes**: `default`, `wesworld`, `dropout` available
+## [1.0.0] - 2026-02-02
 
-### 📹 Enhanced Camera Selection
-- **Camera detection**: Automatically detects and lists all available cameras
-- **Camera information**: Shows camera index and backend information
-- **Persistent selection**: Remembers last used camera in config
+### Added
+- Initial desktop app release
+- Cross-platform support (Windows, macOS, Linux)
+- Hardware-accelerated rendering
+- Direct camera access
+- 95+ face filters
+- Offline capability
+- Better FPS than web browsers (50-60+ vs 30-45)
+- WASM-based face detection
+- Real-time video processing
+- OBS virtual camera integration
 
-### 🚀 Performance Improvements
-- **Background update checks**: Update checking runs in background threads
-- **Optimized frame processing**: Better frame handling and caching
-- **Efficient UI rendering**: Improved overlay rendering performance
+### Desktop App Features
+- Native app for macOS (Intel + Apple Silicon)
+- Native app for Windows (x64 + x86)
+- Native app for Linux (AppImage + DEB)
+- GPU acceleration enabled by default
+- No frame rate limiting
+- Desynchronized canvas rendering
+- High-performance WebGL contexts
+- RequestAnimationFrame batching
+- Optimized memory management
 
-## New Keyboard Shortcuts
+### Documentation
+- Desktop app guide (DESKTOP_APP_GUIDE.md)
+- Quick start guide (DESKTOP_QUICKSTART.md)
+- Release documentation (docs/RELEASES.md)
+- Build icon guide (build/README.md)
+- Setup completion summary
 
-- **F**: Toggle favorite for current filter
-- **R**: Start/Stop recording
-- **U**: Check for updates / Pull updates (if available)
-- **H**: Toggle UI overlay (existing)
-- **SPACE**: Toggle auto-advance (existing)
-- **←/→**: Navigate filters (existing)
-- **Q**: Quit (existing)
+### Development
+- Electron 28 integration
+- electron-builder configuration
+- macOS code signing support
+- Windows installer (NSIS)
+- DMG creation for macOS
+- GitHub Actions CI/CD
+- Automated release workflow
 
-## Configuration Updates
+## [Previous Versions]
 
-The `config.json` file now supports:
+See git history for web-only versions and development history.
 
-```json
-{
-  "camera_index": 1,
-  "advance_interval": 0.1,
-  "updates": {
-    "enabled": true,
-    "branch": "main",
-    "check_interval": 300,
-    "auto_pull": false,
-    "last_commit": null,
-    "last_check": 0
-  },
-  "favorites": ["sam_reich", "bulge", "swirl"],
-  "theme": "default"
-}
-```
+---
 
-## File Structure
+## Release Types
 
-New files and directories:
-- `update_checker.py`: Auto-update system
-- `themes/default.json`: Default theme configuration
-- `recordings/`: Directory for recorded videos (auto-created)
+- **Added** - New features
+- **Changed** - Changes in existing functionality
+- **Deprecated** - Soon-to-be removed features
+- **Removed** - Removed features
+- **Fixed** - Bug fixes
+- **Security** - Security fixes
 
-## Usage Examples
+## Links
 
-### Check for Updates Manually
-Press `U` in the application, or run:
-```bash
-python3 update_checker.py
-```
-
-### Change Update Branch
-Edit `config.json`:
-```json
-{
-  "updates": {
-    "branch": "develop"
-  }
-}
-```
-
-### Record a Video
-1. Start the application: `make interactive`
-2. Select your filter
-3. Press `R` to start recording
-4. Press `R` again to stop
-5. Video saved to `recordings/recording_YYYYMMDD_HHMMSS.mp4`
-
-### Use a Different Theme
-Edit `config.json`:
-```json
-{
-  "theme": "wesworld"
-}
-```
-
-## Technical Details
-
-### Update Checker
-- Uses GitHub API to check for latest commit
-- Compares with local git commit hash
-- Supports configurable check intervals
-- Handles network errors gracefully
-
-### Recording
-- Uses OpenCV VideoWriter
-- MP4 format with mp4v codec
-- Automatic timestamp-based naming
-- Saves to dedicated recordings directory
-
-### Themes
-- JSON-based configuration
-- RGB color values
-- Supports both new format and legacy web format
-- Automatic conversion from hex to RGB
-
-## Backward Compatibility
-
-All existing features remain unchanged:
-- All keyboard shortcuts still work
-- Config file structure is backward compatible
-- Existing themes are automatically converted
-- No breaking changes to filter functionality
-
+- [Latest Release](https://github.com/wesworldio/ww-fx-1/releases/latest)
+- [All Releases](https://github.com/wesworldio/ww-fx-1/releases)
+- [Repository](https://github.com/wesworldio/ww-fx-1)

@@ -1,41 +1,39 @@
-.PHONY: help build clean watch daemon daemon-stop daemon-status daemon-logs build-info setup-hooks \
-	native-build native-run native-clean native-release native-setup native-xcode \
-	all run setup
+.PHONY: help setup run clean build-info setup-hooks \
+	native-setup native-build native-run native-release native-clean native-xcode native-kill native-rebuild \
+	web-build web-clean web-watch web-daemon web-daemon-stop web-daemon-status web-daemon-logs
 
 PYTHON = python3
+GREEN = \033[0;32m
+YELLOW = \033[1;33m
+RED = \033[0;31m
+NC = \033[0m
 
 help:
 	@echo "$(GREEN)WesWorld FX - Build Commands$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Quick Start (Native macOS Metal App):$(NC)"
-	@echo "  make run              - Build and run the OSX native Metal version"
+	@echo "$(YELLOW)PRIMARY: macOS Native (Metal GPU):$(NC)"
+	@echo "  make run              - Build and run native macOS app (primary)"
 	@echo "  make setup            - Initial setup for native app"
-	@echo ""
-	@echo "$(YELLOW)Web/WASM Commands:$(NC)"
-	@echo "  make build            - Build WASM module"
-	@echo "  make clean            - Clean WASM artifacts"
-	@echo "  make watch            - Watch files and rebuild (foreground)"
-	@echo "  make daemon           - Start watcher daemon"
-	@echo "  make daemon-stop      - Stop watcher daemon"
-	@echo "  make daemon-status    - Check watcher status"
-	@echo "  make daemon-logs      - View watcher logs"
-	@echo ""
-	@echo "$(YELLOW)Native macOS App Commands:$(NC)"
-	@echo "  make native-setup     - Create Xcode project for native app"
 	@echo "  make native-build     - Build native app (debug)"
-	@echo "  make native-run       - Build and run native app"
 	@echo "  make native-release   - Build release version"
-	@echo "  make native-clean     - Clean native build artifacts"
-	@echo "  make native-xcode     - Open Xcode project"
+	@echo "  make native-xcode     - Open in Xcode"
+	@echo "  make native-clean     - Clean build artifacts"
+	@echo ""
+	@echo "$(YELLOW)SECONDARY: Web Target (Testing & Comparison):$(NC)"
+	@echo "  make web-build        - Build web assets"
+	@echo "  make web-watch        - Watch files and rebuild (foreground)"
+	@echo "  make web-daemon       - Start watcher daemon"
+	@echo "  make web-daemon-stop  - Stop watcher daemon"
+	@echo "  make web-daemon-logs  - View watcher logs"
+	@echo "  make web-clean        - Clean web artifacts"
 	@echo ""
 	@echo "$(YELLOW)Utilities:$(NC)"
 	@echo "  make build-info       - Generate build-info.json from git"
 	@echo "  make setup-hooks      - Install git hooks"
 	@echo ""
-	@echo "$(YELLOW)Notes:$(NC)"
-	@echo "  • Native app uses Metal GPU acceleration"
-	@echo "  • WASM version is web-based"
-	@echo "  • Python backend code archived in archive/"
+	@echo "$(YELLOW)Development:$(NC)"
+	@echo "  make native-rebuild   - Clean and rebuild native app"
+	@echo "  make native-kill      - Kill running app instance"
 
 build-info:
 	@echo "Generating build-info.json from git..."
@@ -45,81 +43,75 @@ setup-hooks:
 	@echo "Setting up git hooks to auto-update build-info.json..."
 	@bash scripts/setup_git_hooks.sh
 
-# Build Commands
-build:
-	@echo "Building WASM module..."
-	@if [ ! -f wasm/build.sh ]; then \
-		echo "❌ Error: wasm/build.sh not found"; \
-		exit 1; \
-	fi
-	@chmod +x wasm/build.sh
-	@cd wasm && ./build.sh
+# ============================================================================
+# Web Build Commands (Secondary)
+# ============================================================================
 
-clean:
-	@echo "Cleaning build artifacts..."
-	@rm -rf wasm/build 2>/dev/null || true
+web-build:
+	@echo "$(YELLOW)Building web assets...$(NC)"
+	@echo "✓ Web files ready (index.html, web-grid-generator.html)"
+
+web-clean:
+	@echo "$(YELLOW)Cleaning web build artifacts...$(NC)"
 	@rm -f static/wasm/wwfx_module.js static/wasm/wwfx_module.wasm 2>/dev/null || true
-	@echo "✅ Build artifacts cleaned"
+	@echo "$(GREEN)✓ Web clean complete$(NC)"
 
-watch:
-	@echo "Starting file watcher (foreground)..."
-	@echo "Watching for changes in wasm/src/, wasm/include/, and wasm/CMakeLists.txt"
+web-watch:
+	@echo "$(YELLOW)Starting file watcher for web (foreground)...$(NC)"
+	@echo "Watching for changes in web files"
 	@echo "Press Ctrl+C to stop"
 	@$(PYTHON) scripts/watch_wasm.py
 
-daemon:
-	@echo "Starting watcher as daemon..."
+web-daemon:
+	@echo "$(YELLOW)Starting web watcher as daemon...$(NC)"
 	@if [ -f /tmp/ww_fx_wasm.pid ]; then \
 		PID=$$(cat /tmp/ww_fx_wasm.pid); \
 		if ps -p $$PID > /dev/null 2>&1; then \
-			echo "⚠️  Watcher already running (PID: $$PID)"; \
-			echo "   Stop with: make daemon-stop"; \
+			echo "$(YELLOW)⚠️  Watcher already running (PID: $$PID)$(NC)"; \
+			echo "   Stop with: make web-daemon-stop"; \
 			exit 1; \
 		fi; \
 	fi
-	@echo "Building WASM module initially..."
-	@$(MAKE) build || true
-	@echo "Starting watcher daemon..."
 	@nohup $(PYTHON) scripts/watch_wasm.py > /tmp/ww_fx_wasm.log 2>&1 & \
 	echo $$! > /tmp/ww_fx_wasm.pid && \
-	echo "✅ Watcher started (PID: $$(cat /tmp/ww_fx_wasm.pid))"
-	@echo "To view logs: make daemon-logs"
-	@echo "To stop: make daemon-stop"
+	echo "$(GREEN)✓ Watcher started (PID: $$(cat /tmp/ww_fx_wasm.pid))$(NC)"
+	@echo "   View logs: make web-daemon-logs"
+	@echo "   Stop: make web-daemon-stop"
 
-daemon-stop:
+web-daemon-stop:
 	@if [ -f /tmp/ww_fx_wasm.pid ]; then \
 		PID=$$(cat /tmp/ww_fx_wasm.pid); \
 		if ps -p $$PID > /dev/null 2>&1; then \
-			kill $$PID && echo "✅ Stopped watcher (PID: $$PID)"; \
+			kill $$PID && echo "$(GREEN)✓ Stopped watcher (PID: $$PID)$(NC)"; \
 		else \
-			echo "⚠️  Process $$PID not found"; \
+			echo "$(YELLOW)⚠️  Process $$PID not found$(NC)"; \
 		fi; \
 		rm -f /tmp/ww_fx_wasm.pid; \
 	else \
-		echo "⚠️  No watcher PID file found"; \
+		echo "$(YELLOW)⚠️  No watcher PID file found$(NC)"; \
 	fi
 
-daemon-status:
+web-daemon-status:
 	@if [ -f /tmp/ww_fx_wasm.pid ]; then \
 		PID=$$(cat /tmp/ww_fx_wasm.pid); \
 		if ps -p $$PID > /dev/null 2>&1; then \
-			echo "✅ Watcher running (PID: $$PID)"; \
+			echo "$(GREEN)✓ Watcher running (PID: $$PID)$(NC)"; \
 		else \
-			echo "⚠️  Watcher not running (PID file exists but process not found)"; \
+			echo "$(YELLOW)⚠️  Watcher not running (PID file exists but process not found)$(NC)"; \
 		fi; \
 	else \
-		echo "⚠️  Watcher not running"; \
+		echo "$(YELLOW)⚠️  Watcher not running$(NC)"; \
 	fi
 
-daemon-logs:
+web-daemon-logs:
 	@if [ -f /tmp/ww_fx_wasm.log ]; then \
 		tail -f /tmp/ww_fx_wasm.log; \
 	else \
-		echo "⚠️  No log file found. Start watcher with: make daemon"; \
+		echo "$(YELLOW)⚠️  No log file found. Start watcher with: make web-daemon$(NC)"; \
 	fi
 
 # ============================================================================
-# Native macOS Metal App Build Commands
+# Native macOS Metal App Build Commands (PRIMARY)
 # ============================================================================
 
 MACOS_DIR = macos-native
@@ -127,16 +119,16 @@ NATIVE_APP_NAME = WesWorldFX
 BUILD_DIR = $(MACOS_DIR)/build
 RELEASE_DIR = $(BUILD_DIR)/Build/Products/Release
 DEBUG_DIR = $(BUILD_DIR)/Build/Products/Debug
-GREEN = \033[0;32m
-YELLOW = \033[1;33m
-RED = \033[0;31m
-NC = \033[0m
 
+# Default targets
 setup: native-setup
-	@echo "$(GREEN)✓ Setup complete$(NC)"
+	@echo "$(GREEN)✓ Setup complete - Ready to build and run$(NC)"
 
-run: native-spm-run
+run: native-run
 	@echo "$(GREEN)✓ App launched$(NC)"
+
+clean: native-clean
+	@echo "$(GREEN)✓ Clean complete$(NC)"
 
 # Setup native Xcode project
 native-setup:
@@ -158,11 +150,16 @@ native-setup:
 native-build: native-setup
 	@echo "$(YELLOW)Building WesWorldFX (Debug)...$(NC)"
 	@cd $(MACOS_DIR) && \
-	xcodebuild -project $(NATIVE_APP_NAME).xcodeproj \
-		-scheme $(NATIVE_APP_NAME) \
-		-configuration Debug \
-		-derivedDataPath build \
-		build 2>&1 | tail -20 || true
+	if [ -f "$(NATIVE_APP_NAME).xcodeproj/project.pbxproj" ]; then \
+		xcodebuild -project $(NATIVE_APP_NAME).xcodeproj \
+			-scheme $(NATIVE_APP_NAME) \
+			-configuration Debug \
+			-derivedDataPath build \
+			build 2>&1 | tail -20 || true; \
+	else \
+		echo "$(YELLOW)⚠️  Xcode project missing; using SwiftPM build$(NC)"; \
+		swift build -c debug; \
+	fi
 	@echo "$(GREEN)✓ Build complete$(NC)"
 
 # Build and run native app
@@ -171,8 +168,12 @@ native-run: native-build
 	@if [ -d "$(DEBUG_DIR)/$(NATIVE_APP_NAME).app" ]; then \
 		open "$(DEBUG_DIR)/$(NATIVE_APP_NAME).app"; \
 		echo "$(GREEN)✓ WesWorldFX launched (Press B to open Custom Bulge Editor)$(NC)"; \
+	elif [ -f "$(MACOS_DIR)/Package.swift" ]; then \
+		echo "$(YELLOW)⚠️  Xcode app not found; running SwiftPM binary$(NC)"; \
+		cd $(MACOS_DIR) && swift run; \
 	else \
 		echo "$(RED)❌ App not found at $(DEBUG_DIR)/$(NATIVE_APP_NAME).app$(NC)"; \
+		echo "$(RED)❌ Package.swift not found in $(MACOS_DIR)$(NC)"; \
 		exit 1; \
 	fi
 
@@ -180,13 +181,19 @@ native-run: native-build
 native-release: native-setup
 	@echo "$(YELLOW)Building WesWorldFX (Release)...$(NC)"
 	@cd $(MACOS_DIR) && \
-	xcodebuild -project $(NATIVE_APP_NAME).xcodeproj \
-		-scheme $(NATIVE_APP_NAME) \
-		-configuration Release \
-		-derivedDataPath build \
-		build 2>&1 | tail -20 || true
-	@echo "$(GREEN)✓ Release build complete$(NC)"
-	@echo "App: $(RELEASE_DIR)/$(NATIVE_APP_NAME).app"
+	if [ -f "$(NATIVE_APP_NAME).xcodeproj/project.pbxproj" ]; then \
+		xcodebuild -project $(NATIVE_APP_NAME).xcodeproj \
+			-scheme $(NATIVE_APP_NAME) \
+			-configuration Release \
+			-derivedDataPath build \
+			build 2>&1 | tail -20 || true; \
+		echo "$(GREEN)✓ Release build complete$(NC)"; \
+		echo "   App: $(RELEASE_DIR)/$(NATIVE_APP_NAME).app"; \
+	else \
+		echo "$(YELLOW)⚠️  Xcode project missing; using SwiftPM release build$(NC)"; \
+		swift build -c release; \
+		echo "$(GREEN)✓ Binary: $(MACOS_DIR)/.build/release/$(NATIVE_APP_NAME)$(NC)"; \
+	fi
 
 # Clean native build
 native-clean:
@@ -199,24 +206,14 @@ native-clean:
 native-xcode: native-setup
 	@if [ -f "$(MACOS_DIR)/$(NATIVE_APP_NAME).xcodeproj/project.pbxproj" ]; then \
 		open "$(MACOS_DIR)/$(NATIVE_APP_NAME).xcodeproj"; \
+		echo "$(GREEN)✓ Opened in Xcode$(NC)"; \
+	elif [ -f "$(MACOS_DIR)/Package.swift" ]; then \
+		echo "$(YELLOW)⚠️  Xcode project missing; opening Package.swift$(NC)"; \
+		open "$(MACOS_DIR)/Package.swift"; \
 	else \
 		echo "$(RED)❌ Xcode project not found. Run 'make native-setup' first.$(NC)"; \
 		exit 1; \
 	fi
-
-# Swift Package Manager alternative (faster builds)
-native-spm-build:
-	@echo "$(YELLOW)Building with Swift Package Manager...$(NC)"
-	@cd $(MACOS_DIR) && swift build -c debug
-
-native-spm-run: native-spm-build
-	@echo "$(YELLOW)Running with Swift Package Manager...$(NC)"
-	@cd $(MACOS_DIR) && swift run
-
-native-spm-release:
-	@echo "$(YELLOW)Building release with Swift Package Manager...$(NC)"
-	@cd $(MACOS_DIR) && swift build -c release
-	@echo "$(GREEN)✓ Binary: $(MACOS_DIR)/.build/release/$(NATIVE_APP_NAME)$(NC)"
 
 # Kill any running instance
 native-kill:

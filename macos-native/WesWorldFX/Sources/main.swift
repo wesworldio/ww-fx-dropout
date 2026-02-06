@@ -45,6 +45,8 @@ func setupMenuBar() {
     filtersMenu.addItem(withTitle: "Manage Custom Filters...", action: #selector(AppDelegate.manageBulgeFilters(_:)), keyEquivalent: "m")
     filtersMenu.addItem(withTitle: "Import Custom Filters...", action: #selector(AppDelegate.importBulgeFilters(_:)), keyEquivalent: "")
     filtersMenu.addItem(withTitle: "Export Custom Filters...", action: #selector(AppDelegate.exportBulgeFilters(_:)), keyEquivalent: "")
+    filtersMenu.addItem(NSMenuItem.separator())
+    filtersMenu.addItem(withTitle: "Reload Bundled Bulge Filters", action: #selector(AppDelegate.reloadBundledBulgeFilters(_:)), keyEquivalent: "r")
     
     // Window Menu
     let windowMenuItem = NSMenuItem()

@@ -78,6 +78,14 @@ if [ "$1" == "release" ]; then
         -derivedDataPath build \
         clean build
     
+    # Copy bulge effects resource
+    APP_PATH="build/Build/Products/Release/WesWorldFX.app"
+    if [ -f "42_bulge_effects.wwfxbulge" ] && [ -d "$APP_PATH" ]; then
+        echo -e "${YELLOW}Copying 42 bulge effects to app bundle...${NC}"
+        cp "42_bulge_effects.wwfxbulge" "$APP_PATH/Contents/Resources/"
+        echo -e "${GREEN}✓ Resources copied!${NC}"
+    fi
+    
     echo -e "${GREEN}✓ Build complete!${NC}"
     echo "App location: build/Build/Products/Release/WesWorldFX"
 fi
