@@ -104,7 +104,7 @@ class CameraViewController: NSViewController {
         view.addSubview(controlsView)
         
         // Version Label
-        let versionLabel = NSTextField(labelWithString: "WesWorld FX v2.1.2 (Build 2126)")
+        let versionLabel = NSTextField(labelWithString: "WesWorld FX v2.1.3 (Build 186)")
         versionLabel.frame = NSRect(x: 10, y: 165, width: 280, height: 15)
         versionLabel.textColor = .white.withAlphaComponent(0.6)
         versionLabel.font = .systemFont(ofSize: 11, weight: .regular)
