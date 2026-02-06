@@ -2368,7 +2368,7 @@ kernel void radial_wobble_v3(texture2d<float, access::read> inTexture [[texture(
     
     uint2 sourcePos = uint2(clamp(newPos, float2(0.0), float2(width - 1, height - 1)));
     float4 color = inTexture.read(sourcePos);
-    outTexture.write(sourcePos);
+    outTexture.write(color, gid);
 }
 
 kernel void radial_wobble_v4(texture2d<float, access::read> inTexture [[texture(0)]],
