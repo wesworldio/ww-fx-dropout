@@ -11,7 +11,7 @@ enum FilterType: String, CaseIterable {
     case none = "None (Original)"
     
     // Favorites
-    case bulgeEyes = "Bulge Eyes"
+    // case bulgeEyes = "Bulge Eyes"
     case funhouseMirror = "Funhouse Mirror"
     case funnySquash = "Funny Squash"
     case pinchCheeks = "Pinch Cheeks"
@@ -157,7 +157,7 @@ enum FilterType: String, CaseIterable {
     var metalFunctionName: String {
         switch self {
         case .none: return ""
-        case .bulgeEyes: return "bulge_eyes"
+        // case .bulgeEyes: return "bulge_eyes"
         case .funhouseMirror: return "funhouse_mirror"
         case .funnySquash: return "funny_squash"
         case .pinchCheeks: return "pinch_cheeks"

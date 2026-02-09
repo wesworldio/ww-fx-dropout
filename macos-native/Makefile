@@ -44,6 +44,8 @@ build: setup
 	@echo "$(GREEN)✓ Build complete!$(NC)"
 
 release: setup
+	@echo "$(YELLOW)Compiling Metal shaders...$(NC)"
+	@./compile-shaders.sh
 	@echo "$(YELLOW)Building $(APP_NAME) (Release)...$(NC)"
 	@swift build -c release
 	@echo "$(GREEN)✓ Release build complete!$(NC)"

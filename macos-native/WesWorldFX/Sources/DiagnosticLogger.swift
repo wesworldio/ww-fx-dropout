@@ -64,6 +64,13 @@ class DiagnosticLogger {
             }
         }
         log(level: "ERROR", category: category, message: fullMessage)
+        
+        // Submit to WesWorld logging system
+        if let error = error {
+            Task {
+                await WesWorldReporter.shared.logError(message, error, additionalInfo: ["category": category])
+            }
+        }
     }
     
     /// Log a critical error (crash-level)
@@ -76,6 +83,17 @@ class DiagnosticLogger {
             fullMessage += "\n  Stack Trace:\n    " + stackTrace.joined(separator: "\n    ")
         }
         log(level: "CRITICAL", category: "CRASH", message: fullMessage)
+        
+        // Submit critical errors to WesWorld immediately
+        if let error = error {
+            Task {
+                await WesWorldReporter.shared.logError(message, error, additionalInfo: ["level": "critical"])
+            }
+        } else {
+            Task {
+                await WesWorldReporter.shared.logWarning(fullMessage, additionalInfo: ["level": "critical"])
+            }
+        }
     }
     
     /// Log performance metrics
@@ -215,7 +233,7 @@ class DiagnosticLogger {
     
     // MARK: - System Information Helpers
     
-    private func getCPUUsage() -> Double {
+    func getCPUUsage() -> Double {
         var totalUsageOfCPU: Double = 0.0
         var threadsList: thread_act_array_t?
         var threadsCount: mach_msg_type_number_t = 0
@@ -254,7 +272,7 @@ class DiagnosticLogger {
         return totalUsageOfCPU
     }
     
-    private func getMemoryUsage() -> (usedBytes: UInt64, totalBytes: UInt64, usedPercent: Double) {
+    func getMemoryUsage() -> (usedBytes: UInt64, totalBytes: UInt64, usedPercent: Double) {
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(MemoryLayout<task_vm_info>.size)/4
         
@@ -284,7 +302,7 @@ class DiagnosticLogger {
         return "\(model) macOS \(processInfo.operatingSystemVersionString)"
     }
     
-    private func getMacModel() -> String {
+    func getMacModel() -> String {
         var modelIdentifier = ""
         let task = Process()
         task.launchPath = "/usr/sbin/sysctl"

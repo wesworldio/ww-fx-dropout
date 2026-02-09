@@ -6,6 +6,7 @@
 //
 
 import MetalKit
+import Dispatch
 
 class MetalRenderer: NSObject, MTKViewDelegate {
     
@@ -20,7 +21,7 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     private var lastLogTime: Date = Date()
     
     // Render pipeline
-    private var pipelineState: MTLRenderPipelineState!
+        private var pipelineState: MTLRenderPipelineState?
     private var vertexBuffer: MTLBuffer!
     
     // Vertices for fullscreen quad
@@ -55,61 +56,74 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         
         setupPipeline(view: view)
         setupVertexBuffer()
+        
+        if pipelineState != nil {
+            print("✓ MetalRenderer initialized successfully")
+        } else {
+            print("⚠ MetalRenderer: Failed to initialize render pipeline")
+        }
     }
     
     private func setupPipeline(view: MTKView) {
-        // Load shader source from bundle or filesystem
-        var shaderSource: String?
-
-        if let shaderURL = Bundle.main.url(forResource: "Shaders", withExtension: "metal"),
-           let source = try? String(contentsOf: shaderURL, encoding: .utf8) {
-            shaderSource = source
-            print("✓ MetalRenderer loaded shaders from bundle: \(shaderURL.path)")
-        } else {
-            let fileManager = FileManager.default
-            let currentDir = fileManager.currentDirectoryPath
-            let possiblePaths = [
-                "\(currentDir)/WesWorldFX/Metal/Shaders.metal",
-                "\(currentDir)/macos-native/WesWorldFX/Metal/Shaders.metal",
-                "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Metal/Shaders.metal"
-            ]
-
-            for path in possiblePaths {
-                if fileManager.fileExists(atPath: path),
-                   let source = try? String(contentsOfFile: path, encoding: .utf8) {
-                    shaderSource = source
-                    print("✓ MetalRenderer loaded shaders from: \(path)")
-                    break
+        // Load shader library from precompiled metallib file
+        // Try multiple paths for shader library
+        let shaderPaths = [
+            Bundle.main.path(forResource: "Shaders", ofType: "metallib"),  // In app bundle
+            Bundle.main.url(forResource: "Shaders", withExtension: "metallib")?.path,  // Alternative
+            "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX.app/Contents/Resources/Shaders.metallib"  // Direct path
+        ].compactMap { $0 }
+        
+        var library: MTLLibrary?
+        
+        // Try bundle first
+        if let bundleShaderPath = shaderPaths.first {
+            let libraryURL = URL(fileURLWithPath: bundleShaderPath)
+            do {
+                let libraryData = try Data(contentsOf: libraryURL)
+                // Use dispatch_data for Metal library loading
+                let dispatchData = libraryData.withUnsafeBytes { buffer -> DispatchData in
+                    return DispatchData(bytes: UnsafeRawBufferPointer(buffer))
                 }
+                library = try device.makeLibrary(data: dispatchData)
+                print("✓ Shaders loaded successfully")
+            } catch {
+                print("⚠ Failed to load precompiled shaders: \(error)")
             }
         }
-
-        guard let shaderSource = shaderSource else {
-            fatalError("Failed to load shader source file")
+        
+        // Fall back to default library if needed
+        if library == nil {
+            print("⚠ Using default Metal library")
+            library = device.makeDefaultLibrary()
         }
         
-        print("Loaded shader source, length: \(shaderSource.count)")
+        guard let library = library else {
+            print("ERROR: Failed to load shader library - cannot render")
+            return
+        }
         
-        // Create shader library from source
+        print("Shader library loaded successfully")
+        
+        guard let vertexFunction = library.makeFunction(name: "vertexShader"),
+              let fragmentFunction = library.makeFunction(name: "fragmentShader") else {
+            print("ERROR: Failed to find shader functions in library")
+            print("  vertexShader found: \(library.makeFunction(name: "vertexShader") != nil)")
+            print("  fragmentShader found: \(library.makeFunction(name: "fragmentShader") != nil)")
+            print("  Available functions: \(library.functionNames)")
+            return
+        }
+        
+        // Create pipeline descriptor
+        let pipelineDescriptor = MTLRenderPipelineDescriptor()
+        pipelineDescriptor.vertexFunction = vertexFunction
+        pipelineDescriptor.fragmentFunction = fragmentFunction
+        pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
+        
         do {
-            let library = try device.makeLibrary(source: shaderSource, options: nil)
-            print("Shader library created successfully")
-            
-            guard let vertexFunction = library.makeFunction(name: "vertexShader"),
-                  let fragmentFunction = library.makeFunction(name: "fragmentShader") else {
-                fatalError("Failed to find shader functions")
-            }
-            
-            // Create pipeline descriptor
-            let pipelineDescriptor = MTLRenderPipelineDescriptor()
-            pipelineDescriptor.vertexFunction = vertexFunction
-            pipelineDescriptor.fragmentFunction = fragmentFunction
-            pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
-            
             pipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+            print("✓ Pipeline state created successfully")
         } catch {
-            print("METAL SHADER ERROR: \(error)")
-            fatalError("Failed to create pipeline: \(error)")
+            print("ERROR: Failed to create render pipeline: \(error)")
         }
     }
     
@@ -168,10 +182,15 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         }
         
         // Draw textured quad
-        renderEncoder.setRenderPipelineState(pipelineState)
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder.setFragmentTexture(texture, index: 0)
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+        // Draw textured quad - only if pipeline state is available
+        if let pipelineState = pipelineState {
+            renderEncoder.setRenderPipelineState(pipelineState)
+            renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+            renderEncoder.setFragmentTexture(texture, index: 0)
+            renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+        } else {
+            print("WARNING: Pipeline state not available, skipping render")
+        }
         renderEncoder.endEncoding()
         
         commandBuffer.present(drawable)

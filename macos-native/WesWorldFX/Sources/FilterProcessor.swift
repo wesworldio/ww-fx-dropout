@@ -36,7 +36,15 @@ class FilterProcessor {
         self.device = device
         
         guard let queue = device.makeCommandQueue() else {
-            fatalError("Failed to create command queue")
+            print("ERROR: Failed to create command queue")
+            // Initialize with dummy values to allow object creation
+            self.commandQueue = device.makeCommandQueue()!
+            
+            var dummyCache: CVMetalTextureCache?
+            CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device, nil, &dummyCache)
+            self.textureCache = dummyCache!
+            
+            return
         }
         self.commandQueue = queue
         
@@ -44,7 +52,9 @@ class FilterProcessor {
         var cache: CVMetalTextureCache?
         CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device, nil, &cache)
         guard let textureCache = cache else {
-            fatalError("Failed to create texture cache")
+            print("ERROR: Failed to create texture cache")
+            self.textureCache = cache!
+            return
         }
         self.textureCache = textureCache
         
@@ -52,29 +62,65 @@ class FilterProcessor {
     }
     
     private func setupFilterPipelines() {
-        // Load shader source from file system
-        let fileManager = FileManager.default
-        let currentDir = fileManager.currentDirectoryPath
-        let possiblePaths = [
-            "\(currentDir)/WesWorldFX/Metal/Shaders.metal",
-            "\(currentDir)/macos-native/WesWorldFX/Metal/Shaders.metal",
-            "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Metal/Shaders.metal"
-        ]
+        // Try to load precompiled metallib first
+        let bundleShaderPath = Bundle.main.path(forResource: "Shaders", ofType: "metallib")
+        var library: MTLLibrary?
         
-        var shaderSource: String?
-        for path in possiblePaths {
-            if fileManager.fileExists(atPath: path) {
-                if let source = try? String(contentsOfFile: path, encoding: .utf8) {
-                    shaderSource = source
-                    print("✓ FilterProcessor loaded shaders from: \(path)")
-                    break
+        // Try bundle metallib
+        if let bundleShaderPath = bundleShaderPath {
+            let libraryURL = URL(fileURLWithPath: bundleShaderPath)
+            do {
+                let libraryData = try Data(contentsOf: libraryURL)
+                library = try libraryData.withUnsafeBytes { buffer -> MTLLibrary in
+                    try device.makeLibrary(data: DispatchData(bytes: UnsafeRawBufferPointer(buffer)))
                 }
+                print("✓ FilterProcessor loaded metallib from bundle")
+            } catch {
+                print("⚠ Failed to load precompiled metallib: \(error)")
             }
         }
         
-        guard let shaderSource = shaderSource,
-              let library = try? device.makeLibrary(source: shaderSource, options: nil) else {
-            fatalError("Failed to create shader library")
+        // Fallback to runtime compilation
+        if library == nil {
+            let fileManager = FileManager.default
+            let possiblePaths = [
+                "\(fileManager.currentDirectoryPath)/WesWorldFX/Metal/Shaders.metal",
+                "\(fileManager.currentDirectoryPath)/macos-native/WesWorldFX/Metal/Shaders.metal",
+                "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Metal/Shaders.metal"
+            ]
+            
+            var shaderSource: String?
+            for path in possiblePaths {
+                if fileManager.fileExists(atPath: path) {
+                    if let source = try? String(contentsOfFile: path, encoding: .utf8) {
+                        shaderSource = source
+                        print("✓ FilterProcessor loaded shaders from: \(path)")
+                        break
+                    }
+                }
+            }
+            
+            if let shaderSource = shaderSource {
+                do {
+                    library = try device.makeLibrary(source: shaderSource, options: nil)
+                    print("✓ FilterProcessor compiled shader library")
+                } catch {
+                    print("ERROR: Failed to compile shaders: \(error)")
+                }
+            } else {
+                print("ERROR: No shader source found")
+            }
+        }
+        
+        // Use default library if all else fails
+        if library == nil {
+            print("⚠ Using default Metal library")
+            library = device.makeDefaultLibrary()
+        }
+        
+        guard let library = library else {
+            print("ERROR: Could not load any shader library - filters will not work")
+            return
         }
         
         // Create compute pipeline for each filter
@@ -88,8 +134,10 @@ class FilterProcessor {
                     let pipeline = try device.makeComputePipelineState(function: function)
                     filterPipelines[filter] = pipeline
                 } catch {
-                    print("Failed to create pipeline for \(filter): \(error)")
+                    print("⚠ Failed to create pipeline for \(filter): \(error)")
                 }
+            } else {
+                print("⚠ Could not find function '\(functionName)' in library")
             }
         }
 
@@ -104,7 +152,7 @@ class FilterProcessor {
             .gentleRipple: "draw_grid_overlay_gentle_ripple",
 
             // Eye & face effects
-            .bulgeEyes: "draw_grid_overlay_bulge_eyes",
+            // .bulgeEyes: "draw_grid_overlay_bulge_eyes",
             .pinchCheeks: "draw_grid_overlay_pinch_cheeks",
             .elasticFace: "draw_grid_overlay_elastic_face",
             .smushFace: "draw_grid_overlay_smush_face",

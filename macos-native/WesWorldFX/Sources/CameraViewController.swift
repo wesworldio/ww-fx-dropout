@@ -10,6 +10,18 @@ import AVFoundation
 import MetalKit
 
 class CameraViewController: NSViewController {
+        private func getCPURAMAndMachineInfo() -> [String: String] {
+            let cpuUsage = DiagnosticLogger.shared.getCPUUsage()
+            let mem = DiagnosticLogger.shared.getMemoryUsage()
+            let machine = DiagnosticLogger.shared.getMacModel()
+            return [
+                "cpu_percent": String(format: "%.1f", cpuUsage),
+                "ram_used": String(format: "%llu", mem.usedBytes),
+                "ram_total": String(format: "%llu", mem.totalBytes),
+                "ram_percent": String(format: "%.1f", mem.usedPercent),
+                "machine": machine
+            ]
+        }
     
     // Camera
     private var captureSession: AVCaptureSession!
@@ -27,6 +39,7 @@ class CameraViewController: NSViewController {
     // UI
     private var controlsView: NSView!
     private var fpsLabel: NSTextField!
+    private var versionLabel: NSTextField!
     private var filterLabel: NSTextField!
     private var filterSelector: NSPopUpButton!
     private var cameraSelector: NSPopUpButton!
@@ -42,19 +55,59 @@ class CameraViewController: NSViewController {
         // Try to read build-info.json from the project root
         let buildInfoPath = "/Users/wes/Sites/wesworld/ww-fx-dropout/build-info.json"
         
+        var version = "2.1.3"
+        var buildNumber = 190
+        
         if FileManager.default.fileExists(atPath: buildInfoPath) {
             do {
                 let data = try Data(contentsOf: URL(fileURLWithPath: buildInfoPath))
                 if let jsonDict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    let version = jsonDict["version"] as? String ?? "2.1.3"
-                    let buildNumber = jsonDict["buildNumber"] as? Int ?? 190
-                    return "WesWorld FX v\(version) (Build \(buildNumber))"
+                    version = jsonDict["version"] as? String ?? "2.1.3"
+                    buildNumber = jsonDict["buildNumber"] as? Int ?? 190
                 }
             } catch {
                 print("Error reading build-info.json: \(error)")
             }
         }
-        return "WesWorld FX v2.1.3 (Build 190)"
+        
+        // Check if this is the latest version
+        checkIfLatestVersion(currentVersion: version)
+        
+        let latestTag = isLatestVersion ? " (Latest)" : ""
+        return "WesWorld FX v\(version)\(latestTag) (Build \(buildNumber))"
+    }
+    
+    private var isLatestVersion = false
+    
+    private func checkIfLatestVersion(currentVersion: String) {
+        let urlString = "https://api.github.com/repos/wesworldio/ww-fx-dropout/releases/latest"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 5
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self,
+                  let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let tagName = json["tag_name"] as? String else {
+                return
+            }
+            
+            let latestVersion = tagName.replacingOccurrences(of: "v", with: "")
+            self.isLatestVersion = (currentVersion == latestVersion)
+            
+            // Update UI on main thread
+            DispatchQueue.main.async {
+                self.updateVersionDisplay()
+            }
+        }.resume()
+    }
+    
+    private func updateVersionDisplay() {
+        // Re-read and update the version label
+        versionLabel.stringValue = getBuildVersionString()
     }
     
     override func loadView() {
@@ -125,7 +178,7 @@ class CameraViewController: NSViewController {
         view.addSubview(controlsView)
         
         // Version Label
-        let versionLabel = NSTextField(labelWithString: getBuildVersionString())
+        versionLabel = NSTextField(labelWithString: getBuildVersionString())
         versionLabel.frame = NSRect(x: 10, y: 165, width: 280, height: 15)
         versionLabel.textColor = .white.withAlphaComponent(0.6)
         versionLabel.font = .systemFont(ofSize: 11, weight: .regular)
@@ -252,6 +305,14 @@ class CameraViewController: NSViewController {
             filterProcessor.currentFilter = filterType
             updateFilterLabel(filterType.displayName)
             DiagnosticLogger.shared.info("Filter changed to: \(filterType.displayName)", category: "FILTERS")
+                // Log filter change to remote server
+                let sysInfo = getCPURAMAndMachineInfo()
+                Task {
+                    await WesWorldReporter.shared.logInfo("Filter changed", additionalInfo: [
+                        "event": "filter_changed",
+                        "filter": filterType.displayName
+                    ].merging(sysInfo) { $1 })
+                }
         }
     }
     
@@ -267,6 +328,15 @@ class CameraViewController: NSViewController {
         
         let newCamera = cameras[selectedIndex]
         switchCamera(to: newCamera)
+
+            // Log camera change to remote server
+            let sysInfo = getCPURAMAndMachineInfo()
+            Task {
+                await WesWorldReporter.shared.logInfo("Camera changed", additionalInfo: [
+                    "event": "camera_changed",
+                    "camera": newCamera.localizedName
+                ].merging(sysInfo) { $1 })
+            }
     }
     
     private func updateCameraList() {

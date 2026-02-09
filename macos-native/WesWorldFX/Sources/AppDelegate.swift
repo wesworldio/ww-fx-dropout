@@ -35,6 +35,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        // Initialize crash reporting FIRST
+        WesWorldReporter.shared.setupCrashHandlers()
+        
+            // Explicitly log app open event to remote log server
+            Task {
+                await WesWorldReporter.shared.logInfo("WesWorldFX app opened", additionalInfo: ["event": "app_opened"])
+            }
         // Initialize diagnostic logger
         DiagnosticLogger.shared.info("Application did finish launching", category: "LIFECYCLE")
         DiagnosticLogger.shared.startPeriodicMonitoring(interval: 60) // Log system status every minute
@@ -103,6 +110,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ aNotification: Notification) {
         // Log app termination
         DiagnosticLogger.shared.info("Application will terminate", category: "LIFECYCLE")
+        
+            // Explicitly log app close event to remote log server
+            Task {
+                await WesWorldReporter.shared.logInfo("WesWorldFX app closed", additionalInfo: ["event": "app_closed"])
+            }
+        // Flush any pending crash logs
+        Task {
+            await WesWorldReporter.shared.flushPendingLogs()
+        }
         
         // Clean up camera and Metal resources
         cameraViewController?.cleanup()

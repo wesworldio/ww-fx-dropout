@@ -56,6 +56,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/WesWorldReporter.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift"
         },
         {
@@ -79,6 +83,7 @@
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/FilterType.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/MetalRenderer.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/UpdateChecker.swift.o",
+        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/WesWorldReporter.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/main.swift.o"
       ],
       "otherArguments" : [
@@ -170,6 +175,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/WesWorldReporter.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/main.swift.o"
         },
         {
@@ -187,6 +196,7 @@
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterType.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/MetalRenderer.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/UpdateChecker.swift",
+        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/WesWorldReporter.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift"
       ],
       "tempsPath" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build",
@@ -212,6 +222,7 @@
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/FilterType.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/MetalRenderer.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/UpdateChecker.swift",
+      "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/WesWorldReporter.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift",
       "-I",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/Modules",
@@ -328,6 +339,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/WesWorldReporter.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/main.swift"
         }
       ],
@@ -371,6 +386,10 @@
         {
           "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/UpdateChecker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/WesWorldReporter.swift.o"
         },
         {
           "kind" : "file",
