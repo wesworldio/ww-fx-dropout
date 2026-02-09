@@ -4,6 +4,12 @@
     "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/WesWorldFX.o",
     "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/master.swiftdeps"
   },
+  "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate+CacheCleanup.swift": {
+    "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate+CacheCleanup.swift.o",
+    "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate+CacheCleanup~partial.swiftmodule",
+    "swift-dependencies": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate+CacheCleanup.swiftdeps",
+    "diagnostics": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate+CacheCleanup.dia"
+  },
   "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate.swift": {
     "object": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate.swift.o",
     "swiftmodule": "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate~partial.swiftmodule",

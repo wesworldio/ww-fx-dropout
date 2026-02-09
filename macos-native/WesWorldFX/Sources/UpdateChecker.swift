@@ -20,7 +20,7 @@ class UpdateChecker {
             return version
         }
         
-        return "2.1.3" // Hardcoded fallback
+        return "2.1.4" // Hardcoded fallback
     }
     
     private init() {}

@@ -34,7 +34,7 @@ class WesWorldReporter {
     init(
         serverURL: String? = nil,
         apiKey: String? = nil,
-        version: String = "2.1.3 (Build 210)"
+        version: String = "2.1.4 (Build 210)"
     ) {
         // Try to load from config file first, then environment variables, then defaults
         let config = Self.loadConfig()

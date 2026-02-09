@@ -16,25 +16,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Build Info Helper
     
     private func getBuildVersionString() -> String {
-        // Try to read build-info.json from the project root
-        let buildInfoPath = "/Users/wes/Sites/wesworld/ww-fx-dropout/build-info.json"
-        
-        if FileManager.default.fileExists(atPath: buildInfoPath) {
+        // Try to read build-info.json from the app bundle's Resources directory
+        if let buildInfoURL = Bundle.main.url(forResource: "build-info", withExtension: "json") {
             do {
-                let data = try Data(contentsOf: URL(fileURLWithPath: buildInfoPath))
+                let data = try Data(contentsOf: buildInfoURL)
                 if let jsonDict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    let version = jsonDict["version"] as? String ?? "2.1.3"
-                    let buildNumber = jsonDict["buildNumber"] as? Int ?? 190
+                    let version = jsonDict["version"] as? String ?? "2.1.4"
+                    let buildNumber = jsonDict["buildNumber"] as? Int ?? 210
                     return "Version \(version) (Build \(buildNumber))"
                 }
             } catch {
                 print("Error reading build-info.json: \(error)")
             }
         }
-        return "Version 2.1.3 (Build 190)"
+        return "Version 2.1.4 (Build 210)"
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        // Clean up old cache and preferences if launching a new version
+        performCacheCleanupIfNeeded()
         // Initialize crash reporting FIRST
         WesWorldReporter.shared.setupCrashHandlers()
         
@@ -52,9 +52,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupDebugMenu()
         
         // Check for updates on launch (after a short delay to let the app fully load)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            UpdateChecker.shared.checkForUpdates()
-        }
+        // DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        //     UpdateChecker.shared.checkForUpdates()
+        // }
         
         // Activate the app - CRITICAL for window visibility
         NSApp.setActivationPolicy(.regular)

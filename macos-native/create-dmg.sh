@@ -51,5 +51,14 @@ hdiutil convert "$TEMP_DMG" -format UDZO -o "$DMG_NAME"
 rm -f "$TEMP_DMG"
 
 echo ""
+
+# Copy DMG to top-level releases directory
+RELEASES_DIR="../releases"
+if [ ! -d "$RELEASES_DIR" ]; then
+    mkdir -p "$RELEASES_DIR"
+fi
+cp "$DMG_NAME" "$RELEASES_DIR/"
+
 echo "✓ DMG created successfully: $DMG_NAME"
 echo "  Size: $(du -h "$DMG_NAME" | cut -f1)"
+echo "✓ DMG also copied to $RELEASES_DIR/"

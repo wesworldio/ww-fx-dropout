@@ -55,15 +55,15 @@ class CameraViewController: NSViewController {
         // Try to read build-info.json from the project root
         let buildInfoPath = "/Users/wes/Sites/wesworld/ww-fx-dropout/build-info.json"
         
-        var version = "2.1.3"
-        var buildNumber = 190
+        var version = "2.1.4"
+        var buildNumber = 210
         
         if FileManager.default.fileExists(atPath: buildInfoPath) {
             do {
                 let data = try Data(contentsOf: URL(fileURLWithPath: buildInfoPath))
                 if let jsonDict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    version = jsonDict["version"] as? String ?? "2.1.3"
-                    buildNumber = jsonDict["buildNumber"] as? Int ?? 190
+                    version = jsonDict["version"] as? String ?? "2.1.4"
+                    buildNumber = jsonDict["buildNumber"] as? Int ?? 210
                 }
             } catch {
                 print("Error reading build-info.json: \(error)")
@@ -130,12 +130,47 @@ class CameraViewController: NSViewController {
         print("UI setup complete")
         DiagnosticLogger.shared.info("UI setup complete", category: "UI")
         
-        setupCamera()
-        print("Camera setup complete")
+        checkAndRequestCameraPermission()
         
         setupFilterProcessor()
         print("Filter processor setup complete")
         DiagnosticLogger.shared.info("Filter processor setup complete", category: "FILTERS")
+    }
+
+    private func checkAndRequestCameraPermission() {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
+        case .authorized:
+            // Already authorized, proceed to setup camera
+            self.setupCamera()
+            print("Camera setup complete")
+        case .notDetermined:
+            // Request permission
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        self.setupCamera()
+                        print("Camera setup complete")
+                    } else {
+                        self.showCameraAccessDeniedAlert()
+                    }
+                }
+            }
+        case .denied, .restricted:
+            // Show alert to user
+            self.showCameraAccessDeniedAlert()
+        @unknown default:
+            self.showCameraAccessDeniedAlert()
+        }
+    }
+
+    private func showCameraAccessDeniedAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Camera Access Required"
+        alert.informativeText = "WesWorld FX needs camera access to work. Please enable it in System Settings > Privacy & Security > Camera."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
     
     override func viewDidAppear() {

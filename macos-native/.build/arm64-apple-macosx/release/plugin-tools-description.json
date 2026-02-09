@@ -24,6 +24,10 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate+CacheCleanup.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate.swift"
         },
         {
@@ -75,6 +79,7 @@
       "moduleName" : "WesWorldFX",
       "moduleOutputPath" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/Modules/WesWorldFX.swiftmodule",
       "objects" : [
+        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate+CacheCleanup.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/CameraViewController.swift.o",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/DiagnosticLogger.swift.o",
@@ -143,6 +148,10 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate+CacheCleanup.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate.swift.o"
         },
         {
@@ -188,6 +197,7 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate+CacheCleanup.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CameraViewController.swift",
         "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/DiagnosticLogger.swift",
@@ -214,6 +224,7 @@
       "-package-name",
       "macos_native",
       "-c",
+      "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate+CacheCleanup.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/CameraViewController.swift",
       "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/DiagnosticLogger.swift",
@@ -307,6 +318,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate+CacheCleanup.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/WesWorldFX/Sources/AppDelegate.swift"
         },
         {
@@ -354,6 +369,10 @@
         {
           "kind" : "virtual",
           "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wes/Sites/wesworld/ww-fx-dropout/macos-native/.build/arm64-apple-macosx/release/WesWorldFX.build/AppDelegate+CacheCleanup.swift.o"
         },
         {
           "kind" : "file",
