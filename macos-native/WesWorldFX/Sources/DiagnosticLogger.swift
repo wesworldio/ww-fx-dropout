@@ -59,7 +59,8 @@ class DiagnosticLogger {
             fullMessage += "\n  Error Details: \(error.localizedDescription)"
             let nsError = error as NSError
             fullMessage += "\n  Domain: \(nsError.domain), Code: \(nsError.code)"
-            if let userInfo = nsError.userInfo as? [String: Any], !userInfo.isEmpty {
+            let userInfo = nsError.userInfo
+            if !userInfo.isEmpty {
                 fullMessage += "\n  User Info: \(userInfo)"
             }
         }

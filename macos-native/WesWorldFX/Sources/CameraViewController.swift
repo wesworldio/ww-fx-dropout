@@ -10,6 +10,11 @@ import AVFoundation
 import MetalKit
 
 class CameraViewController: NSViewController {
+            // Debug overlay state
+            private var debugOverlay: NSTextField!
+            private var debugOverlayTimer: Timer?
+            private var lastFrameReceived: CFTimeInterval = 0
+            private var lastErrorMessage: String? = nil
         private func getCPURAMAndMachineInfo() -> [String: String] {
             let cpuUsage = DiagnosticLogger.shared.getCPUUsage()
             let mem = DiagnosticLogger.shared.getMemoryUsage()
@@ -470,12 +475,45 @@ class CameraViewController: NSViewController {
     
     private func showError(_ message: String) {
         DispatchQueue.main.async {
+            self.lastErrorMessage = message
+            self.debugOverlay.stringValue = "ERROR: \(message)"
+            self.debugOverlay.textColor = NSColor.red
+            self.debugOverlay.isHidden = false
+            // Also show alert as before
             let alert = NSAlert()
             alert.messageText = "Error"
             alert.informativeText = message
             alert.alertStyle = .critical
             alert.addButton(withTitle: "OK")
             alert.runModal()
+        }
+    }
+
+    private func showDebugMessage(_ message: String, color: NSColor = NSColor.systemYellow) {
+        DispatchQueue.main.async {
+            self.debugOverlay.stringValue = message
+            self.debugOverlay.textColor = color
+            self.debugOverlay.isHidden = false
+        }
+    }
+
+    private func hideDebugOverlay() {
+        DispatchQueue.main.async {
+            self.debugOverlay.isHidden = true
+        }
+    }
+
+    private func updateDebugOverlay() {
+        let now = CACurrentMediaTime()
+        // If no frame received in 2 seconds, show warning
+        if lastFrameReceived == 0 || (now - lastFrameReceived) > 2.0 {
+            if let lastError = lastErrorMessage {
+                showDebugMessage("ERROR: \(lastError)", color: NSColor.red)
+            } else {
+                showDebugMessage("No video frames received.\n\nPossible causes:\n- Camera not detected\n- Metal pipeline failure\n- Filter error\n\nTry switching camera or restarting app.", color: NSColor.systemYellow)
+            }
+        } else {
+            hideDebugOverlay()
         }
     }
     
@@ -485,6 +523,7 @@ class CameraViewController: NSViewController {
         }
     }
     
+
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 48: // Tab
@@ -493,6 +532,8 @@ class CameraViewController: NSViewController {
             // Random filter selection
             let allFiltersExceptNone = FilterType.allCases.filter { $0 != .none }
             if let randomFilter = allFiltersExceptNone.randomElement() {
+
+        // ...existing code...
                 let randomIndex = FilterType.allCases.firstIndex(of: randomFilter) ?? 0
                 filterSelector.selectItem(at: randomIndex)
                 filterChanged()
@@ -512,6 +553,8 @@ class CameraViewController: NSViewController {
         case 34: // i/I key - cycle cameras
             cycleCamera()
         default:
+
+
             // Don't call super to prevent system beep
             break
         }
@@ -529,11 +572,11 @@ class CameraViewController: NSViewController {
         UpdateChecker.shared.checkForUpdates(showNoUpdateAlert: true)
     }
 }
-
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 extension CameraViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+            showDebugMessage("Failed to get pixel buffer from camera", color: .red)
         // Calculate FPS
         let currentTime = CACurrentMediaTime()
         if lastFrameTime > 0 {
@@ -541,8 +584,11 @@ extension CameraViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
             fps = 1.0 / delta
             
             // Update FPS display every 10 frames
+            // Hide overlay if visible
+            hideDebugOverlay()
             if Int(currentTime * 60) % 10 == 0 {
                 updateFPS(fps)
+            showDebugMessage("Filter processing failed", color: .red)
             }
         } else {
             print("First frame received from camera!")
