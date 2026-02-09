@@ -58,6 +58,8 @@ release: setup
 		build | xcpretty || xcodebuild -project $(APP_NAME).xcodeproj -scheme $(SCHEME) -configuration Release build
 	@echo "$(GREEN)✓ Release build complete!$(NC)"
 	@echo "App: $(BUILD_DIR)/Build/Products/Release/$(APP_NAME).app"
+	@echo "Creating DMG installer..."
+	@bash create-dmg.sh
 
 run: build
 	@echo "$(YELLOW)Launching $(APP_NAME)...$(NC)"

@@ -26,7 +26,6 @@ ENV/
 # Electron / Node
 node_modules/
 dist/
-*.dmg
 *.exe
 *.AppImage
 *.deb
