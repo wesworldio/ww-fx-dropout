@@ -62,3 +62,4 @@ Thumbs.db
 
 # Build info (generated from git) - keep in repo for deployment
 # build-info.json
+/macos-native/.build/
