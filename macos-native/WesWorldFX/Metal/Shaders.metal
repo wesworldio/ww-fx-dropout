@@ -1002,13 +1002,360 @@ kernel void wave_distortion_v1(texture2d<float, access::read> inTexture [[textur
     outTexture.write(color, gid);
 }
 
-// MARK: - Elastic Warp Filters (14 variants)
+// Simple Universal Grid Overlay - Used as fallback for all filters
+kernel void draw_simple_grid_overlay(texture2d<float, access::read> inTexture [[texture(0)]],
+                                     texture2d<float, access::write> outTexture [[texture(1)]],
+                                     uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
 
-kernel void elastic_warp_1(texture2d<float, access::read> inTexture [[texture(0)]],
-                          texture2d<float, access::write> outTexture [[texture(1)]],
-                          uint2 gid [[thread_position_in_grid]]) {
+    // Read the input texture color
+    float4 textureColor = inTexture.read(gid);
+    
+    // Grid parameters (match web)
+    const uint gridSize = 30;
+    const uint gridOffset = 5;
+
+    // Check if this pixel is on a grid line
+    bool onHorizontalGrid = (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0);
+    bool onVerticalGrid = (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0);
+
+    // Overlay yellow grid or write texture color
+    if (onHorizontalGrid || onVerticalGrid) {
+        outTexture.write(float4(1.0, 1.0, 0.0, 1.0), gid);
+    } else {
+        outTexture.write(textureColor, gid);
+    }
+}
+
+// Grid Overlay with Bulge Eyes Distortion - Forward-maps grid lines like the web version
+// Grid overlay for complex_ripple filter
+kernel void draw_grid_overlay_complex_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
+                                             texture2d<float, access::write> outTexture [[texture(1)]],
+                                             uint2 gid [[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
     
+    // Complex ripple with angular variation - same as complex_ripple filter
+    float radialRipple = sin(dist * 0.06) * 6.0;
+    float angularRipple = sin(angle * 4.0) * 3.0;
+    float totalRipple = radialRipple + angularRipple;
+    float newX = pos.x + totalRipple * cosAngle;
+    float newY = pos.y + totalRipple * sinAngle;
+
+    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
+                         clamp(newY, 0.0, float(height - 1)));
+    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
+}
+
+// Grid overlay for water_ripple filter
+kernel void draw_grid_overlay_water_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
+                                           texture2d<float, access::write> outTexture [[texture(1)]],
+                                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float centerX = float(width) / 2.0;
+    float centerY = float(height) / 2.0;
+
+    // Grid parameters (match web)
+    const uint gridSize = 30;
+    const uint gridOffset = 5;
+
+    // Only draw for source grid points
+    bool isGridPoint = false;
+    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
+        isGridPoint = true;
+    }
+    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
+        isGridPoint = true;
+    }
+    if (!isGridPoint) {
+        return;
+    }
+
+    float2 pos = float2(gid);
+    float dx = pos.x - centerX;
+    float dy = pos.y - centerY;
+    float dist = sqrt(dx * dx + dy * dy);
+    float angle = atan2(dy, dx);
+    
+    // Web version: simple ripple without decay
+    const float frequency = 0.05;
+    const float amplitude = 15.0;
+    float ripple = sin(dist * frequency) * amplitude;
+    float newX = pos.x + ripple * cos(angle);
+    float newY = pos.y + ripple * sin(angle);
+
+    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
+                         clamp(newY, 0.0, float(height - 1)));
+    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
+}
+
+// Grid overlay for multi_ripple filter
+kernel void draw_grid_overlay_multi_ripple(texture2d<float, access::read> inTexture [[texture(0)]],
+                                           texture2d<float, access::write> outTexture [[texture(1)]],
+                                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float centerX = float(width) / 2.0;
+    float centerY = float(height) / 2.0;
+
+    // Grid parameters (match web)
+    const uint gridSize = 30;
+    const uint gridOffset = 5;
+
+    // Only draw for source grid points
+    bool isGridPoint = false;
+    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
+        isGridPoint = true;
+    }
+    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
+        isGridPoint = true;
+    }
+    if (!isGridPoint) {
+        return;
+    }
+
+    float2 pos = float2(gid);
+    float dx = pos.x - centerX;
+    float dy = pos.y - centerY;
+    float dist = sqrt(dx * dx + dy * dy);
+    float angle = atan2(dy, dx);
+
+    float ripple1 = sin(dist * 0.05) * 5.0;
+    float ripple2 = sin(dist * 0.08) * 3.0;
+    float ripple3 = sin(dist * 0.12) * 2.0;
+    float totalRipple = ripple1 + ripple2 + ripple3;
+    float newX = pos.x + totalRipple * cos(angle);
+    float newY = pos.y + totalRipple * sin(angle);
+
+    uint2 outPos = uint2(clamp(float2(newX, newY), float2(0.0), float2(width - 1, height - 1)));
+    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
+}
+
+// Grid overlay for swirl filter
+
+// Generic grid overlay for bulge_eyes filter (legacy)
+kernel void draw_grid_overlay(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
+                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float centerX = float(width) / 2.0;
+    float centerY = float(height) / 2.0;
+
+    // Grid parameters (match web)
+    const uint gridSize = 30;
+    const uint gridOffset = 5;
+
+    // Read the input texture color first
+    float4 textureColor = inTexture.read(gid);
+    
+    // Only draw grid for source grid points
+    bool isGridPoint = false;
+    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
+        isGridPoint = true;
+    }
+    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
+        isGridPoint = true;
+    }
+    
+    // If it's a grid point, write yellow; otherwise write the texture color
+    if (isGridPoint) {
+        outTexture.write(float4(1.0, 1.0, 0.0, 1.0), gid);
+    } else {
+        outTexture.write(textureColor, gid);
+    }
+}
+
+
+// ============================================================================
+// COMPREHENSIVE GRID OVERLAY SHADERS FOR ALL FILTERS
+// Each grid shader matches its corresponding filter's distortion exactly
+// ============================================================================
+
+inline bool isGridPoint(uint2 gid) {
+    const uint gridSize = 30;
+    const uint gridOffset = 5;
+    if (gid.y >= gridOffset && ((gid.y - gridOffset) % gridSize) == 0) {
+        return true;
+    }
+    if (gid.x >= gridOffset && ((gid.x - gridOffset) % gridSize) == 0) {
+        return true;
+    }
+    return false;
+}
+
+// Grid overlay for upside_down
+kernel void draw_grid_overlay_upside_down(texture2d<float, access::read> inTexture [[texture(0)]],
+                                          texture2d<float, access::write> outTexture [[texture(1)]],
+                                          uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    if (!isGridPoint(gid)) return;
+
+    uint height = inTexture.get_height();
+    float newX = float(gid.x);
+    float newY = float(height - 1 - gid.y);
+
+    uint2 outPos = uint2(clamp(newX, 0.0, float(outTexture.get_width() - 1)),
+                         clamp(newY, 0.0, float(outTexture.get_height() - 1)));
+    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
+}
+
+// Grid overlay for upside_down_v1 (rotation)
+kernel void draw_grid_overlay_upside_down_v1(texture2d<float, access::read> inTexture [[texture(0)]],
+                                             texture2d<float, access::write> outTexture [[texture(1)]],
+                                             uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    if (!isGridPoint(gid)) return;
+
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float newX = float(width - 1 - gid.x);
+    float newY = float(height - 1 - gid.y);
+
+    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
+                         clamp(newY, 0.0, float(height - 1)));
+    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
+}
+
+// Grid overlay for bulge_eyes - uses inverse distortion to find source grid lines
+kernel void draw_grid_overlay_bulge_eyes(texture2d<float, access::read> inTexture [[texture(0)]],
+                                         texture2d<float, access::write> outTexture [[texture(1)]],
+                                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    
+    // Read the input texture color first - this is the processed image
+    float4 textureColor = inTexture.read(gid);
+    
+    // Always write the texture color as the base
+    outTexture.write(textureColor, gid);
+
+    // Grid parameters
+    const uint gridSize = 30;
+    const uint gridOffset = 5;
+
+    // Check if this output position is on a grid line
+    bool onHorizontalGrid = false;
+    bool onVerticalGrid = false;
+    
+    uint gridX = gid.x;
+    uint gridY = gid.y;
+    
+    if (gridY >= gridOffset && ((gridY - gridOffset) % gridSize) == 0) {
+        onHorizontalGrid = true;
+    }
+    if (gridX >= gridOffset && ((gridX - gridOffset) % gridSize) == 0) {
+        onVerticalGrid = true;
+    }
+    
+    // Overlay yellow grid lines
+    if (onHorizontalGrid || onVerticalGrid) {
+        outTexture.write(float4(1.0, 1.0, 0.0, 1.0), gid);
+    }
+}
+
+// Grid overlay for funhouse_mirror
+kernel void draw_grid_overlay_funhouse_mirror(texture2d<float, access::read> inTexture [[texture(0)]],
+                                              texture2d<float, access::write> outTexture [[texture(1)]],
+                                              uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    if (!isGridPoint(gid)) return;
+
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float centerX = float(width) / 2.0;
+    float halfWidth = float(width) / 2.0;
+    float invHalfWidth = 1.0 / halfWidth;
+    const float strength = 0.4;
+
+    float2 pos = float2(gid);
+    float dx = pos.x - centerX;
+    float normalizedX = dx * invHalfWidth;
+    float funhouseStretch = 1.0 + strength * sin(normalizedX * M_PI_F);
+    float newX = centerX + dx * funhouseStretch;
+    float newY = pos.y;
+
+    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
+                         clamp(newY, 0.0, float(height - 1)));
+    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
+}
+
+// Grid overlay for funny_squash
+kernel void draw_grid_overlay_funny_squash(texture2d<float, access::read> inTexture [[texture(0)]],
+                                           texture2d<float, access::write> outTexture [[texture(1)]],
+                                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    if (!isGridPoint(gid)) return;
+
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float centerX = float(width) / 2.0;
+    float centerY = float(height) / 2.0;
+    float halfHeight = float(height) / 2.0;
+    float invHalfHeight = 1.0 / halfHeight;
+    const float strength = 0.4;
+
+    float2 pos = float2(gid);
+    float dy = pos.y - centerY;
+    float normalizedY = dy * invHalfHeight;
+    float squashFactor = 1.0 - strength * normalizedY * normalizedY;
+    float newX = centerX + (pos.x - centerX) / squashFactor;
+    float newY = pos.y;
+
+    uint2 outPos = uint2(clamp(pos.x, 0.0, float(width - 1)),
+                         clamp(newY, 0.0, float(height - 1)));
+    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
+}
+
+// Grid overlay for pinch_cheeks
+kernel void draw_grid_overlay_pinch_cheeks(texture2d<float, access::read> inTexture [[texture(0)]],
+                                           texture2d<float, access::write> outTexture [[texture(1)]],
+                                           uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    if (!isGridPoint(gid)) return;
+
+    uint width = inTexture.get_width();
+    uint height = inTexture.get_height();
+    float centerX = float(width) / 2.0;
+    float centerY = float(height) / 2.0;
+    float radius = min(float(width), float(height)) / 2.0;
+    float invRadius = 1.0 / radius;
+    const float strength = 0.35;
+
+    float2 pos = float2(gid);
+    float dx = pos.x - centerX;
+    float dy = pos.y - centerY;
+    float dist = sqrt(dx * dx + dy * dy);
+    float normalizedDist = min(dist * invRadius, 1.0);
+    float angle = atan2(dy, dx);
+    float cosAngle = cos(angle);
+    float sinAngle = sin(angle);
+
+    float pinchFactor = 1.0 - strength * abs(cosAngle) * normalizedDist;
+    float newDist = dist * pinchFactor;
+    float newX = centerX + newDist * cosAngle;
+    float newY = centerY + newDist * sinAngle;
+
+    uint2 outPos = uint2(clamp(newX, 0.0, float(width - 1)),
+                         clamp(newY, 0.0, float(height - 1)));
+    outTexture.write(float4(1.0, 1.0, 0.0, 1.0), outPos);
+}
+
+// Grid overlay for pincushion
+kernel void draw_grid_overlay_pincushion(texture2d<float, access::read> inTexture [[texture(0)]],
+                                         texture2d<float, access::write> outTexture [[texture(1)]],
+                                         uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) return;
+    if (!isGridPoint(gid)) return;
+
     uint width = inTexture.get_width();
     uint height = inTexture.get_height();
     float2 center = float2(width / 2.0, height / 2.0);

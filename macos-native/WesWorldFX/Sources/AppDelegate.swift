@@ -142,11 +142,69 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    @objc func openBulgeEditor(_ sender: Any?) {
+        cameraViewController?.openBulgeEditor()
+    }
+    
+    @objc func manageBulgeFilters(_ sender: Any?) {
+        cameraViewController?.manageBulgeFilters()
+    }
+    
+    @objc func importBulgeFilters(_ sender: Any?) {
+        BulgeFilterManager.shared.importFiltersDialog()
+        cameraViewController?.updateFilterList()
+    }
+    
+    @objc func exportBulgeFilters(_ sender: Any?) {
+        BulgeFilterManager.shared.exportAllFilters()
+    }
+
+    @objc func reloadBundledBulgeFilters(_ sender: Any?) {
+        BulgeFilterManager.shared.reloadBundledEffects()
+        cameraViewController?.updateFilterList()
+    }
+    
     private func requestCameraAccess() {
-        AVCaptureDevice.requestAccess(for: .video) { granted in
-            if !granted {
-                DiagnosticLogger.shared.warning("Camera access denied by user", category: "CAMERA")
-                
+        // Check current authorization status
+        let currentStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        
+        // Log current state
+        let statusString = {
+            switch currentStatus {
+            case .authorized: return "authorized"
+            case .denied: return "denied"
+            case .restricted: return "restricted"
+            case .notDetermined: return "notDetermined"
+            @unknown default: return "unknown"
+            }
+        }()
+        
+        print("Camera permission status: \(statusString)")
+        
+        // Load previously saved permission state
+        let defaults = UserDefaults.standard
+        
+        switch currentStatus {
+        case .authorized:
+            // Permission already granted by user
+            print("Camera access already authorized by system")
+            defaults.set(true, forKey: cameraPermissionGrantedKey)
+            defaults.set(Date(), forKey: cameraPermissionLastAskedKey)
+            
+        case .denied:
+            // User previously denied camera access
+            print("Camera access was denied")
+            showCameraDeniedAlert()
+            
+        case .restricted:
+            // Camera access is restricted (parental controls, MDM, etc.)
+            print("Camera access is restricted")
+            showCameraRestrictedAlert()
+            
+        case .notDetermined:
+            // First time asking for permission
+            print("Requesting camera access from user")
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
                 DispatchQueue.main.async {
                     let alert = NSAlert()
                     alert.messageText = "Camera Access Required"

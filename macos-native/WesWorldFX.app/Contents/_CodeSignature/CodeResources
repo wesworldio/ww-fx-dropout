@@ -4,18 +4,40 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>Resources/42_bulge_effects.wwfxbulge</key>
+		<data>
+		905KhIxg8375v/e1W4g+gUgcNTk=
+		</data>
+		<key>Resources/Shaders.metal</key>
+		<data>
+		GW0SXxW2a0eofkeMiwZvlhYD8vE=
+		</data>
 		<key>Resources/Shaders.metallib</key>
 		<data>
-		jzQn+Bkvr5dYuZDZ1UfzJt9UhLo=
+		zrT8X0vc19JSo2fqRNxy/i1p5js=
 		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>Resources/42_bulge_effects.wwfxbulge</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			y74aL7hk/sKU9E7tKeC25yqcYX4Yda2U+38N0vc2ZEg=
+			</data>
+		</dict>
+		<key>Resources/Shaders.metal</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			r1otfyZBMEakulPZNLl1ymzZvjxGFPtI4VaQ5cDdIbc=
+			</data>
+		</dict>
 		<key>Resources/Shaders.metallib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			mX5B0K8x+AT0IkyQGoxJeZInjCU/d3UmBUHwsU81un8=
+			LwGLjbfSeVNMBq20fYh0Nmub4OYH6rsb7Iq3cTaQnr4=
 			</data>
 		</dict>
 	</dict>

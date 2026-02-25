@@ -49,6 +49,8 @@ class CameraViewController: NSViewController {
     private var filterSelector: NSPopUpButton!
     private var cameraSelector: NSPopUpButton!
     private var uiVisible: Bool = false
+    private let lastCameraUniqueIdKey = "WesWorldFX_LastCameraUniqueId"
+    private var cameraSyncTimer: Timer?
     
     // Performance tracking
     private var lastFrameTime: CFTimeInterval = 0
@@ -129,44 +131,17 @@ class CameraViewController: NSViewController {
         
         setupMetalView()
         print("Metal view setup complete")
-        DiagnosticLogger.shared.info("Metal view setup complete", category: "GRAPHICS")
         
         setupUI()
         print("UI setup complete")
-        DiagnosticLogger.shared.info("UI setup complete", category: "UI")
         
-        checkAndRequestCameraPermission()
-        
+        // CRITICAL: Setup filter processor BEFORE camera to avoid race condition
         setupFilterProcessor()
         print("Filter processor setup complete")
-        DiagnosticLogger.shared.info("Filter processor setup complete", category: "FILTERS")
-    }
-
-    private func checkAndRequestCameraPermission() {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        switch status {
-        case .authorized:
-            // Already authorized, proceed to setup camera
-            self.setupCamera()
-            print("Camera setup complete")
-        case .notDetermined:
-            // Request permission
-            AVCaptureDevice.requestAccess(for: .video) { granted in
-                DispatchQueue.main.async {
-                    if granted {
-                        self.setupCamera()
-                        print("Camera setup complete")
-                    } else {
-                        self.showCameraAccessDeniedAlert()
-                    }
-                }
-            }
-        case .denied, .restricted:
-            // Show alert to user
-            self.showCameraAccessDeniedAlert()
-        @unknown default:
-            self.showCameraAccessDeniedAlert()
-        }
+        
+        setupCamera()
+        print("Camera setup complete")
+        startCameraSyncTimer()
     }
 
     private func showCameraAccessDeniedAlert() {
@@ -199,6 +174,10 @@ class CameraViewController: NSViewController {
         metalView.enableSetNeedsDisplay = false
         metalView.isPaused = false
         metalView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        
+        // CRITICAL: Set drawable size to match view size on Retina displays
+        // Without this, the drawable will be sized incorrectly on high-DPI screens
+        metalView.drawableSize = metalView.bounds.size
         
         view.addSubview(metalView)
         
@@ -271,30 +250,57 @@ class CameraViewController: NSViewController {
         captureSession = AVCaptureSession()
         captureSession.sessionPreset = .hd1920x1080 // 1080p for best quality with OBS
         
-        guard let camera = AVCaptureDevice.default(for: .video) else {
-            showError("No camera found")
-            DiagnosticLogger.shared.error("No camera device found", category: "CAMERA")
+        // Try different presets for compatibility
+        let presets: [AVCaptureSession.Preset] = [.hd1920x1080, .hd1280x720, .high]
+        var presetSelected = false
+        
+        for preset in presets {
+            if captureSession.canSetSessionPreset(preset) {
+                captureSession.sessionPreset = preset
+                print("📷 Camera preset set to: \(preset.rawValue)")
+                presetSelected = true
+                break
+            }
+        }
+        
+        if !presetSelected {
+            print("⚠️  No camera preset could be set, using default")
+        }
+        
+        // Get all available cameras and **strongly prefer** built-in
+        let allCameras = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera, .externalUnknown],
+            mediaType: .video,
+            position: .unspecified
+        ).devices
+        
+        print("📷 Found \(allCameras.count) camera(s):")
+        for (index, cam) in allCameras.enumerated() {
+            print("   [\(index)] \(cam.localizedName) - \(cam.deviceType.rawValue)")
+        }
+        
+        // Prefer the most recently used camera if available, otherwise fall back
+        let camera = preferredCamera(from: allCameras)
+        
+        guard let camera = camera else {
+            showError("No camera found. Please check System Preferences > Security & Privacy > Camera")
             return
         }
         
         currentCamera = camera
-        DiagnosticLogger.shared.logCameraStatus(
-            status: "Found camera",
-            details: [
-                "Name": camera.localizedName,
-                "Model": camera.modelID,
-                "Supports 1080p": camera.formats.contains { format in
-                    let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
-                    return dimensions.width == 1920 && dimensions.height == 1080
-                }
-            ]
-        )
+        UserDefaults.standard.set(camera.uniqueID, forKey: lastCameraUniqueIdKey)
         
         do {
             let input = try AVCaptureDeviceInput(device: camera)
             if captureSession.canAddInput(input) {
                 captureSession.addInput(input)
-                DiagnosticLogger.shared.info("Camera input added to session", category: "CAMERA")
+                print("✓ Camera input added")
+                DispatchQueue.main.async { [weak self] in
+                    self?.updateCameraList()
+                }
+            } else {
+                print("❌ Cannot add camera input")
+                return
             }
             
             videoOutput = AVCaptureVideoDataOutput()
@@ -308,7 +314,22 @@ class CameraViewController: NSViewController {
             
             if captureSession.canAddOutput(videoOutput) {
                 captureSession.addOutput(videoOutput)
-                DiagnosticLogger.shared.info("Video output added to session", category: "CAMERA")
+                print("✓ Video output added")
+                
+                // Configure connection for proper orientation
+                if let connection = videoOutput.connection(with: .video) {
+                    if connection.isVideoOrientationSupported {
+                        connection.videoOrientation = .landscapeRight
+                        print("✓ Video orientation set to landscapeRight")
+                    }
+                    if connection.isVideoMirroringSupported {
+                        connection.isVideoMirrored = false
+                        print("✓ Video mirroring disabled")
+                    }
+                }
+            } else {
+                print("❌ Cannot add video output")
+                return
             }
             
             // Start session
@@ -386,6 +407,8 @@ class CameraViewController: NSViewController {
             position: .unspecified
         ).devices
         
+        syncCurrentCameraFromSession(forceUpdate: false)
+        
         cameraSelector.removeAllItems()
         cameraSelector.addItems(withTitles: cameras.map { $0.localizedName })
         
@@ -393,6 +416,9 @@ class CameraViewController: NSViewController {
         if let current = currentCamera,
            let index = cameras.firstIndex(of: current) {
             cameraSelector.selectItem(at: index)
+        } else if let storedId = UserDefaults.standard.string(forKey: lastCameraUniqueIdKey),
+                  let storedIndex = cameras.firstIndex(where: { $0.uniqueID == storedId }) {
+            cameraSelector.selectItem(at: storedIndex)
         }
     }
     
@@ -413,6 +439,7 @@ class CameraViewController: NSViewController {
                 if self.captureSession.canAddInput(newInput) {
                     self.captureSession.addInput(newInput)
                     self.currentCamera = newCamera
+                    UserDefaults.standard.set(newCamera.uniqueID, forKey: self.lastCameraUniqueIdKey)
                     
                     // Update UI on main thread
                     DispatchQueue.main.async {
@@ -424,6 +451,28 @@ class CameraViewController: NSViewController {
             }
             
             self.captureSession.commitConfiguration()
+        }
+    }
+
+    private func startCameraSyncTimer() {
+        cameraSyncTimer?.invalidate()
+        cameraSyncTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.syncCurrentCameraFromSession(forceUpdate: true)
+        }
+    }
+
+    private func syncCurrentCameraFromSession(forceUpdate: Bool) {
+        guard let currentInput = captureSession?.inputs.first as? AVCaptureDeviceInput else { return }
+        let sessionDevice = currentInput.device
+        let hasChanged = currentCamera?.uniqueID != sessionDevice.uniqueID
+        if hasChanged || forceUpdate {
+            currentCamera = sessionDevice
+            UserDefaults.standard.set(sessionDevice.uniqueID, forKey: lastCameraUniqueIdKey)
+            if forceUpdate {
+                DispatchQueue.main.async { [weak self] in
+                    self?.updateCameraList()
+                }
+            }
         }
     }
     
@@ -445,6 +494,24 @@ class CameraViewController: NSViewController {
         } else if let firstCamera = cameras.first {
             switchCamera(to: firstCamera)
         }
+    }
+
+    private func preferredCamera(from cameras: [AVCaptureDevice]) -> AVCaptureDevice? {
+        if let storedId = UserDefaults.standard.string(forKey: lastCameraUniqueIdKey),
+           let storedCamera = cameras.first(where: { $0.uniqueID == storedId }) {
+            print("📷 🎯 Using last camera: \(storedCamera.localizedName)")
+            return storedCamera
+        }
+        if let builtIn = cameras.first(where: { $0.deviceType == .builtInWideAngleCamera }) {
+            print("📷 🎯 Using BUILT-IN camera: \(builtIn.localizedName)")
+            return builtIn
+        }
+        if let external = cameras.first {
+            print("⚠️  No built-in camera found, using: \(external.localizedName)")
+            return external
+        }
+        print("❌ NO CAMERAS FOUND!")
+        return nil
     }
     
     private func toggleUI() {
@@ -520,6 +587,10 @@ class CameraViewController: NSViewController {
     func cleanup() {
         sessionQueue.async { [weak self] in
             self?.captureSession?.stopRunning()
+        }
+        DispatchQueue.main.async { [weak self] in
+            self?.cameraSyncTimer?.invalidate()
+            self?.cameraSyncTimer = nil
         }
     }
     
@@ -597,7 +668,13 @@ extension CameraViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         
         // Get pixel buffer from sample buffer
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            print("Failed to get pixel buffer from sample buffer")
+            print("❌ Failed to get pixel buffer from sample buffer")
+            return
+        }
+        
+        // Safety check: ensure filter processor is initialized before processing
+        guard filterProcessor != nil else {
+            print("⚠️  Filter processor not yet initialized, skipping frame")
             return
         }
         

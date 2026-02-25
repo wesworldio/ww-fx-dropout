@@ -1,0 +1,4 @@
+/Users/wes/Sites/wesworld/ww-fx-dropout/wasm/build/CMakeFiles/wwfx_wasm.dir
+/Users/wes/Sites/wesworld/ww-fx-dropout/wasm/build/CMakeFiles/wwfx_module.dir
+/Users/wes/Sites/wesworld/ww-fx-dropout/wasm/build/CMakeFiles/edit_cache.dir
+/Users/wes/Sites/wesworld/ww-fx-dropout/wasm/build/CMakeFiles/rebuild_cache.dir

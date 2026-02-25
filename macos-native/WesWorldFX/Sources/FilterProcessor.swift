@@ -20,6 +20,7 @@ class FilterProcessor {
     private var filterPipelines: [FilterType: MTLComputePipelineState] = [:]
     // Grid overlay pipelines (filter-specific)
     private var gridPipelines: [FilterType: MTLComputePipelineState] = [:]
+    private var customGridPipeline: MTLComputePipelineState?
     private var defaultGridPipeline: MTLComputePipelineState?
     private var simpleGridPipeline: MTLComputePipelineState?
     
@@ -202,6 +203,16 @@ class FilterProcessor {
             }
         }
         
+        // Grid overlay for custom bulge filters
+        if let customGridFunction = library.makeFunction(name: "draw_grid_overlay_custom_bulge") {
+            do {
+                customGridPipeline = try device.makeComputePipelineState(function: customGridFunction)
+                print("✓ Custom bulge grid pipeline created successfully")
+            } catch {
+                print("Failed to create custom bulge grid pipeline: \(error)")
+            }
+        }
+        
         // Default grid pipeline for other filters (bulge_eyes style)
         if let defaultGridFunction = library.makeFunction(name: "draw_grid_overlay") {
             do {
@@ -282,11 +293,17 @@ class FilterProcessor {
             }
             
             // Get pipeline based on filter type
-            let pipeline = filterPipelines[currentFilter]
+            var pipeline: MTLComputePipelineState? = nil
+            if case .custom = currentFilter {
+                // Use the custom bulge pipeline
+                pipeline = customBulgePipeline
+            } else {
+                pipeline = filterPipelines[currentFilter]
+            }
             
             guard let pipeline = pipeline else {
                 computeEncoder.endEncoding()
-                print("FilterProcessor: Pipeline not found for filter")
+                print("FilterProcessor: Pipeline not found for filter \(currentFilter)")
                 return sourceTexture
             }
             
@@ -314,7 +331,12 @@ class FilterProcessor {
         // Apply grid overlay to show filter deformation (when enabled)
         if showGrid {
             // Select the appropriate grid pipeline based on current filter
-            let gridPipeline = gridPipelines[currentFilter] ?? defaultGridPipeline ?? simpleGridPipeline
+            var gridPipeline: MTLComputePipelineState? = nil
+            if case .custom = currentFilter {
+                gridPipeline = customGridPipeline
+            } else {
+                gridPipeline = gridPipelines[currentFilter] ?? defaultGridPipeline ?? simpleGridPipeline
+            }
             
             guard let gridPipeline = gridPipeline else {
                 print("FilterProcessor: No grid pipeline available for filter")
@@ -430,5 +452,74 @@ class FilterProcessor {
     /// Set the current filter type for processing
     public func setCurrentFilter(_ filter: FilterType) {
         currentFilter = filter
+    }
+    
+    /// Process a texture with a custom bulge filter for live preview (non-blocking)
+    /// - Parameters:
+    ///   - texture: Source texture to process
+    ///   - filter: Custom bulge filter with points
+    /// - Returns: Processed texture with bulge effect applied
+    public func processCustomBulgeAsync(_ texture: MTLTexture, with filter: CustomBulgeFilter) -> MTLTexture? {
+        // Check pipeline first - don't create Metal objects if we can't process
+        guard let pipeline = customBulgePipeline else {
+            print("FilterProcessor: Custom bulge pipeline not available")
+            return texture
+        }
+        
+        guard let commandBuffer = commandQueue.makeCommandBuffer(),
+              let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            print("FilterProcessor: Failed to create command buffer or encoder")
+            return texture
+        }
+        
+        // Create output texture - if this fails, must end encoder before returning
+        guard let outputTexture = createOutputTexture(matching: texture) else {
+            computeEncoder.endEncoding()
+            print("FilterProcessor: Failed to create output texture for custom bulge")
+            return texture
+        }
+        
+        // Setup compute shader
+        computeEncoder.setComputePipelineState(pipeline)
+        computeEncoder.setTexture(texture, index: 0)
+        computeEncoder.setTexture(outputTexture, index: 1)
+        
+        // Prepare bulge points data for GPU
+        var pointCount = UInt32(filter.points.count)
+        computeEncoder.setBytes(&pointCount, length: MemoryLayout<UInt32>.size, index: 0)
+        
+        // Prepare point data as simple tuples (x, y, radius, strength)
+        var bulgeData: [(Float, Float, Float, Float)] = []
+        for point in filter.points {
+            bulgeData.append((point.x, point.y, point.radius, point.strength))
+        }
+        
+        // Pass bulge points (max 16 points)
+        let maxPoints = min(bulgeData.count, 16)
+        if maxPoints > 0 {
+            computeEncoder.setBytes(bulgeData, length: maxPoints * MemoryLayout<(Float, Float, Float, Float)>.stride, index: 1)
+        }
+        
+        // Dispatch threads
+        let threadGroupSize = MTLSizeMake(16, 16, 1)
+        let threadGroups = MTLSizeMake(
+            (texture.width + threadGroupSize.width - 1) / threadGroupSize.width,
+            (texture.height + threadGroupSize.height - 1) / threadGroupSize.height,
+            1
+        )
+        
+        computeEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+        computeEncoder.endEncoding()
+        
+        // Commit WITHOUT waiting - let it process in background
+        commandBuffer.commit()
+        // Don't call waitUntilCompleted() - this blocks the main thread!
+        
+        return outputTexture
+    }
+    
+    /// Check if custom bulge processing is available
+    public func isCustomBulgeAvailable() -> Bool {
+        return customBulgePipeline != nil
     }
 }

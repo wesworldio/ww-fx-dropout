@@ -1,29 +1,90 @@
 import Foundation
 import AppKit
+import UserNotifications
 
-class UpdateChecker {
+class UpdateChecker: NSObject, UNUserNotificationCenterDelegate {
     static let shared = UpdateChecker()
     
     private let repoOwner = "wesworldio"
     private let repoName = "ww-fx-dropout"
-    private var currentVersion: String {
-        // Try to get version from Info.plist first
-        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
-            return version
+    private let currentVersion = "2.1.0"
+    private let notificationsEnabled: Bool
+    
+    override private init() {
+        if let bundleId = Bundle.main.bundleIdentifier, !bundleId.isEmpty {
+            notificationsEnabled = true
+        } else {
+            notificationsEnabled = false
         }
-        
-        // Fallback: read from build-info.json
-        if let buildInfoPath = Bundle.main.resourceURL?.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("build-info.json").path,
-           let data = try? Data(contentsOf: URL(fileURLWithPath: buildInfoPath)),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let version = json["version"] as? String {
-            return version
+        super.init()
+        guard notificationsEnabled else {
+            print("⚠️  Notifications disabled (no app bundle identifier)")
+            return
         }
-        
-        return "2.1.4" // Hardcoded fallback
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if let error = error {
+                print("Notification authorization error: \(error.localizedDescription)")
+            } else if !granted {
+                print("Notification authorization not granted")
+            }
+        }
+        let downloadAction = UNNotificationAction(
+            identifier: "UpdateChecker.Download",
+            title: "Download",
+            options: [.foreground]
+        )
+        let viewReleaseAction = UNNotificationAction(
+            identifier: "UpdateChecker.ViewRelease",
+            title: "View Release",
+            options: [.foreground]
+        )
+        let laterAction = UNNotificationAction(
+            identifier: "UpdateChecker.Later",
+            title: "Later",
+            options: []
+        )
+        let category = UNNotificationCategory(
+            identifier: "UpdateChecker.UpdateAvailable",
+            actions: [downloadAction, viewReleaseAction, laterAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        center.setNotificationCategories([category])
     }
     
-    private init() {}
+    // MARK: - UNUserNotificationCenterDelegate
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        let downloadUrl = userInfo["downloadUrl"] as? String
+        let releaseUrl = userInfo["releaseUrl"] as? String
+        
+        switch response.actionIdentifier {
+        case "UpdateChecker.Download":
+            if let downloadUrl, let url = URL(string: downloadUrl) {
+                NSWorkspace.shared.open(url)
+            } else if let releaseUrl, let url = URL(string: releaseUrl) {
+                NSWorkspace.shared.open(url)
+            }
+        case "UpdateChecker.ViewRelease", UNNotificationDefaultActionIdentifier:
+            if let releaseUrl, let url = URL(string: releaseUrl) {
+                NSWorkspace.shared.open(url)
+            }
+        default:
+            break
+        }
+        completionHandler()
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
+    }
     
     func checkForUpdates(showNoUpdateAlert: Bool = false) {
         let urlString = "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest"
@@ -111,50 +172,50 @@ class UpdateChecker {
     }
     
     private func showUpdateAlert(latestVersion: String, releaseUrl: String, downloadUrl: String?, releaseNotes: String) {
-        let alert = NSAlert()
-        alert.messageText = "Update Available"
-        alert.informativeText = "Version \(latestVersion) is now available. You have version \(currentVersion).\n\nWhat's New:\n\(releaseNotes.prefix(200))\(releaseNotes.count > 200 ? "..." : "")"
-        alert.alertStyle = .informational
-        
+        guard notificationsEnabled else {
+            print("Update available: v\(latestVersion) - \(releaseUrl)")
+            return
+        }
+        let content = UNMutableNotificationContent()
+        content.title = "Update Available"
+        content.subtitle = "WesWorld FX v\(latestVersion)"
+        content.body = "A new version is available. Click to download or visit the release page."
+        content.userInfo = ["releaseUrl": releaseUrl]
+        content.categoryIdentifier = "UpdateChecker.UpdateAvailable"
         if let downloadUrl = downloadUrl {
-            alert.addButton(withTitle: "Download Update")
-            alert.addButton(withTitle: "View Release Notes")
-            alert.addButton(withTitle: "Later")
-            
-            let response = alert.runModal()
-            
-            switch response {
-            case .alertFirstButtonReturn: // Download
-                if let url = URL(string: downloadUrl) {
-                    NSWorkspace.shared.open(url)
-                }
-            case .alertSecondButtonReturn: // Release Notes
-                if let url = URL(string: releaseUrl) {
-                    NSWorkspace.shared.open(url)
-                }
-            default:
-                break
-            }
-        } else {
-            alert.addButton(withTitle: "View Release")
-            alert.addButton(withTitle: "Later")
-            
-            let response = alert.runModal()
-            
-            if response == .alertFirstButtonReturn {
-                if let url = URL(string: releaseUrl) {
-                    NSWorkspace.shared.open(url)
-                }
+            content.userInfo["downloadUrl"] = downloadUrl
+        }
+        
+        let request = UNNotificationRequest(
+            identifier: "UpdateChecker.UpdateAvailable",
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Failed to deliver update notification: \(error.localizedDescription)")
             }
         }
     }
     
     private func showNoUpdateAlert() {
-        let alert = NSAlert()
-        alert.messageText = "No Updates Available"
-        alert.informativeText = "You are running the latest version (\(currentVersion))."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        guard notificationsEnabled else {
+            print("App is up to date (v\(currentVersion))")
+            return
+        }
+        let content = UNMutableNotificationContent()
+        content.title = "App is Up to Date"
+        content.body = "You're running the latest version (\(currentVersion))."
+        
+        let request = UNNotificationRequest(
+            identifier: "UpdateChecker.NoUpdate",
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Failed to deliver no-update notification: \(error.localizedDescription)")
+            }
+        }
     }
 }
